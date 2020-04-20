@@ -5,6 +5,7 @@
 ## Written by Shintai Chong
 ## Version 1.0 /2020/02/05
 ##
+## Edit: 2020/04/20, Tsen, MBF location
 ##########################################################################################################################
 
 
@@ -103,7 +104,7 @@ fi
 subjid=$(basename ${OriDir})
 
 # Multi-Band factor
-if [ -f "${OriDir}/2_BiasCo/MBF.txt" ]; then
+if [ -f "${OriDir}/1_DWIprep/MBF.txt" ]; then
 	MBF=both
 else
 	mporder=0
