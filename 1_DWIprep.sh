@@ -3,11 +3,11 @@
 ##########################################################################################################################
 ## Diffusion data processing pipeline
 ## Written by Clementine Kung
-## Version 1.0 /2020/04/01
-##
+## Version 1.1 /2020/04/20
+## Modified for Philips format
 ##########################################################################################################################
 
-
+# 20200424 - check dwi.bval dwi.bvec exist, line 65
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -61,6 +61,26 @@ mkdir -p ${SubjectDir}/0_BIDS_NIFTI
 cd ${SubjectDir}/0_BIDS_NIFTI
 /bin/cp -f ${BIDSDir}/dwi/*dwi* .
 /bin/cp -f ${BIDSDir}/anat/*T1* .
+
+# check dwi.bval dwi.bvec exist
+handle=($(find . -name "*dwi*.nii.gz*"))
+for (( i = 0; i < ${#handle[*]}; i++ )); do
+	#statements
+	n_handle=$(basename -- ${handle[$i]} | cut -f1 -d '.')
+	if [[ -f ${n_handle}.bval ]]; then
+		:
+	else
+		b="0"
+		dim=($(fslhd ${n_handle}.nii.gz | cat -v | egrep 'dim4'))
+    	for (( i=2; i <= ${dim[1]}; i++ )); do
+		    b="$b 0"
+      	done
+    		echo $b >> ${n_handle}.bval
+      	for (( i=1; i<=3; i++ )); do
+      		echo $b >> ${n_handle}.bvec
+      	done
+	fi
+done
 
 # rename DWI dwi *dwi*
 # file=($(ls .))
@@ -130,31 +150,31 @@ for json_file in ${json_dir}; do
 		tmp=(${line})
 
 		case ${tmp[0]} in
-		'"PhaseEncodingDirection":')
+		'"PhaseEncodingDirection":' | '"PhaseEncodingAxis":')
 			d=${tmp[1]}
 			d_tmp=${d:1:${#d}-3}
 
 			case "$d_tmp" in
-			"j") echo "PA" 
-			PED_PA=PA
-			PhaseEncodingDirectionCode[0]=${Rec}
-			Acqparams_Topup_tmp="0 1 0" 
-			;;
-			"j-") echo "AP" 
-			PED_AP=AP
-			PhaseEncodingDirectionCode[1]=${Rec}
-			Acqparams_Topup_tmp="0 -1 0"
-			;;
-			"i") echo "RL"
-			PED_RL=RL
-			PhaseEncodingDirectionCode[2]=${Rec}
-			Acqparams_Topup_tmp="1 0 0"
-			;;
-			"i-") echo "LR"
-			PED_LR=LR
-			PhaseEncodingDirectionCode[3]=${Rec}
-			Acqparams_Topup_tmp="-1 0 0" 
-			;;
+				"j") echo "PA" 
+				PED_PA=PA
+				PhaseEncodingDirectionCode[0]=${Rec}
+				Acqparams_Topup_tmp="0 1 0" 
+				;;
+				"j-") echo "AP" 
+				PED_AP=AP
+				PhaseEncodingDirectionCode[1]=${Rec}
+				Acqparams_Topup_tmp="0 -1 0"
+				;;
+				"i") echo "RL"
+				PED_RL=RL
+				PhaseEncodingDirectionCode[2]=${Rec}
+				Acqparams_Topup_tmp="1 0 0"
+				;;
+				"i-") echo "LR"
+				PED_LR=LR
+				PhaseEncodingDirectionCode[3]=${Rec}
+				Acqparams_Topup_tmp="-1 0 0" 
+				;;
 			esac
 		;;
 
@@ -164,13 +184,13 @@ for json_file in ${json_dir}; do
 			#echo $EffectiveEchoSpacing	
 		;;
 
-
 		'"AcquisitionMatrixPE":')
 			d=${tmp[1]}
 			AcquisitionMatrixPE=${d:0:${#d}-1}
 			EPIfactor=${AcquisitionMatrixPE}
 			# echo "EPIfactor: $EPIfactor"
 		;;
+
 
 		'"ReconMatrixPE":')
 			d=${tmp[1]}

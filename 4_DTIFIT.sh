@@ -7,7 +7,10 @@
 ##
 ##########################################################################################################################
 
-
+# 20200417 - fix floating number b-values comparison
+#          - fix null and lowb as 0 and 1000 (select_dwi_vols_st)
+# 20200424 - cancle fixing null and lowb as 0 and 1000
+#		   - convert floating number to integer
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -135,7 +138,8 @@ done
 
 # Average DWI null images
 if [ ${#null[*]} -eq 1 ]; then # only 1 group of null image
-	${mainS}/select_dwi_vols_st ${subjid}-preproc.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-Average_b0 ${null[0]} -m
+	nu=${null%.*}
+	${mainS}/select_dwi_vols_st ${subjid}-preproc.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-Average_b0 ${nu} -m
 elif [ ${#null[*]} -gt 1 ]; then # more than 1 group of null images
 	tags=""
 	for ((i=1; i<${#null[*]}; i++)); do
@@ -146,7 +150,8 @@ fi
 
 # Extract DWI low-b images
 if [ ${#lowb[*]} -eq 1 ]; then # only 1 group of low b-value
-	${mainS}/select_dwi_vols_st ${subjid}-preproc.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-lowb-only-data ${lowb[0]} -obv ${subjid}-preproc.bvec
+	b=${lowb%.*}
+	${mainS}/select_dwi_vols_st ${subjid}-preproc.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-lowb-only-data ${b} -obv ${subjid}-preproc.bvec
 elif [ ${#lowb[*]} -gt 1 ]; then # more than 1 group of low b-balues
 	tags=""
 	 for ((i=1; i<${#lowb[*]}; i++)); do
