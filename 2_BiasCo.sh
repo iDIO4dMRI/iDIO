@@ -46,7 +46,7 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hd:p:" optionName; 
+while getopts "hp:" optionName; 
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in

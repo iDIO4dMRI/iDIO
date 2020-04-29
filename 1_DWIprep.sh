@@ -8,6 +8,7 @@
 ##########################################################################################################################
 
 # 20200424 - check dwi.bval dwi.bvec exist, line 65
+# 20200429 - fixing imaging resize floating number problem, line 239, 242. Shintai 
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -235,7 +236,8 @@ for json_file in ${json_dir}; do
 	done
 
 	## resize
-	Interpolation=$((${ReconMatrixPE}/${AcquisitionMatrixPE}))
+	Interpolation=$(echo "${ReconMatrixPE}/${AcquisitionMatrixPE}" | bc -l)
+	# Interpolation=$((${ReconMatrixPE}/${AcquisitionMatrixPE}))
 	if [ "${Interpolation}" != 1 ]; then
 		mkdir -p ${SubjectDir}/0_BIDS_NIFTI/Preresize
 		resizefile=$(basename ${nifti_file})
