@@ -29,10 +29,13 @@ Usage(){
 Usage:	6_NetworkProc -[options] 
 
 System will automatically detect all folders in directory if no input arguments supplied
+need to save configure file(T1_2_ICBM_MNI152_1mm.cnf) to /usr/local/fsl/etc/flirtsch
+need to save MNI template (mni_icbm152_t1_tal_nlin_asym_09c_/bet/mask.nii.gz) to /usr/local/fsl/data/standard
+Default needed files could be downloaded from 120.126.40.109 with dpgroup/2020dpg
 
 Options:
 	-p 	Input directory; [default = pwd directory]
-	-a 	Input Atlas directory; 
+	-a 	Input Atlas directory; [default = pwd/configure_Atlas, need to include Atlas/MNI directories
 
 EOF
 exit 1
