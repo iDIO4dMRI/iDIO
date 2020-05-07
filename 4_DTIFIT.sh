@@ -115,6 +115,10 @@ fi
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo.nii.gz ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bval ${OriDir}/4_DTIFIT/${subjid}-preproc.bval
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec
+
+# Doing bias correct
+dwibiascorrect ants ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -force
+
 cd ${OriDir}/4_DTIFIT
 bv_num=($(grep '[^[:blank:]]+' -Eo ${subjid}-preproc.bval | sort | uniq -c))
 echo "A total of $(($(echo ${#bv_num[@]}) / 2)) b-values were found..."
@@ -139,25 +143,25 @@ done
 # Average DWI null images
 if [ ${#null[*]} -eq 1 ]; then # only 1 group of null image
 	nu=${null%.*}
-	${mainS}/select_dwi_vols_st ${subjid}-preproc.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-Average_b0 ${nu} -m
+	${mainS}/select_dwi_vols_st ${subjid}-preproc-unbiased.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-Average_b0 ${nu} -m
 elif [ ${#null[*]} -gt 1 ]; then # more than 1 group of null images
 	tags=""
 	for ((i=1; i<${#null[*]}; i++)); do
 		tags="${tags} -b ${null[$i]}"
 	done
-	${mainS}/select_dwi_vols_st ${subjid}-preproc.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-Average_b0 ${null[0]} ${tags} -m
+	${mainS}/select_dwi_vols_st ${subjid}-preproc-unbiased.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-Average_b0 ${null[0]} ${tags} -m
 fi
 
 # Extract DWI low-b images
 if [ ${#lowb[*]} -eq 1 ]; then # only 1 group of low b-value
 	b=${lowb%.*}
-	${mainS}/select_dwi_vols_st ${subjid}-preproc.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-lowb-only-data ${b} -obv ${subjid}-preproc.bvec
+	${mainS}/select_dwi_vols_st ${subjid}-preproc-unbiased.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-lowb-only-data ${b} -obv ${subjid}-preproc.bvec
 elif [ ${#lowb[*]} -gt 1 ]; then # more than 1 group of low b-balues
 	tags=""
 	 for ((i=1; i<${#lowb[*]}; i++)); do
 	 	tags="${tags} -b ${lowb[$i]}"
 	 done
-	 ${mainS}/select_dwi_vols_st ${subjid}-preproc.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-lowb-only-data ${lowb[0]} -obv ${subjid}-preproc.bvec ${tags}
+	 ${mainS}/select_dwi_vols_st ${subjid}-preproc-unbiased.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-lowb-only-data ${lowb[0]} -obv ${subjid}-preproc.bvec ${tags}
 fi
 
 fslmerge -t ${subjid}-preproc-lowb-data.nii.gz ${subjid}-preproc-Average_b0.nii.gz ${subjid}-preproc-lowb-only-data.nii.gz 
