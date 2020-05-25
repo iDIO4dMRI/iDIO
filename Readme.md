@@ -11,3 +11,4 @@ MRtrix 3: https://www.mrtrix.org/
 Usage
 e.g. PreMain -p <OutputPath> -b <BIDSdir>
 
+PLEASE UPDATE!
