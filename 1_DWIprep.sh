@@ -20,13 +20,12 @@ Usage() {
 
     1_DWIprep - DWI data preperation for the following processing
 
-    Usage: 1_DWIprep -s <SubjectName> -b <BIDSDir> -p <SubjectDir>
+    Usage: 1_DWIprep -b <BIDSDir> -p <SubjectDir>
 
 EOF
     exit
 }
 
-SubjName=
 BIDSDir=
 SubjectDir=
 
@@ -35,10 +34,7 @@ do
     case $OPTION in
     h)  
         Usage
-        ;;     
-    s)
-        SubjName=$OPTARG
-        ;;    
+        ;;        
     b)
         BIDSDir=$OPTARG
         ;;
@@ -54,17 +50,20 @@ do
     esac
 done
 
-if [ "${SubjName}" == "" ] || [ "${SubjectDir}" == "" ] || [ "${BIDSDir}" == "" ]; then
+if [ "${SubjectDir}" == "" ] || [ "${BIDSDir}" == "" ]; then
     Usage
 fi
 
 mkdir -p ${SubjectDir}/0_BIDS_NIFTI
 cd ${SubjectDir}/0_BIDS_NIFTI
 /bin/cp -f ${BIDSDir}/dwi/*dwi* .
-/bin/cp -f ${BIDSDir}/anat/*T1* ..
+/bin/cp -f ${BIDSDir}/dwi/*DWI* .
+/bin/cp -f ${BIDSDir}/anat/*T1* .
 
-# rename DWI dwi *dwi*
-# rename -v 's/DWI/dwi/' *dwi*
+rename -v 's/DWI/dwi_prerename/' *DWI*
+rename -v 's/bvals/bval/' *.bvals
+rename -v 's/bvecs/bvec/' *.bvecs
+
 # file=($(ls .))
 # fileLen=${#file[@]}
 # for (( i = 0; i < $fileLen; i++ )); do
@@ -72,8 +71,6 @@ cd ${SubjectDir}/0_BIDS_NIFTI
 # 	nname=$(echo ${file[$i]} | sed 's/DWI/dwi/g')
 # 	mv ${file[$i]} $nname
 # done
-
-rename -v 's/dwi/dwi_prerename/' *dwi*
 
 json_dir=$(ls -d ${SubjectDir}/0_BIDS_NIFTI/*dwi*.json)
 json_dir_tmp=(${json_dir})
@@ -127,7 +124,8 @@ for json_file in ${json_dir}; do
 	Rec=$[$Rec+1]
 	MultibandAccelerationFactor=0
 
-	nifti_file=${json_file:0:${#json_file}-5}.nii.gz
+	prerename_filename=${json_file:0:${#json_file}-5}
+	nifti_file=${prerename_filename}.nii.gz
 
 	while read line; do
 
@@ -217,7 +215,7 @@ for json_file in ${json_dir}; do
 	echo "${Acqparams_Topup_tmp} ${C4}" >> Acqparams_Topup.txt
 
 	## read .bval file
-	nn=$(cat ${json_file:0:${#json_file}-5}.bval)
+	nn=$(cat ${prerename_filename}.bval)
 	for n in ${nn}; do
 		echo $Rec >> Eddy_Index.txt
 	done
@@ -238,11 +236,17 @@ for json_file in ${json_dir}; do
 		echo ${AcquisitionMatrixPE}
 		echo ${dim3}
 		#mrresize ./Preresize/${resizefile} ./${resizefile} -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}
-		mrgrid ../Preresize/${resizefile} regrid ../${resizefile} -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}
+		mrgrid ./Preresize/${resizefile} regrid ./${resizefile} -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}
+	
+		cd ${SubjectDir}/0_BIDS_NIFTI/Preresize
+		mv ${resizefile} dwi_${PED}.nii.gz
 	fi
 
-	rename -v 's/${json_file:0:${#json_file}-5}/dwi_${PED}/' ${json_file:0:${#json_file}-5}.*
-
+	echo ${prerename_filename}
+	cd ${SubjectDir}/0_BIDS_NIFTI
+	for file_format in nii.gz json bval bvec; do
+		mv ${prerename_filename}.${file_format} dwi_${PED}.${file_format}
+	done
 
 done
 
