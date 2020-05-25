@@ -5,7 +5,8 @@
 ## Written by Alan Huang
 ## Version 1.0 /2020/02/05
 ##
-## Edit: Options, 2020/04/07, Tsen
+## Edit: 2020/04/07, Tsen, Options
+## Edit: 2020/04/20, Tsen, Options
 ##########################################################################################################################
 
 
@@ -45,7 +46,7 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hd:P:" optionName; 
+while getopts "hd:p:" optionName; 
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in

@@ -60,17 +60,24 @@ cd ${SubjectDir}/0_BIDS_NIFTI
 /bin/cp -f ${BIDSDir}/dwi/*DWI* .
 /bin/cp -f ${BIDSDir}/anat/*T1* .
 
-rename -v 's/DWI/dwi_prerename/' *DWI*
-rename -v 's/bvals/bval/' *.bvals
-rename -v 's/bvecs/bvec/' *.bvecs
+#rename -v 's/DWI/dwi_prerename/' *DWI*
+#rename -v 's/bvals/bval/' *.bvals
+#rename -v 's/bvecs/bvec/' *.bvecs
 
-# file=($(ls .))
-# fileLen=${#file[@]}
-# for (( i = 0; i < $fileLen; i++ )); do
-# 	#statements
-# 	nname=$(echo ${file[$i]} | sed 's/DWI/dwi/g')
-# 	mv ${file[$i]} $nname
-# done
+for DWI_file in *DWI*; do
+ 	#statements
+	nname=$(echo ${DWI_file} | sed 's/DWI/dwi/g')
+ 	mv ${DWI_file} $nname
+done
+
+for bvals_file in *.bvals; do
+	mv ${bvals_file} ${bvals_file:0:${#bvals_file}-1}
+done
+
+for bvecs_file in *.bvecs; do
+	mv ${bvecs_file} ${bvecs_file:0:${#bvecs_file}-1}
+done
+
 
 json_dir=$(ls -d ${SubjectDir}/0_BIDS_NIFTI/*dwi*.json)
 json_dir_tmp=(${json_dir})
