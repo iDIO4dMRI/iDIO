@@ -3,8 +3,9 @@
 ##########################################################################################################################
 ## Diffusion data processing pipeline
 ## Written by Clementine Kung
-## Version 1.0 /2020/04/01
-##
+## Version 1.0.1 /2020/05/25
+## mrresize -> mrgrid
+## rename PED 
 ##########################################################################################################################
 
 
@@ -60,9 +61,10 @@ fi
 mkdir -p ${SubjectDir}/0_BIDS_NIFTI
 cd ${SubjectDir}/0_BIDS_NIFTI
 /bin/cp -f ${BIDSDir}/dwi/*dwi* .
-/bin/cp -f ${BIDSDir}/anat/*T1* .
+/bin/cp -f ${BIDSDir}/anat/*T1* ..
 
 # rename DWI dwi *dwi*
+# rename -v 's/DWI/dwi/' *dwi*
 # file=($(ls .))
 # fileLen=${#file[@]}
 # for (( i = 0; i < $fileLen; i++ )); do
@@ -70,6 +72,8 @@ cd ${SubjectDir}/0_BIDS_NIFTI
 # 	nname=$(echo ${file[$i]} | sed 's/DWI/dwi/g')
 # 	mv ${file[$i]} $nname
 # done
+
+rename -v 's/dwi/dwi_prerename/' *dwi*
 
 json_dir=$(ls -d ${SubjectDir}/0_BIDS_NIFTI/*dwi*.json)
 json_dir_tmp=(${json_dir})
@@ -136,21 +140,25 @@ for json_file in ${json_dir}; do
 
 			case "$d_tmp" in
 			"j") echo "PA" 
+			PED=PA
 			PED_PA=PA
 			PhaseEncodingDirectionCode[0]=${Rec}
 			Acqparams_Topup_tmp="0 1 0" 
 			;;
 			"j-") echo "AP" 
+			PED=AP
 			PED_AP=AP
 			PhaseEncodingDirectionCode[1]=${Rec}
 			Acqparams_Topup_tmp="0 -1 0"
 			;;
 			"i") echo "RL"
+			PED=RL
 			PED_RL=RL
 			PhaseEncodingDirectionCode[2]=${Rec}
 			Acqparams_Topup_tmp="1 0 0"
 			;;
 			"i-") echo "LR"
+			PED=LR
 			PED_LR=LR
 			PhaseEncodingDirectionCode[3]=${Rec}
 			Acqparams_Topup_tmp="-1 0 0" 
@@ -229,15 +237,20 @@ for json_file in ${json_dir}; do
 		cd ${SubjectDir}/0_BIDS_NIFTI
 		echo ${AcquisitionMatrixPE}
 		echo ${dim3}
-		mrresize ./Preresize/${resizefile} ./${resizefile} -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}
+		#mrresize ./Preresize/${resizefile} ./${resizefile} -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}
+		mrgrid ../Preresize/${resizefile} regrid ../${resizefile} -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}
 	fi
+
+	rename -v 's/${json_file:0:${#json_file}-5}/dwi_${PED}/' ${json_file:0:${#json_file}-5}.*
+
+
 done
 
 cd ${SubjectDir}/1_DWIprep
 
 ## Index_*.txt
-PED=${PED_PA}${PED_AP}${PED_RL}${PED_LR}
-echo "PhaseEncodingDirection: $PED"
+PED_all=${PED_PA}${PED_AP}${PED_RL}${PED_LR}
+echo "PhaseEncodingDirection: ${PED_all}"
 echo "${PhaseEncodingDirectionCode[0]} ${PhaseEncodingDirectionCode[1]} ${PhaseEncodingDirectionCode[2]} ${PhaseEncodingDirectionCode[3]}" > Index_PE.txt
 DirectionNumner=$[${PhaseEncodingDirectionCode[0]}+${PhaseEncodingDirectionCode[1]}+${PhaseEncodingDirectionCode[2]}+${PhaseEncodingDirectionCode[3]}]
 
