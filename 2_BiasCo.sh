@@ -129,7 +129,8 @@ case $Topup in
 		cd $OriDir/2_BiasCo
 		
 		dwidenoise -nthreads 2 $(echo ${File1%.*.*}).nii.gz Temp-denoise.nii.gz
-		mrdegibbs -datatype $DType -nthreads 2 Temp-denoise.nii.gz $(echo ${File1%.*.*})-denoise-deGibbs.nii.gz
+		# mrdegibbs -datatype $DType -nthreads 2 Temp-denoise.nii.gz $(echo ${File1%.*.*})-denoise-deGibbs.nii.gz
+		mrdegibbs -nthreads 2 Temp-denoise.nii.gz $(echo ${File1%.*.*})-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
 		;;
 	3 )
 		echo using merged dwi
@@ -143,15 +144,13 @@ case $Topup in
 		bval2=$(cat $(echo ${File2%.*.*}).bval)
 		echo $bval1 $bval2 > $OriDir/2_BiasCo/$(echo ${File1%.*.*})${direction[1]}.bval
 		
-# 		bvec1=$(cat $(echo ${File1%.*.*}).bvec)
-# 		bvec2=$(cat $(echo ${File2%.*.*}).bvec)
-#       paste -d "\0" ${File1%.*.*}.bvec ${File2%.*.*}.bvec > $OriDir/2_BiasCo/$(echo ${File1%.*.*})${direction[1]}.bvec
 		paste -d " " ${File1%.*.*}.bvec ${File2%.*.*}.bvec > $OriDir/2_BiasCo/$(echo ${File1%.*.*})${direction[1]}.bvec
         
 		cd $OriDir/2_BiasCo
 		
 		dwidenoise -nthreads 2 $(echo ${File1%.*.*})${direction[1]}.nii.gz Temp-denoise.nii.gz
-		mrdegibbs -datatype $DType -nthreads 2 Temp-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz
+		# mrdegibbs -datatype $DType -nthreads 2 Temp-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz
+		mrdegibbs -nthreads 2 Temp-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
 		;;
 esac
 
@@ -167,7 +166,9 @@ if [[ "${B0num}" -gt "3"  ]]; then
 	echo "Calling Matlab for Drifting Correction"
 	CMD="correct_signal_drift_1211('${File_denoise}.nii.gz', '${File_bval}', 0, 'piecewise', '${File_denoise}-DriftCo.nii.gz')"
 	matlab -nodisplay -r "${CMD}; quit"
-	mrconvert -datatype ${DType} -force ${File_denoise}-DriftCo.nii.gz ${File_denoise}-DriftCo.nii.gz
+	
+	# Change data format
+	# mrconvert -datatype ${DType} -force ${File_denoise}-DriftCo.nii.gz ${File_denoise}-DriftCo.nii.gz	
 else
 	echo "Not enough number of b0 (null scans), drifting correction skipped"
 fi
