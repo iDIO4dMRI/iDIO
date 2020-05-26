@@ -3,12 +3,11 @@
 ##########################################################################################################################
 ## Diffusion data processing pipeline
 ## Written by Clementine Kung
-## Version 1.0.1 /2020/05/25
-## mrresize -> mrgrid
-## rename PED 
+## Version 1.2 2020/05/26
 ##########################################################################################################################
-
-
+# 20200424 - check dwi.bval dwi.bvec exist
+# 20200429 - fixing imaging resize floating number problem
+# 20200526 - mrgird (line 264), rename PED (line 271)
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -26,6 +25,7 @@ EOF
     exit
 }
 
+SubjName=
 BIDSDir=
 SubjectDir=
 
@@ -34,7 +34,7 @@ do
     case $OPTION in
     h)  
         Usage
-        ;;        
+        ;; 
     b)
         BIDSDir=$OPTARG
         ;;
@@ -60,12 +60,8 @@ cd ${SubjectDir}/0_BIDS_NIFTI
 /bin/cp -f ${BIDSDir}/dwi/*DWI* .
 /bin/cp -f ${BIDSDir}/anat/*T1* .
 
-#rename -v 's/DWI/dwi_prerename/' *DWI*
-#rename -v 's/bvals/bval/' *.bvals
-#rename -v 's/bvecs/bvec/' *.bvecs
-
+# check filenames
 for DWI_file in *DWI*; do
- 	#statements
 	nname=$(echo ${DWI_file} | sed 's/DWI/dwi/g')
  	mv ${DWI_file} $nname
 done
@@ -78,10 +74,31 @@ for bvecs_file in *.bvecs; do
 	mv ${bvecs_file} ${bvecs_file:0:${#bvecs_file}-1}
 done
 
+# prerename
+for dwi_files in *dwi*; do
+	mv ${dwi_files} prerename_${dwi_files}
+done
 
-json_dir=$(ls -d ${SubjectDir}/0_BIDS_NIFTI/*dwi*.json)
+# check dwi.bval dwi.bvec exist
+for nifti_file in prerename_*dwi*.nii.gz; do
+	dwi_filename=$(basename -- ${nifti_file} | cut -f1 -d '.')
+	if [ ! -f "${dwi_filename}.bval" ]; then
+		b="0"
+		dim=($(fslhd ${dwi_filename}.nii.gz | cat -v | egrep 'dim4'))
+    	for (( i=2; i <= ${dim[1]}; i++ )); do
+		    b="$b 0"
+      	done
+    		echo $b >> ${dwi_filename}.bval
+      	for (( i=1; i<=3; i++ )); do
+      		echo $b >> ${dwi_filename}.bvec
+      	done
+	fi
+done
+
+# read .json file
+json_dir=$(ls -d ${SubjectDir}/0_BIDS_NIFTI/prerename_*dwi*.json)
 json_dir_tmp=(${json_dir})
-n_json_file=$(ls -d ${SubjectDir}/0_BIDS_NIFTI/*dwi*.json | wc -l)
+n_json_file=$(ls -d ${SubjectDir}/0_BIDS_NIFTI/prerename_*dwi*.json | wc -l)
 
 if [ "${json_dir}" == "" ] || [ "${n_json_file}" == "0" ]; then
     echo ""
@@ -132,63 +149,63 @@ for json_file in ${json_dir}; do
 	MultibandAccelerationFactor=0
 
 	prerename_filename=${json_file:0:${#json_file}-5}
-	nifti_file=${prerename_filename}.nii.gz
+	echo "\n====Check inforamtion for $(basename ${prerename_filename})===="
 
 	while read line; do
 
 		tmp=(${line})
 
 		case ${tmp[0]} in
-		'"PhaseEncodingDirection":')
+		'"PhaseEncodingDirection":' | '"PhaseEncodingAxis":')
 			d=${tmp[1]}
 			d_tmp=${d:1:${#d}-3}
 
-			case "$d_tmp" in
-			"j") echo "PA" 
-			PED=PA
-			PED_PA=PA
-			PhaseEncodingDirectionCode[0]=${Rec}
-			Acqparams_Topup_tmp="0 1 0" 
-			;;
-			"j-") echo "AP" 
-			PED=AP
-			PED_AP=AP
-			PhaseEncodingDirectionCode[1]=${Rec}
-			Acqparams_Topup_tmp="0 -1 0"
-			;;
-			"i") echo "RL"
-			PED=RL
-			PED_RL=RL
-			PhaseEncodingDirectionCode[2]=${Rec}
-			Acqparams_Topup_tmp="1 0 0"
-			;;
-			"i-") echo "LR"
-			PED=LR
-			PED_LR=LR
-			PhaseEncodingDirectionCode[3]=${Rec}
-			Acqparams_Topup_tmp="-1 0 0" 
-			;;
+			case "$d_tmp" in			
+			"j")
+				PED=PA
+				PED_PA=PA
+				PhaseEncodingDirectionCode[0]=${Rec}
+				Acqparams_Topup_tmp="0 1 0" 
+				;;
+			"j-") 
+				PED=AP
+				PED_AP=AP
+				PhaseEncodingDirectionCode[1]=${Rec}
+				Acqparams_Topup_tmp="0 -1 0"
+				;;
+			"i") 
+				PED=RL
+				PED_RL=RL
+				PhaseEncodingDirectionCode[2]=${Rec}
+				Acqparams_Topup_tmp="1 0 0"
+				;;
+			"i-") 
+				PED=LR
+				PED_LR=LR
+				PhaseEncodingDirectionCode[3]=${Rec}
+				Acqparams_Topup_tmp="-1 0 0" 
+				;;
 			esac
+			echo "PED: ${PED}"
 		;;
 
 		'"EffectiveEchoSpacing":')
 			d=${tmp[1]}
 			EffectiveEchoSpacing=${d:0:${#d}-1}	
-			#echo $EffectiveEchoSpacing	
+			echo "EffectiveEchoSpacing: $EffectiveEchoSpacing"
 		;;
-
 
 		'"AcquisitionMatrixPE":')
 			d=${tmp[1]}
 			AcquisitionMatrixPE=${d:0:${#d}-1}
 			EPIfactor=${AcquisitionMatrixPE}
-			# echo "EPIfactor: $EPIfactor"
+			echo "AcquisitionMatrixPE: $AcquisitionMatrixPE"
 		;;
 
 		'"ReconMatrixPE":')
 			d=${tmp[1]}
 			ReconMatrixPE=${d:0:${#d}-1}
-			#echo "ReconMatrixPE: $ReconMatrixPE"
+			echo "ReconMatrixPE: $ReconMatrixPE"
 		;;
 
 		'"MultibandAccelerationFactor":') 
@@ -228,11 +245,12 @@ for json_file in ${json_dir}; do
 	done
 
 	## resize
-	Interpolation=$((${ReconMatrixPE}/${AcquisitionMatrixPE}))
-	if [ "${Interpolation}" != 1 ]; then
+	# Interpolation=$(echo "${ReconMatrixPE}/${AcquisitionMatrixPE}" | bc -l)
+	# Interpolation=$((${ReconMatrixPE}/${AcquisitionMatrixPE}))
+	if [ $(echo "${ReconMatrixPE} < ${AcquisitionMatrixPE}"|bc) -eq 1 ]; then
 		mkdir -p ${SubjectDir}/0_BIDS_NIFTI/Preresize
-		resizefile=$(basename ${nifti_file})
-		mv ${nifti_file} ${SubjectDir}/0_BIDS_NIFTI/Preresize
+		resizefile=$(basename ${prerename_filename}.nii.gz)
+		mv ${prerename_filename}.nii.gz ${SubjectDir}/0_BIDS_NIFTI/Preresize
 		cd ${SubjectDir}/0_BIDS_NIFTI/Preresize
 		fslinfo ${resizefile} > fslinfo.txt
 
@@ -240,20 +258,20 @@ for json_file in ${json_dir}; do
 		dim3=${g[1]}
 
 		cd ${SubjectDir}/0_BIDS_NIFTI
-		echo ${AcquisitionMatrixPE}
-		echo ${dim3}
+		echo dim1,2: ${AcquisitionMatrixPE}
+		echo dim3: ${dim3}
 		#mrresize ./Preresize/${resizefile} ./${resizefile} -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}
 		mrgrid ./Preresize/${resizefile} regrid ./${resizefile} -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}
-	
+
 		cd ${SubjectDir}/0_BIDS_NIFTI/Preresize
 		mv ${resizefile} dwi_${PED}.nii.gz
 	fi
 
-	echo ${prerename_filename}
 	cd ${SubjectDir}/0_BIDS_NIFTI
 	for file_format in nii.gz json bval bvec; do
 		mv ${prerename_filename}.${file_format} dwi_${PED}.${file_format}
 	done
+	echo "filename change from $(basename ${prerename_filename}) to dwi_${PED}"
 
 done
 
