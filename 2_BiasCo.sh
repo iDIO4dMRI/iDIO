@@ -164,7 +164,7 @@ B0num=$(echo $(cat b0_report.txt) | awk -F "--vols=" '/--vols=/{print $2}' | sed
 
 if [[ "${B0num}" -gt "3"  ]]; then
 	echo "Calling Matlab for Drifting Correction"
-	CMD="correct_signal_drift_1211('${File_denoise}.nii.gz', '${File_bval}', 0, 'piecewise', '${File_denoise}-DriftCo.nii.gz')"
+	CMD="correct_signal_drift_v2('${File_denoise}.nii.gz', '${File_bval}', 0, 'multilinear', '${File_denoise}-DriftCo.nii.gz')"
 	matlab -nodisplay -r "${CMD}; quit"
 	
 	# Change data format
