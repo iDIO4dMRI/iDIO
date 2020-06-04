@@ -143,8 +143,10 @@ if [[ -f .mrtrix.conf ]]; then
 	for file in .mrtrix.conf*; do
 		cp ${file} ${file}.back
 	done
+	echo "BZeroThreshold: 66" > .mrtrix.conf
 else
-echo "BZeroThreshold: 65">.mrtrix.conf
+echo "BZeroThreshold: 66">.mrtrix.conf # with a threshold of 65 (HCP 7T b0 <=65)
+#default shell tolerance = 80 (BValueEpsilon: 80)
 fi
 
 ## Main Processing
