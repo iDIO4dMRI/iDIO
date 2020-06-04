@@ -179,41 +179,44 @@ mrconvert ${handleDWI} ${OriDir}/5_CSDpreproc/${handle}.mif -fslgrad ${OriDir}/5
 # dwi2mask ${OriDir}/5_CSDpreproc/${handle}-unbiased.mif ${OriDir}/5_CSDpreproc/dwi_mask.mif -fslgrad ${OriDir}/5_CSDpreproc/${handle}.bvec ${OriDir}/5_CSDpreproc/${handle}.bval 
 
 # detemine shell numbers
-bv_num=($(grep '[^[:blank:]]+' -Eo ${OriDir}/5_CSDpreproc/${handlebv}.bval | sort | uniq -c))
-lowb_tmp=0
-null_tmp=0
-shell_num=0
 
-for ((i=0; i<${#bv_num[@]}; i=i+2)); do
-	if [ ${bv_num[$(($i+1))]} -gt 1500 ]; then
-		echo "${bv_num[$i]} of b=${bv_num[$(($i+1))]}s/mm^2, high b-value found."
-		shell_num=$((${shell_num} + 1))
-	elif [ ${bv_num[$(($i+1))]} -lt 65 ]; then
-		echo "${bv_num[$i]} of b=${bv_num[$(($i+1))]}s/mm^2 (null image(s))"
-		null[${null_tmp}]=${bv_num[$(($i+1))]}
-		null_tmp=$((${null_tmp} + 1))
+for (( i=1; i<=${shell_num_all}; i=i+1 )); do
+	# echo ${i}
+	bv=$(mrinfo dwi.mif -shell_bvalues| awk '{print $'${i}'}')
+	bv_num=$(mrinfo dwi.mif -shell_sizes| awk '{print $'${i}'}')
+	echo ${bv}
+	if [ `echo "${bv} > 1500" | bc` -eq 1 ]; then
+		echo "${bv_num} of b=${bv}s/mm^2, high b-value found."
+	elif [ `echo "${bv} < 65" | bc` -eq 1 ]; then
+		echo "${bv_num} of b=${bv}s/mm^2 (null image(s))"
+		null_tmp=$((${null_tmp}+${bv_num}))
+		null_shell=$((${null_tmp}+1))
 	else
-		echo "${bv_num[$i]} of b=${bv_num[$(($i+1))]}s/mm^2"
-		lowb[${lowb_tmp}]=${bv_num[$(($i+1))]}
-		lowb_tmp=$((${lowb_tmp} + 1))
-		shell_num=$((${shell_num} + 1))
+		echo "${bv_num} of b=${bv}s/mm^2"
+		lowb_tmp=$((${lowb_tmp}+1))
 	fi
 done
 
-echo "A total of ${shell_num} shells were found..."
+echo "A total of ${shell_num_all} shells were found..."
+if [[ ${null_shell} -eq 0 ]]; then
+	echo "No null image was found..."
+	exit 1
+fi
 
-if [[ ${shell_num} -eq 1 ]]; then
+
+if [[ ${shell_num_all} -eq 2 ]]; then
 	# for single-shell data 
 	dwi2response tournier ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt 
 
 	dwi2fod csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif -mask ${handleMask}
-elif [[ ${shell_num} -ge 2 ]]; then
+elif [[ ${shell_num_all} -ge 3 ]]; then
 	# for multi-shell data
 	dwi2response dhollander ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt
 
 	dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask}
 else
 	echo " Error: Input is not valid..."
+	exit 1
 fi
 
 #S4 generate Track
