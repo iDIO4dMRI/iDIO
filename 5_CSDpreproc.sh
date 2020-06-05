@@ -179,15 +179,16 @@ mrconvert ${handleDWI} ${OriDir}/5_CSDpreproc/${handle}.mif -fslgrad ${OriDir}/5
 # dwi2mask ${OriDir}/5_CSDpreproc/${handle}-unbiased.mif ${OriDir}/5_CSDpreproc/dwi_mask.mif -fslgrad ${OriDir}/5_CSDpreproc/${handle}.bvec ${OriDir}/5_CSDpreproc/${handle}.bval 
 
 # detemine shell numbers
+shell_num_all=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_bvalues| awk '{print NF}')
 
 for (( i=1; i<=${shell_num_all}; i=i+1 )); do
 	# echo ${i}
-	bv=$(mrinfo dwi.mif -shell_bvalues| awk '{print $'${i}'}')
-	bv_num=$(mrinfo dwi.mif -shell_sizes| awk '{print $'${i}'}')
+	bv=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_bvalues| awk '{print $'${i}'}')
+	bv_num=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_sizes| awk '{print $'${i}'}')
 	echo ${bv}
 	if [ `echo "${bv} > 1500" | bc` -eq 1 ]; then
 		echo "${bv_num} of b=${bv}s/mm^2, high b-value found."
-	elif [ `echo "${bv} < 65" | bc` -eq 1 ]; then
+	elif [ `echo "${bv} < 66" | bc` -eq 1 ]; then
 		echo "${bv_num} of b=${bv}s/mm^2 (null image(s))"
 		null_tmp=$((${null_tmp}+${bv_num}))
 		null_shell=$((${null_tmp}+1))
