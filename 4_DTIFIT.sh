@@ -2,8 +2,8 @@
 
 ##########################################################################################################################
 ## Diffusion data processing pipeline
-## Written by Shintai Chong
-## Version 1.0 /2020/02/05
+## Written by Shintai Chong & HeatherHsu
+## Version 1.0 /2020/06/05
 ##
 ##########################################################################################################################
 
@@ -11,7 +11,8 @@
 #          - fix null and lowb as 0 and 1000 (select_dwi_vols_st)
 # 20200424 - cancle fixing null and lowb as 0 and 1000
 #		   - convert floating number to integer
-# 20200507 - Adding bias correction, L121
+# 20200605 - change shell detecting - using MRtrix (-s function remove)
+#		   - 
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -29,7 +30,6 @@ System will automatically detect all folders in directory if no input arguments 
 
 Options:
 	-p 	Input directory; [default = pwd directory]
-	-s  funtion "select_dwi_vols_st" path
 
 EOF
 exit 1
@@ -38,7 +38,6 @@ exit 1
 # Setup default variables
 OriDir=$(pwd)
 run_script=y
-mainS=$(pwd)
 args="$(sed -E 's/(-[A-Za-z]+ )([^-]*)( |$)/\1"\2"\3/g' <<< $@)"
 declare -a a="($args)"
 set - "${a[@]}"
@@ -46,7 +45,7 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hp:s:" optionName; 
+while getopts "hp:" optionName; 
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
@@ -55,9 +54,6 @@ do
 		;;
 	p)
 		OriDir=$OPTARG
-		;;
-	s)
-		mainS=$OPTARG
 		;;
 	\?) 
 		exit 42
@@ -78,13 +74,11 @@ if [ ! -d "${OriDir}/3_EddyCo" ] || [ ! -d "${OriDir}/2_BiasCo" ]; then
 fi
 
 # Check if DWI exists 
-if [ -f "`find ${OriDir}/2_BiasCo -maxdepth 1 -name "*DriftCo.nii.gz*"`" ]; then
-	handle=$(basename -- $(find ${OriDir}/2_BiasCo -maxdepth 1 -name "*DriftCo.nii.gz*") | cut -f1 -d '.')
-elif [ -f "`find ${OriDir}/2_BiasCo -maxdepth 1 -name "*deGibbs.nii.gz*"`" ]; then
-	handle=$(basename -- $(find ${OriDir}/2_BiasCo -maxdepth 1 -name "*deGibbs.nii.gz*") | cut -f1 -d '.')
+if [ -f "`find ${OriDir}/3_EddyCo -maxdepth 1 -name "*EddyCo.nii.gz*"`" ]; then
+	handle=$(basename -- $(find ${OriDir}/3_EddyCo -maxdepth 1 -name "*EddyCo.nii.gz*") | cut -f1 -d '.')
 else
 	echo ""
-	echo "No image found..."
+	echo "No EddyCo image found..."
 	exit 1
 fi
 
@@ -113,58 +107,77 @@ fi
 
 [ -d ${OriDir}/4_DTIFIT ] || mkdir ${OriDir}/4_DTIFIT
 
-cp ${OriDir}/3_EddyCo/${handle}-EddyCo.nii.gz ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz
-cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bval ${OriDir}/4_DTIFIT/${subjid}-preproc.bval
-cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec
+cp ${OriDir}/3_EddyCo/${handle}.nii.gz ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz
+cp ${OriDir}/3_EddyCo/${handle}.bval ${OriDir}/4_DTIFIT/${subjid}-preproc.bval
+cp ${OriDir}/3_EddyCo/${handle}.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec
 
 # Doing bias correct
 dwibiascorrect ants ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -force
 
 cd ${OriDir}/4_DTIFIT
-bv_num=($(grep '[^[:blank:]]+' -Eo ${subjid}-preproc.bval | sort | uniq -c))
-echo "A total of $(($(echo ${#bv_num[@]}) / 2)) b-values were found..."
+
+## BE CAREFUL ###
+# Adding bzero threshold into configure file
+# Will CREATE the new configure file and RENAME the old configure files into ${conf}.back
+
+cd ~/
+if [[ -f .mrtrix.conf ]]; then 
+	cp .mrtrix.conf .mrtrix.conf.back
+fi
+echo "BZeroThreshold: 66" > .mrtrix.conf
+# with a threshold of 65 (HCP 7T b0 <=65)
+#default shell tolerance = 80 (BValueEpsilon: 80)
+
+# detemine shell numbers
+shell_num_all=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_bvalues| awk '{print NF}')
+
+echo "A total of ${shell_num_all} b-values were found..."
+
+
 lowb_tmp=0
 null_tmp=0
-for ((i=0; i<${#bv_num[@]}; i=i+2)); do
-	if [ ${bv_num[$(($i+1))]} -gt 1500 ]; then
+for (( i=1; i<=${shell_num_all}; i=i+1 )); do
+# echo ${i}
+	bv=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_bvalues| awk '{print $'${i}'}')
+	bv_num=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_sizes| awk '{print $'${i}'}')
+	echo ${bv}
+	if [ `echo "${bv} > 1500" | bc` -eq 1 ]; then
 		tput setaf 1 # change terminal color to red color
-		echo "${bv_num[$i]} of b=${bv_num[$(($i+1))]}s/mm^2, high b-value found."
+		echo "${bv_num} of b=${bv}s/mm^2, high b-value found."
 		tput sgr0 # change terminal color to default color
-	elif [ ${bv_num[$(($i+1))]} -lt 65 ]; then
-		echo "${bv_num[$i]} of b=${bv_num[$(($i+1))]}s/mm^2 (null image(s))"
-		null[${null_tmp}]=${bv_num[$(($i+1))]}
-		null_tmp=$((${null_tmp} + 1))
+
+	elif [ `echo "${bv} < 66" | bc` -eq 1 ]; then
+		echo "${bv_num} of b=${bv}s/mm^2 (null image(s))"
+		null_tmp=$((${null_tmp}+${bv_num}))
 	else
-		echo "${bv_num[$i]} of b=${bv_num[$(($i+1))]}s/mm^2"
-		lowb[${lowb_tmp}]=${bv_num[$(($i+1))]}
-		lowb_tmp=$((${lowb_tmp} + 1))
+		echo "${bv_num} of b=${bv}s/mm^2"
+		lowb_tmp=$((${lowb_tmp}+1))
+		lowb[${lowb_tmp}]=${bv}
 	fi
 done
 
-# Average DWI null images
-if [ ${#null[*]} -eq 1 ]; then # only 1 group of null image
-	nu=${null%.*}
-	${mainS}/select_dwi_vols_st ${subjid}-preproc-unbiased.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-Average_b0 ${nu} -m
-elif [ ${#null[*]} -gt 1 ]; then # more than 1 group of null images
-	tags=""
-	for ((i=1; i<${#null[*]}; i++)); do
-		tags="${tags} -b ${null[$i]}"
-	done
-	${mainS}/select_dwi_vols_st ${subjid}-preproc-unbiased.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-Average_b0 ${null[0]} ${tags} -m
+if [[ ${null_tmp} -eq 0 ]]; then
+	echo "No null image was found..."
+	exit 1
 fi
+
+# Average DWI null images
+dwiextract ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz - -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -bzero | mrmath - mean -axis 3 ${OriDir}/4_DTIFIT/${subjid}-preproc-Average_b0.nii.gz
 
 # Extract DWI low-b images
-if [ ${#lowb[*]} -eq 1 ]; then # only 1 group of low b-value
-	b=${lowb%.*}
-	${mainS}/select_dwi_vols_st ${subjid}-preproc-unbiased.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-lowb-only-data ${b} -obv ${subjid}-preproc.bvec
-elif [ ${#lowb[*]} -gt 1 ]; then # more than 1 group of low b-balues
-	tags=""
-	 for ((i=1; i<${#lowb[*]}; i++)); do
-	 	tags="${tags} -b ${lowb[$i]}"
-	 done
-	 ${mainS}/select_dwi_vols_st ${subjid}-preproc-unbiased.nii.gz ${subjid}-preproc.bval ${subjid}-preproc-lowb-only-data ${lowb[0]} -obv ${subjid}-preproc.bvec ${tags}
+tags=""
+if [ ${#lowb[*]} -eq 1 ]; then
+	tags=${lowb[1]}
+elif [ ${#lowb[*]} -gt 1 ]; then
+	for ((i=1; i<${#lowb[*]}; i++)); do
+	 	tags="${tags},${lowb[$i]}"
+	done
 fi
+echo bvalue ${tags}
 
+dwiextract ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -no_bzero -shells ${tags} ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.nii.gz -export_grad_fsl ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.bval
+
+cd ${OriDir}/4_DTIFIT
 fslmerge -t ${subjid}-preproc-lowb-data.nii.gz ${subjid}-preproc-Average_b0.nii.gz ${subjid}-preproc-lowb-only-data.nii.gz 
 echo 0 > b0
 paste -d ' ' b0 ${subjid}-preproc-lowb-only-data.bval > ${subjid}-preproc-lowb-data.bval
