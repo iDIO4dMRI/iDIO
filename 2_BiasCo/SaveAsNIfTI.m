@@ -36,7 +36,7 @@ elseif isfield(target, 'dat') && isfield(target.dat, 'dim')
 else
     dat.dim = size(data);
 end
-dat.dtype = 'FLOAT64-LE';
+dat.dtype = 'FLOAT32-LE';
 dat.offset = ceil(348/8)*8;
 
 N = nifti;
