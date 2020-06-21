@@ -1,4 +1,4 @@
-function correct_signal_drift_1211(file_in, grad_info_file, b0var, method,file_out)
+function correct_signal_drift_v2(file_in, grad_info_file, b0var, method,file_out)
 % Function to correct for signal drift in diffusion-weighted MRI data
 % as described in Vos et al., MRM 2016, in press (doi:)
 % 
@@ -17,7 +17,7 @@ function correct_signal_drift_1211(file_in, grad_info_file, b0var, method,file_o
 % drift_method = 'linear'; 
 % drift_method = 'quadratic'; 
 % drift_method = 'gaussian';
-% drift_method = 'piecewise';
+% drift_method = 'multilinear';
 drift_method = method;
 
 % Show plot of original and corrected signal intensities?
@@ -207,8 +207,12 @@ end
 clear mask_p* a se i
 
 intsall = zeros(nr_ims,1);
+j=0;
 for i=1:nr_ims
-    intsall(i) = mean(raw{i}(mask{1}));
+    if intersect(i,b_to_use)
+        j=j+1;
+    end
+    intsall(i) = mean(raw{i}(mask{j}));
 end
 
 % Get mean intensities of each within the mask
@@ -285,10 +289,17 @@ if n/K < 40
 end
 end
 
-if strcmpi(drift_method(1), 'p')
+if strcmpi(drift_method(1), 'm')
 % Do smoothingspline correction
-drift_fit_ss = fit(b_to_use, ints, 'linearinterp');
-corr_ss=feval(drift_fit_ss,x);
+for i = 2:length(b_to_use)
+    drift_fit_ss=fit([b_to_use(1) b_to_use(i)]', [ints(1) ints(i)]', 'a*x+b');
+    
+    for j = b_to_use(i-1)+1:b_to_use(i)
+        corr_ss(1,j)=j.*drift_fit_ss.a+drift_fit_ss.b;
+    end
+end
+
+corr_ss(1)=ints(1);
 % Calculate sum squared residuals
 res_ss = sum((ints'-corr_ss(b_to_use)).^2);
 % Calculate Akaike's information criteria (AIC)
@@ -331,7 +342,7 @@ elseif strcmpi(drift_method(1), 'g')
 %     if AIC_l < AIC_q
 %         fprintf('\nAIC of linear is lower than quadratic (%.2f vs. %.2f).\nYou could consider changing the correction for more stable signal drift correction.\n', AIC_l, AIC_q);
 %     end
-elseif strcmpi(drift_method(1), 'p')
+elseif strcmpi(drift_method(1), 'm')
     % Do gaussian 3
     drift_fit = drift_fit_ss;
     corr_a=corr_ss;
@@ -367,6 +378,16 @@ for i=1:length(b_to_use)
     mean_corr_int(i) = double(mean(DWI_corr{b_to_use(i)}(mask{i})));
 end
 
+% Get mean intensities from corrected data
+mean_intsall = zeros(nr_ims,1);
+j=0;
+for i=1:nr_ims
+    if intersect(i,b_to_use)
+        j=j+1;
+    end
+    mean_intsall(i) = mean(DWI_corr{i}(mask{j}));
+end
+
 % Convert data back to matrix form
 DWI_im = repmat(DWI_corr{1},[1 1 1 length(DWI_corr)]);
 for d=1:length(DWI_corr)
@@ -392,11 +413,11 @@ if show_intensities
     figure, plot(b_to_use, norm_val*ints/drift_offset, 'r.', 'MarkerSize', 10)
     % Add corrected intensities and the fit
     hold on; plot(b_to_use, mean_corr_int, 'b.', 'MarkerSize', 10)
-    plot(norm_val*corr_a/drift_offset, 'b-');
+    plot(b_to_use, norm_val*ints/drift_offset, 'b-');
     % Add dashed line at 100%
     plot([-1 nr_ims+2], [norm_val norm_val], 'k--'); xlim([0 nr_ims+1]);
     xlabel('DWI'); ylabel('Signal intensity')
-    legend('Uncorrected', 'Corrected', legend_text, 'Location','SouthWest')
+    legend('Uncorrected', 'Corrected', legend_text, 'Location','NorthWest')
     fprintf('There is an estimated %.1f%% signal loss from first to last image\n', decr_prc);
     export_fig('Drifting_Correction_B0only','-transparent','-r120')
 end
@@ -404,16 +425,16 @@ end
 
 if show_intensities
     % Plot correction: Plot raw intensities
-    figure, plot(b_to_use, norm_val*ints/drift_offset, 'r.', 'MarkerSize', 10)
+    figure, plot(b_to_use, ints, 'r.', 'MarkerSize', 10)
     hold on; plot(x, intsall, 'r-');
     % Add corrected intensities and the fit
     hold on; plot(b_to_use, mean_corr_int, 'b.', 'MarkerSize', 10)
-    plot(norm_val*corr_a/drift_offset, 'r--');
-    plot(x, intsall.*(norm_val./corr_a), 'b-')
+%     plot(norm_val*corr_a/drift_offset, 'r--');
+    plot(x, mean_intsall, 'b-')
     % Add dashed line at 100%
     plot([-1 nr_ims+2], [norm_val norm_val], 'k--'); xlim([0 nr_ims+1]);
     xlabel('DWI'); ylabel('Signal intensity')
-    legend('Uncorrected', 'Corrected', legend_text, 'Location','SouthWest')
+    legend('Uncorrected B0', 'Uncorrected Int', 'Corrected B0', 'Corrected Int', 'Location','SouthWest')
     export_fig('Drifting_Correction_allData','-transparent','-r120')
 end
 

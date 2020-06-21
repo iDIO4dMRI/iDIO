@@ -7,6 +7,7 @@ Requirements:
 SPM12: https://www.fil.ion.ucl.ac.uk/spm/software/spm12/
 FSL 6.0.3: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki
 MRtrix 3: https://www.mrtrix.org/
+ANTS: https://github.com/ANTsX/ANTs/wiki
 
 Usage
 e.g. PreMain -p <OutputPath> -b <BIDSdir>
