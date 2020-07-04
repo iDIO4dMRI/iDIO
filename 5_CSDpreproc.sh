@@ -4,7 +4,7 @@
 ## Diffusion data processing pipeline
 ## Written by Heather Hsu
 ## Version 1.0 /2020/02/05
-##
+## **All shell data were calculated by dhollander algorithm** 
 ##########################################################################################################################
 
 
@@ -180,7 +180,7 @@ mrconvert ${handleDWI} ${OriDir}/5_CSDpreproc/${handle}.mif -fslgrad ${OriDir}/5
 
 # detemine shell numbers
 shell_num_all=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_bvalues| awk '{print NF}')
-
+hb=0
 for (( i=1; i<=${shell_num_all}; i=i+1 )); do
 	# echo ${i}
 	bv=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_bvalues| awk '{print $'${i}'}')
@@ -188,6 +188,7 @@ for (( i=1; i<=${shell_num_all}; i=i+1 )); do
 	echo ${bv}
 	if [ `echo "${bv} > 1500" | bc` -eq 1 ]; then
 		echo "${bv_num} of b=${bv}s/mm^2, high b-value found."
+		hb=$((${hb}+1))
 	elif [ `echo "${bv} < 66" | bc` -eq 1 ]; then
 		echo "${bv_num} of b=${bv}s/mm^2 (null image(s))"
 		null_tmp=$((${null_tmp}+${bv_num}))
@@ -205,12 +206,17 @@ if [[ ${null_shell} -eq 0 ]]; then
 fi
 
 
-if [[ ${shell_num_all} -eq 2 ]]; then
+if [[ ${shell_num_all} -ge 2 ]]; then
+	# All shell data were calculated by dhollander algorithm
 	# for single-shell data 
-	dwi2response tournier ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt 
 
-	dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask}
-elif [[ ${shell_num_all} -ge 3 ]]; then
+	# dwi2response tournier ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt 
+
+	# dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask}
+# elif [[ ${shell_num_all} -ge 3 ]]; then
+	if [[ ${shell_num_all} -eq 2 && ${hb} -eq 0 ]]; then
+		echo "lack of high b-value (may cause poor angular resolution)"
+	fi
 	# for multi-shell data
 	dwi2response dhollander ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt
 
