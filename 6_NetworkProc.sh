@@ -15,7 +15,7 @@
 ## need to save configure file(T1_2_ICBM_MNI152_1mm.cnf) to /usr/local/fsl/etc/flirtsch
 ## need to save MNI template (mni_icbm152_t1_tal_nlin_asym_09c_/bet/mask.nii.gz) to /usr/local/fsl/data/standard
 ##
-## Have to setting AtlasDir with -a option (need to include Atlas/MNI directories)
+## Have to set AtlasDir with -a option (need to include Atlas/MNI directories)
 ## 
 ##########################################################################################################################
 
