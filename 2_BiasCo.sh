@@ -41,7 +41,7 @@ arg=-1
 OriDir=$(pwd)
 
 # Parse options
-while getopts "hd:p:" optionName; 
+while getopts "hp:" optionName; 
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
