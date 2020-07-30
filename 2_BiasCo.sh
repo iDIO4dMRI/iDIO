@@ -32,41 +32,34 @@ EOF
 exit 1
 }
 
-# Setup default variables
-OriDir=$(pwd)
-Topup=0
-# The text file for phase encoding direction labeling: 0 0 0 0 = AP PA LR RL
-Phase_encoding=Index_PE.txt
-run_script=y
-
 args="$(sed -E 's/(-[A-Za-z]+ )([^-]*)( |$)/\1"\2"\3/g' <<< $@)"
 declare -a a="($args)"
 set - "${a[@]}"
-
 arg=-1
 
+# Setup default variables
+OriDir=$(pwd)
+
 # Parse options
-while getopts "hd:p:" optionName; 
+while getopts "hp:" optionName; 
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
 	h)  
-		Usage
-		;;
+		Usage;;
 	p)
-		OriDir=$OPTARG
-		;;
+		OriDir=$OPTARG;;
 	\?) 
-		exit 42
-		;;
+		exit 42;;
 	*)
-	    echo "Unrecognised option $1" 1>&2
-	    exit 1
+	  echo "Unrecognised option $1" 1>&2
+	  exit 1
 		;;
 	esac
 done
 
-Phase_index=($(cat $OriDir/1_DWIprep/$Phase_encoding))
+# The text file for phase encoding direction labeling: 0 0 0 0 = AP PA LR RL
+Phase_index=($(cat $OriDir/1_DWIprep/Index_PE.txt))
 Topup=$((${Phase_index[0]} + ${Phase_index[1]} + ${Phase_index[2]} + ${Phase_index[3]}))
 
 PE=($(echo PA AP RL LR))
@@ -87,6 +80,7 @@ if [ ! -d "${OriDir}/1_DWIprep" ]; then
 	exit 1
 fi
 
+run_script=y
 if [ -d ${OriDir}/2_BiasCo ]; then
 	echo ""
 	echo "2_BiasCo detected,"
@@ -112,15 +106,14 @@ fi
 cd ${OriDir}/0_BIDS_NIFTI
 
 if [[ ${#direction[@]} == 1 ]]; then
-	File1=`ls *dwi.nii.gz`
+	File1=`ls *dwi*.nii.gz`
 else
 	File1=`ls *${direction[0]}.nii.gz`
 fi
 
-DType=$(fslinfo $File1 | grep data_type | awk '{print $2}')
 case $Topup in
 	1 )
-		echo only one dwi
+		echo Input DWIs contain only one PE direction
 
 		cp $(echo ${File1%.*.*}).nii.gz ${OriDir}/2_BiasCo
 		cp $(echo ${File1%.*.*}).bval ${OriDir}/2_BiasCo
@@ -128,12 +121,11 @@ case $Topup in
 
 		cd $OriDir/2_BiasCo
 		
-		dwidenoise -nthreads 2 $(echo ${File1%.*.*}).nii.gz Temp-denoise.nii.gz
-		# mrdegibbs -datatype $DType -nthreads 2 Temp-denoise.nii.gz $(echo ${File1%.*.*})-denoise-deGibbs.nii.gz
-		mrdegibbs -nthreads 2 Temp-denoise.nii.gz $(echo ${File1%.*.*})-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
+		dwidenoise $(echo ${File1%.*.*}).nii.gz Temp-denoise.nii.gz
+		mrdegibbs Temp-denoise.nii.gz $(echo ${File1%.*.*})-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
 		;;
 	3 )
-		echo using merged dwi
+		echo Input DWIs contain more than one PE directions
 
 		File2=`ls *${direction[1]}.nii.gz`
 		fslmerge -a $(echo ${File1%.*.*})${direction[1]} $File1 $File2
@@ -148,9 +140,8 @@ case $Topup in
         
 		cd $OriDir/2_BiasCo
 		
-		dwidenoise -nthreads 2 $(echo ${File1%.*.*})${direction[1]}.nii.gz Temp-denoise.nii.gz
-		# mrdegibbs -datatype $DType -nthreads 2 Temp-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz
-		mrdegibbs -nthreads 2 Temp-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
+		dwidenoise $(echo ${File1%.*.*})${direction[1]}.nii.gz Temp-denoise.nii.gz
+		mrdegibbs Temp-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
 		;;
 esac
 
@@ -166,9 +157,6 @@ if [[ "${B0num}" -gt "3"  ]]; then
 	echo "Calling Matlab for Drifting Correction"
 	CMD="correct_signal_drift_v2('${File_denoise}.nii.gz', '${File_bval}', 0, 'multilinear', '${File_denoise}-DriftCo.nii.gz')"
 	matlab -nodisplay -r "${CMD}; quit"
-	
-	# Change data format
-	# mrconvert -datatype ${DType} -force ${File_denoise}-DriftCo.nii.gz ${File_denoise}-DriftCo.nii.gz	
 else
 	echo "Not enough number of b0 (null scans), drifting correction skipped"
 fi

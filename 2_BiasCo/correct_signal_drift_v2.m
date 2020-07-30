@@ -156,6 +156,13 @@ elseif size(grad_info,2)==6
     b_to_use = find(abs(bvals-bval_to_use)<=b_thr);
 end
 
+if b_to_use(end) < length(grad_info)
+    fprintf('Warning: the null images did not cover the whole diffusion image series\n')
+elseif (b_to_use(end)-b_to_use(end-1))*length(b_to_use) < length(grad_info)-(b_to_use(end)-b_to_use(end-1))
+    fprintf('Not enough coverage of null images, drifting correction abort, DriftCo Aborting...\n')
+    return
+end
+
 clear grad_info_file bvec_length bvals
 
 % Get raw data
@@ -291,14 +298,21 @@ end
 
 if strcmpi(drift_method(1), 'm')
 % Do smoothingspline correction
-for i = 2:length(b_to_use)
-    drift_fit_ss=fit([b_to_use(1) b_to_use(i)]', [ints(1) ints(i)]', 'a*x+b');
-    
-    for j = b_to_use(i-1)+1:b_to_use(i)
-        corr_ss(1,j)=j.*drift_fit_ss.a+drift_fit_ss.b;
-    end
-end
+    for i = 2:length(b_to_use)
 
+        drift_fit_ss=fit([b_to_use(1) b_to_use(i)]', [ints(1) ints(i)]', 'a*x+b');
+
+        for j = b_to_use(i-1)+1:b_to_use(i)
+            corr_ss(1,j)=j.*drift_fit_ss.a+drift_fit_ss.b;
+        end
+    end
+    
+    if b_to_use(end) ~= nr_ims
+        for k= j+1:nr_ims
+        corr_ss(1,k)=k.*drift_fit_ss.a+drift_fit_ss.b;
+        end
+    end
+    
 corr_ss(1)=ints(1);
 % Calculate sum squared residuals
 res_ss = sum((ints'-corr_ss(b_to_use)).^2);
