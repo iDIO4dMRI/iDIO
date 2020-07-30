@@ -44,7 +44,7 @@ exit 1
 
 
 # Setup default variables
-AtlasDir=$(pwd)/Configure
+AtlasDir=$(pwd)/share
 OriDir=$(pwd)
 run_script=y
 args="$(sed -E 's/(-[A-Za-z]+ )([^-]*)( |$)/\1"\2"\3/g' <<< $@)"
