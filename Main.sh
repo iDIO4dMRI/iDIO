@@ -44,82 +44,75 @@ while getopts "hp:b:cv" OPTION
 do
     case $OPTION in
     p)
-        SubjectDir=$OPTARG
-        ;;
+        SubjectDir=$OPTARG;;
     b)
-		BIDSDir=$OPTARG
-		;;
+        BIDSDir=$OPTARG;;
     c)
-		cuda=1
-		;;
+		    cuda=1;;
     v)
-        verbose=1
-        ;;
+        verbose=1;;
     ?)
-        Usage
-        ;;
+        Usage;;
     esac
 done
 
 if [ "$SubjectDir" == "" ]; then
-    Usage
+    Usage;
 fi
 
 echo "[Diffusion data processing pipeline] v1.0 2020/03/10"
 echo "Start process at $(date +"%Y-%m-%d %T")"
 
 
-echo "[Diffusion data processing pipeline] v1.0 2020/03/10" >> ${SubjectDir}/pretime.log 
-echo "${SubjectDir}" >> ${SubjectDir}/pretime.log
+echo "[Diffusion data processing pipeline] v1.0 2020/03/10" >> ${SubjectDir}/mainlog.txt 
+echo "${SubjectDir}" >> ${SubjectDir}/mainlog.txt
 
-#echo Start at $(date +"%Y-%m-%d %T") >> ${SubjectDir}/pretime.log
+#echo Start at $(date +"%Y-%m-%d %T") >> ${SubjectDir}/mainlog.txt
 # Step 1_DWIprep
-echo " " >> ${SubjectDir}/pretime.log
+echo " " >> ${SubjectDir}/mainlog.txt
 STARTTIME=$(date +"%s")
-echo "1_DWIprep at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/pretime.log
+echo "1_DWIprep at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
 
 sh 1_DWIprep.sh -b $BIDSDir -p $SubjectDir -s TEST0001
 
 ENDTIME=$(date +"%s"); duration=$(($ENDTIME - $STARTTIME))
-echo "-------------$(date +"%Y-%m-%d %T") ## $((duration / 60)):$((duration % 60))" >> ${SubjectDir}/pretime.log
+echo "-------------$(date +"%Y-%m-%d %T") ## $((duration / 60)):$((duration % 60))" >> ${SubjectDir}/mainlog.txt
 
 
 # Step 2_BiasCo
-echo " " >> ${SubjectDir}/pretime.log
+echo " " >> ${SubjectDir}/mainlog.txt
 STARTTIME=$(date +"%s")
-echo "2_BiasCo at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/pretime.log
+echo "2_BiasCo at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
 
 sh 2_BiasCo.sh -p $SubjectDir
 
 ENDTIME=$(date +"%s"); duration=$(($ENDTIME - $STARTTIME))
-echo "------------$(date +"%Y-%m-%d %T") ## $((duration / 60)):$((duration % 60))" >> ${SubjectDir}/pretime.log
+echo "------------$(date +"%Y-%m-%d %T") ## $((duration / 60)):$((duration % 60))" >> ${SubjectDir}/mainlog.txt
 
 
 # Step 3_EddyCo
-echo " " >> ${SubjectDir}/pretime.log
+echo " " >> ${SubjectDir}/mainlog.txt
 STARTTIME=$(date +"%s")
-echo "3_EddyCo at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/pretime.log
+echo "3_EddyCo at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
 
 case ${cuda} in 
 	0) # without cuda
-		sh 3_EddyCo.sh -p $SubjectDir
-		;;
+		sh 3_EddyCo.sh -p $SubjectDir;;
 	1) # with cuda
-		sh 3_EddyCo.sh -p $SubjectDir -c -m
-        ;;
+		sh 3_EddyCo.sh -p $SubjectDir -c -m;;
 esac
 
 ENDTIME=$(date +"%s"); duration=$(($ENDTIME - $STARTTIME))
-echo "------------$(date +"%Y-%m-%d %T") ## $((duration / 60)):$((duration % 60))" >> ${SubjectDir}/pretime.log
+echo "------------$(date +"%Y-%m-%d %T") ## $((duration / 60)):$((duration % 60))" >> ${SubjectDir}/mainlog.txt
 
 
 # Step 4_DTIFIT
-echo " " >> ${SubjectDir}/pretime.log
+echo " " >> ${SubjectDir}/mainlog.txt
 STARTTIME=$(date +"%s")
-echo "4_DTIFIT at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/pretime.log
+echo "4_DTIFIT at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
 sh 4_DTIFIT.sh -p $SubjectDir -s $mainS
 ENDTIME=$(date +"%s"); duration=$(($ENDTIME - $STARTTIME))
-echo "------------$(date +"%Y-%m-%d %T") ## $((duration / 60)):$((duration % 60))" >> ${SubjectDir}/pretime.log
+echo "------------$(date +"%Y-%m-%d %T") ## $((duration / 60)):$((duration % 60))" >> ${SubjectDir}/mainlog.txt
 
 
 echo "End process at $(date +"%Y-%m-%d %T")"
