@@ -156,6 +156,13 @@ elseif size(grad_info,2)==6
     b_to_use = find(abs(bvals-bval_to_use)<=b_thr);
 end
 
+if b_to_use(end) < length(grad_info)
+    fprintf('Warning: the null images did not cover the whole diffusion image series\n')
+elseif (b_to_use(end)-b_to_use(end-1))*length(b_to_use) < length(grad_info)-(b_to_use(end)-b_to_use(end-1))
+    fprintf('Not enough coverage of null images, drifting correction abort, DriftCo Aborting...\n')
+    return
+end
+
 clear grad_info_file bvec_length bvals
 
 % Get raw data
