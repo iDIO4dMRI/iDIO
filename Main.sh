@@ -85,7 +85,6 @@ STARTTIME=$(date +"%s")
 echo "1_DWIprep at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
 sh 1_DWIprep.sh -b $BIDSDir -p $SubjectDir
 CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
-exit 1
 
 
 # Step 2_BiasCo
