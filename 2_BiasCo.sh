@@ -112,7 +112,7 @@ fi
 cd ${OriDir}/0_BIDS_NIFTI
 
 if [[ ${#direction[@]} == 1 ]]; then
-	File1=`ls *dwi.nii.gz`
+	File1=`ls *dwi*.nii.gz`
 else
 	File1=`ls *${direction[0]}.nii.gz`
 fi
