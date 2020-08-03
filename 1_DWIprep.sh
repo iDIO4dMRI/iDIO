@@ -300,7 +300,6 @@ else
 				echo "BandwidthPerPixelPhaseEncode: $BandwidthPerPixelPhaseEncode"
 			;;
 
-			PhaseEncodingSteps
 			'"PhaseEncodingSteps":')
 				d=${tmp[1]}
 				PhaseEncodingSteps==${d:0:${#d}-1}
@@ -350,8 +349,7 @@ else
 			C4=$(echo 1/${BandwidthPerPixelPhaseEncode} | bc)
 			echo "C4: ${C4}"
 		else
-			## seimens
-			C4=$C4 | bc)
+			C4=$C4
 		fi
 
 		echo "${Acqparams_Topup_tmp} ${C4}" >> Acqparams_Topup.txt
