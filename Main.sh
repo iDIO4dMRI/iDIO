@@ -22,7 +22,7 @@ dMRI processing  v${Version}, ${VDate}
 
 Main - Diffusion data processing pipeline
        "MRtrix3" "MatlabR2018b: spm12, export_fig" "FSL 6.0.3" "ANTs"
-       is needed for this script.
+       are required for running this script.
     
 Usage: Main -[options]   
 
@@ -32,7 +32,7 @@ Options:
     -p  Output directory
     -b 	BIDS file directory
     -c  Using CUDA to speed up. NVIDIA GPU with CUDA v9.1 is available to use this option.
-    -a  Input Atlas directory; [default = pwd/configure_Atlas, need to include Atlas/MNI directories
+    -a  Input Atlas directory; [default = pwd/share/Atlas and pwd/share/MNI directories]
 
 EOF
 exit 1
@@ -51,7 +51,7 @@ do
     b)
         BIDSDir=$OPTARG;;
     c)
-		cuda=1;;
+        cuda=1;;
     a) 
         AtlasDir=$OPTARG;;
     v)
