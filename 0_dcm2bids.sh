@@ -47,6 +47,10 @@ if [ ! -d "${dcm_in}" ] ; then
   echo "[ERROR] Input DICOM directory does not exist."
   exit
 fi
+if [ -d "${bids_out}" ] ; then
+  echo "[ERROR] Specified output directory already exists."
+  exit
+fi
 
 
 # convert dicom to json
@@ -55,8 +59,8 @@ cd ${dcm_in}
 
 all_folder=$(ls -d *)
 for folder in ${all_folder}; do
-	dw_scheme=$(mrinfo ${folder} -property dw_scheme)
-	pe_dir=$(mrinfo ${folder} -property PhaseEncodingDirection)
+	dw_scheme=$(mrinfo ${folder} -property dw_scheme -quiet)
+	pe_dir=$(mrinfo ${folder} -property PhaseEncodingDirection -quiet)
 
 	if [[ ! -z ${dw_scheme} ]]; then
 		case "${pe_dir}" in			
