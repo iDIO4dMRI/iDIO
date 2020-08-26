@@ -212,8 +212,8 @@ else
 fi
 
 #S4 generate Track
-mkdir ${OriDir}/5_CSDpreproc/S3_Tractography
-tckgen ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -backtrack -crop_at_gmwmi -seed_dynamic ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif -maxlength 250 -minlength 5 -mask ${handleMask} -select 1M
+# mkdir ${OriDir}/5_CSDpreproc/S3_Tractography
+# tckgen ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -backtrack -crop_at_gmwmi -seed_dynamic ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif -maxlength 250 -minlength 5 -mask ${handleMask} -select 1M
 
-tcksift2 ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT2_weights.txt -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -out_mu ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT_mu.txt
+# tcksift2 ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT2_weights.txt -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -out_mu ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT_mu.txt
 

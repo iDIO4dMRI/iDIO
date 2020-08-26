@@ -44,6 +44,7 @@ exit 1
 
 
 # Setup default variables
+#Replace pwd to HOMEDI
 AtlasDir=$(pwd)/share
 OriDir=$(pwd)
 run_script=y
@@ -95,14 +96,6 @@ else
 	exit 1
 fi
 
-# if [ -f "`find ${OriDir}/4_DTIFIT -maxdepth 1 -name "*Average_b0.nii.gz"`" ]; then
-# 	handleB0=${OriDir}/4_DTIFIT/*Average_b0.nii.gz
-# else
-# 	echo ""
-# 	echo "No Preprocessed AveragedB0 image found..."
-# 	exit 1
-# fi
-
 if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1.nii.gz"`" ]; then
 	handleT1=${OriDir}/0_BIDS_NIFTI/*T1.nii.gz
 	T1name=$(basename -- $(find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1.nii.gz") | cut -f1 -d '.')
@@ -113,8 +106,12 @@ else
 fi
 
 subjid=$(basename ${OriDir})
-# echo ${handleT1}
-# echo ${T1name}
+
+#S4 generate Track
+mkdir ${OriDir}/5_CSDpreproc/S3_Tractography
+tckgen ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -backtrack -crop_at_gmwmi -seed_dynamic ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif -maxlength 250 -minlength 5 -mask ${handleMask} -select 1M
+
+tcksift2 ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT2_weights.txt -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -out_mu ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT_mu.txt
 
 cd ${OriDir}/5_CSDpreproc/S1_T1proc
 #T1 doing bet and fast
