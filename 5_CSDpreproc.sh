@@ -138,16 +138,18 @@ fi
 ### BE CAREFUL ###
 # Adding bzero threshold into configure file
 # Will CREATE the new configure file and RENAME the old configure files into ${conf}.back
-cd ~/
-if [[ -f .mrtrix.conf ]]; then 
-	for file in .mrtrix.conf*; do
-		cp ${file} ${file}.back
-	done
-	echo "BZeroThreshold: 66" > .mrtrix.conf
-else
-echo "BZeroThreshold: 66">.mrtrix.conf # with a threshold of 65 (HCP 7T b0 <=65)
+# cd ~/
+# if [[ -f .mrtrix.conf ]]; then 
+# 	for file in .mrtrix.conf*; do
+# 		cp ${file} ${file}.back
+# 	done
+# 	echo "BZeroThreshold: 66" > .mrtrix.conf
+# else
+# echo "BZeroThreshold: 66">.mrtrix.conf # with a threshold of 65 (HCP 7T b0 <=65)
 #default shell tolerance = 80 (BValueEpsilon: 80)
-fi
+# fi
+Bzerothr=66
+
 
 ## Main Processing
 #Generate 5tt (lack: compare 5tt and freesurfer)
@@ -179,12 +181,12 @@ mrconvert ${handleDWI} ${OriDir}/5_CSDpreproc/${handle}.mif -fslgrad ${OriDir}/5
 # dwi2mask ${OriDir}/5_CSDpreproc/${handle}-unbiased.mif ${OriDir}/5_CSDpreproc/dwi_mask.mif -fslgrad ${OriDir}/5_CSDpreproc/${handle}.bvec ${OriDir}/5_CSDpreproc/${handle}.bval 
 
 # detemine shell numbers
-shell_num_all=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_bvalues| awk '{print NF}')
+shell_num_all=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_bvalues -config BZeroThreshold ${Bzerothr}| awk '{print NF}')
 hb=0
 for (( i=1; i<=${shell_num_all}; i=i+1 )); do
 	# echo ${i}
-	bv=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_bvalues| awk '{print $'${i}'}')
-	bv_num=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_sizes| awk '{print $'${i}'}')
+	bv=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_bvalues -config BZeroThreshold ${Bzerothr}| awk '{print $'${i}'}')
+	bv_num=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_sizes -config BZeroThreshold ${Bzerothr}| awk '{print $'${i}'}')
 	echo ${bv}
 	if [ `echo "${bv} > 1500" | bc` -eq 1 ]; then
 		echo "${bv_num} of b=${bv}s/mm^2, high b-value found."
@@ -218,9 +220,9 @@ if [[ ${shell_num_all} -ge 2 ]]; then
 		echo "lack of high b-value (may cause poor angular resolution)"
 	fi
 	# for multi-shell data
-	dwi2response dhollander ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt
+	dwi2response dhollander ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt -config BZeroThreshold ${Bzerothr}
 
-	dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask}
+	dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr}
 else
 	echo " Error: Input is not valid..."
 	exit 1
