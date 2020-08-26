@@ -5,7 +5,7 @@
 ## Written by Kuantsen Kuo
 ## Version 1.0 /2020/03/10
 ##
-## Edit: Step 2, 2020/04/07, Tsen
+## Edit: parse command args, 2020/08/03, Tsen
 ##########################################################################################################################
 
 
@@ -13,7 +13,7 @@
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
 Version=1.0
-VDate=2020/07/30
+VDate=2020/08/03
 
 Usage(){
     cat <<EOF
@@ -29,10 +29,11 @@ Usage: Main -[options]
 System will automatically detect all folders in directory if no input arguments supplied
 
 Options:
-    -p  Output directory
-    -b 	BIDS file directory
-    -c  Using CUDA to speed up. NVIDIA GPU with CUDA v9.1 is available to use this option.
-    -a  Input Atlas directory; [default = pwd/share/Atlas and pwd/share/MNI directories]
+    -proc <output dir>  Output directory
+    -bids <BIDS dir>    BIDS file directory
+    -cuda               Using CUDA to speed up. NVIDIA GPU with CUDA v9.1 is available to use this option.
+    -atlas <atlas dir>  Input Atlas directory; [default = pwd/share/Atlas and pwd/share/MNI directories]
+    -h                  Help
 
 EOF
 exit 1
@@ -43,21 +44,15 @@ BIDSDir=
 mainS=$(pwd)
 cuda=0
 
-while getopts "hp:b:ca:v" OPTION
-do
-    case $OPTION in
-    p)
-        SubjectDir=$OPTARG;;
-    b)
-        BIDSDir=$OPTARG;;
-    c)
-        cuda=1;;
-    a) 
-        AtlasDir=$OPTARG;;
-    v)
-        verbose=1;;
-    ?)
-        Usage;;
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+    -proc)  SubjectDir="$2"; shift; shift;;
+    -bids)  BIDSDir="$2"; shift; shift;;
+    -cuda) cuda=1; shift 1;;
+    -atlas) AtlasDir="$2"; shift; shift;;    
+    -h) Usage;;
+
+    *) echo "unknown option:" "$1"; exit 1;;
     esac
 done
 
