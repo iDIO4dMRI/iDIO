@@ -12,7 +12,7 @@
 # 20200424 - cancle fixing null and lowb as 0 and 1000
 #		   - convert floating number to integer
 # 20200605 - change shell detecting - using MRtrix (-s function remove)
-#		   - 
+# 20200825 - without adapting configure files
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -120,16 +120,17 @@ cd ${OriDir}/4_DTIFIT
 # Adding bzero threshold into configure file
 # Will CREATE the new configure file and RENAME the old configure files into ${conf}.back
 
-cd ~/
-if [[ -f .mrtrix.conf ]]; then 
-	cp .mrtrix.conf .mrtrix.conf.back
-fi
-echo "BZeroThreshold: 66" > .mrtrix.conf
+# cd ~/
+# if [[ -f .mrtrix.conf ]]; then 
+# 	cp .mrtrix.conf .mrtrix.conf.back
+# fi
+Bzerothr=66
+# echo "BZeroThreshold: 66" > .mrtrix.conf
 # with a threshold of 65 (HCP 7T b0 <=65)
 #default shell tolerance = 80 (BValueEpsilon: 80)
 
 # detemine shell numbers
-shell_num_all=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_bvalues| awk '{print NF}')
+shell_num_all=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_bvalues -config BZeroThreshold ${Bzerothr} | awk '{print NF}')
 
 echo "A total of ${shell_num_all} b-values were found..."
 
@@ -138,8 +139,8 @@ lowb_tmp=0
 null_tmp=0
 for (( i=1; i<=${shell_num_all}; i=i+1 )); do
 # echo ${i}
-	bv=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_bvalues| awk '{print $'${i}'}')
-	bv_num=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_sizes| awk '{print $'${i}'}')
+	bv=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_bvalues -config BZeroThreshold ${Bzerothr} | awk '{print $'${i}'}')
+	bv_num=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_sizes -config BZeroThreshold ${Bzerothr} | awk '{print $'${i}'}')
 	echo ${bv}
 	if [ `echo "${bv} > 1500" | bc` -eq 1 ]; then
 		tput setaf 1 # change terminal color to red color
@@ -162,7 +163,7 @@ if [[ ${null_tmp} -eq 0 ]]; then
 fi
 
 # Average DWI null images
-dwiextract ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz - -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -bzero | mrmath - mean -axis 3 ${OriDir}/4_DTIFIT/${subjid}-preproc-Average_b0.nii.gz
+dwiextract ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz - -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -bzero -config BZeroThreshold ${Bzerothr} | mrmath - mean -axis 3 ${OriDir}/4_DTIFIT/${subjid}-preproc-Average_b0.nii.gz
 
 # Extract DWI low-b images
 tags=""
@@ -175,7 +176,7 @@ elif [ ${#lowb[*]} -gt 1 ]; then
 fi
 echo bvalue ${tags}
 
-dwiextract ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -no_bzero -shells ${tags} ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.nii.gz -export_grad_fsl ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.bval
+dwiextract ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -no_bzero -shells ${tags} ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.nii.gz -export_grad_fsl ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.bval -config BZeroThreshold ${Bzerothr} 
 
 cd ${OriDir}/4_DTIFIT
 fslmerge -t ${subjid}-preproc-lowb-data.nii.gz ${subjid}-preproc-Average_b0.nii.gz ${subjid}-preproc-lowb-only-data.nii.gz 
