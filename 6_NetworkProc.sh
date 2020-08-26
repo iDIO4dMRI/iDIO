@@ -45,7 +45,7 @@ exit 1
 
 # Setup default variables
 #Replace pwd to HOMEDI
-AtlasDir=$(pwd)/share
+AtlasDir=${mainS}/share
 OriDir=$(pwd)
 run_script=y
 args="$(sed -E 's/(-[A-Za-z]+ )([^-]*)( |$)/\1"\2"\3/g' <<< $@)"
