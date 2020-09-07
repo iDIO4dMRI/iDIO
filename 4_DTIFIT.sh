@@ -12,7 +12,9 @@
 # 20200424 - cancle fixing null and lowb as 0 and 1000
 #		   - convert floating number to integer
 # 20200605 - change shell detecting - using MRtrix (-s function remove)
-# 20200825 - without adapting configure files
+# 20200825 - adapting without configure files (-t add Bzerothr function)
+# 20200907 - bug fixed: ${Bzerothr}
+
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -20,7 +22,8 @@
 Usage(){
 	cat <<EOF
 
-4_DTIFIT - Diffusion Tensor model fitting function. Only low-b (<1500s/mm^2) images were used for fitting. b <65s/mm^2 will be considered to null images.
+4_DTIFIT - Diffusion Tensor model fitting function. Only low-b (<1500s/mm^2) images were used for fitting. 
+		    b < Bzero threshold will be considered to null images [default = 10].
 		    2_BiasCo and 3_EddyCo are needed before processing this script.
 		    4_DTIFIT will be created
 
@@ -30,7 +33,7 @@ System will automatically detect all folders in directory if no input arguments 
 
 Options:
 	-p 	Input directory; [default = pwd directory]
-	-t  Input Bzero threhold; [default = 10]; 
+	-t  Input Bzero threshold; [default = 10]; 
 
 EOF
 exit 1
@@ -138,7 +141,7 @@ for (( i=1; i<=${shell_num_all}; i=i+1 )); do
 		echo "${bv_num} of b=${bv}s/mm^2, high b-value found."
 		tput sgr0 # change terminal color to default color
 
-	elif [ `echo "${bv} < 66" | bc` -eq 1 ]; then
+	elif [ `echo "${bv} < ${Bzerothr}" | bc` -eq 1 ]; then
 		echo "${bv_num} of b=${bv}s/mm^2 (null image(s))"
 		null_tmp=$((${null_tmp}+${bv_num}))
 	else
