@@ -3,14 +3,14 @@
 ##########################################################################################################################
 ## Diffusion data processing pipeline
 ## Written by Clementine Kung
-## Version 1.3.1 2020/08/07
+## Version 1.3.1 2020/09/07
 ##########################################################################################################################
 # 20200424 - check dwi.bval dwi.bvec exist
 # 20200429 - fixing imaging resize floating number problem
 # 20200526 - mrgird, rename PED
 # 20200730 - no .json, fix bug of mrgird
 # 20200807 - bugdix C4=TE
-# 20200826 - check C4 from mrconvert and add mrconvert function
+# 20200826 - check C4 from mrconvert and add mrconvert function (use mrconvert)
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -343,16 +343,16 @@ else
 			echo ${MultibandAccelerationFactor} > MBF.txt
 		fi
 
-		## C4
+		# C4: total readout time
 		if [ "$EPIfactor" != 0 ] && [ "$EffectiveEchoSpacing" != 0 ]; then
-			C4=$(echo ${EffectiveEchoSpacing}*${EPIfactor} | bc)
+			C4=$(echo ${EffectiveEchoSpacing}*(${EPIfactor}-1) | bc)
 			echo "<method 1> C4: ${C4}"
-		#elif [ "$DwellTime" != 0 ] && [ "$PhaseEncodingSteps" != 0 ]; then
-		#	C4=$(echo ${DwellTime}*(${PhaseEncodingSteps}-1) | bc)
-		#	echo "C4: ${C4}"
-		#elif [ "$BandwidthPerPixelPhaseEncode" != 0 ]; then
-		#	C4=$(echo "scale=4; 1/${BandwidthPerPixelPhaseEncode}" | bc)
-		#	echo "<method 2> C4: ${C4}"
+		elif [ "$DwellTime" != 0 ] && [ "$PhaseEncodingSteps" != 0 ]; then
+			C4=$(echo ${DwellTime}*(${PhaseEncodingSteps}-1) | bc)
+			echo "C4: ${C4}"
+		elif [ "$BandwidthPerPixelPhaseEncode" != 0 ]; then
+			C4=$(echo "scale=4; 1/${BandwidthPerPixelPhaseEncode}" | bc)
+			echo "<method 2> C4: ${C4}"
 		else
 			mrconvert ${prerename_filename}.nii.gz -json_import ${json_file} - | mrinfo - -export_pe_eddy Acqparams_Topup_mrconvert.txt indices.txt
 			tmp=($(cat Acqparams_Topup_mrconvert.txt))
