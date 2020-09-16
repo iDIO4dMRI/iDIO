@@ -3,12 +3,14 @@
 ##########################################################################################################################
 ## Diffusion data processing pipeline
 ## Written by Clementine Kung
-## Version 1.3 2020/07/30
+## Version 1.3.1 2020/09/07
 ##########################################################################################################################
 # 20200424 - check dwi.bval dwi.bvec exist
 # 20200429 - fixing imaging resize floating number problem
 # 20200526 - mrgird, rename PED
 # 20200730 - no .json, fix bug of mrgird
+# 20200807 - bugdix C4=TE
+# 20200826 - check C4 from mrconvert and add mrconvert function (use mrconvert)
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -20,7 +22,7 @@ Usage() {
 
     1_DWIprep - DWI data preperation for the following processing
 
-    Usage: 1_DWIprep -b <BIDSDir> -p <PreprocDir> -c <C4>  -s <PhaseEncoding>
+    Usage: 1_DWIprep -b <BIDSDir> -p <PreprocDir> -s <PhaseEncoding>
     
     Options:
 	-c 	C4 
@@ -50,9 +52,6 @@ do
         ;;
     p)
         PreprocDir=$OPTARG
-        ;;
-    c)
-        C4=$OPTARG
         ;;
     s)
         PhaseEncoding=$OPTARG
@@ -270,6 +269,12 @@ else
 				echo "PED: ${PED}"
 			;;
 
+			'"EchoTime":')
+			 	d=${tmp[1]}
+				TE=${d:0:${#d}-1}	
+				echo "TE: $TE"
+			;;
+
 			'"EffectiveEchoSpacing":')
 				d=${tmp[1]}
 				EffectiveEchoSpacing=${d:0:${#d}-1}	
@@ -288,22 +293,22 @@ else
 				echo "EPIfactor: $EPIfactor"
 			;;
 
-			'"DwellTime":')
-				d=${tmp[1]}
-				DwellTime==${d:0:${#d}-1}
-				echo "DwellTime: $DwellTime"
-			;;
+			#'"DwellTime":')
+			#	d=${tmp[1]}
+			#	DwellTime==${d:0:${#d}-1}
+			#	echo "DwellTime: $DwellTime"
+			#;;
+
+			#'"PhaseEncodingSteps":')
+			#	d=${tmp[1]}
+			#	PhaseEncodingSteps==${d:0:${#d}-1}
+			#	echo "PhaseEncodingSteps: $PhaseEncodingSteps"
+			#;;
 
 			'"BandwidthPerPixelPhaseEncode":')
 				d=${tmp[1]}
-				BandwidthPerPixelPhaseEncode==${d:0:${#d}-1}
+				BandwidthPerPixelPhaseEncode=${d:0:${#d}-1}
 				echo "BandwidthPerPixelPhaseEncode: $BandwidthPerPixelPhaseEncode"
-			;;
-
-			'"PhaseEncodingSteps":')
-				d=${tmp[1]}
-				PhaseEncodingSteps==${d:0:${#d}-1}
-				echo "PhaseEncodingSteps: $PhaseEncodingSteps"
 			;;
 
 			'"AcquisitionMatrixPE":')
@@ -338,21 +343,31 @@ else
 			echo ${MultibandAccelerationFactor} > MBF.txt
 		fi
 
-		## C4
+		# C4: total readout time
 		if [ "$EPIfactor" != 0 ] && [ "$EffectiveEchoSpacing" != 0 ]; then
-			C4=$(echo ${EffectiveEchoSpacing}*${EPIfactor} | bc)
-			echo "C4: ${C4}"
-		elif [ "$DwellTime" !=0 ] && [ "$PhaseEncodingSteps" !=0 ]; then
+			C4=$(echo ${EffectiveEchoSpacing}*(${EPIfactor}-1) | bc)
+			echo "<method 1> C4: ${C4}"
+		elif [ "$DwellTime" != 0 ] && [ "$PhaseEncodingSteps" != 0 ]; then
 			C4=$(echo ${DwellTime}*(${PhaseEncodingSteps}-1) | bc)
 			echo "C4: ${C4}"
-		elif [[ "$BandwidthPerPixelPhaseEncode" !=0 ]]; then
-			C4=$(echo 1/${BandwidthPerPixelPhaseEncode} | bc)
-			echo "C4: ${C4}"
+		elif [ "$BandwidthPerPixelPhaseEncode" != 0 ]; then
+			C4=$(echo "scale=4; 1/${BandwidthPerPixelPhaseEncode}" | bc)
+			echo "<method 2> C4: ${C4}"
 		else
-			C4=$C4
+			mrconvert ${prerename_filename}.nii.gz -json_import ${json_file} - | mrinfo - -export_pe_eddy Acqparams_Topup_mrconvert.txt indices.txt
+			tmp=($(cat Acqparams_Topup_mrconvert.txt))
+			echo "<method 3> C4: ${tmp[3]}"
 		fi
 
-		echo "${Acqparams_Topup_tmp} ${C4}" >> Acqparams_Topup.txt
+
+		if [ -n "${C4}" ]; then
+			echo "${Acqparams_Topup_tmp} ${C4}" >> Acqparams_Topup.txt
+		elif [ -f "Acqparams_Topup_mrconvert.txt" ]; then
+			cat Acqparams_Topup_mrconvert.txt >> Acqparams_Topup.txt
+			rm -f Acqparams_Topup_mrconvert.txt indices.txt
+		else
+			echo "${Acqparams_Topup_tmp} ${TE}" >> Acqparams_Topup.txt
+		fi
 
 		## read .bval file
 		nn=$(cat ${prerename_filename}.bval)
@@ -361,7 +376,7 @@ else
 		done
 
 		## resize
-		if [ $(echo "${ReconMatrixPE}/${AcquisitionMatrixPE}"|bc) -ne 1 ]; then
+		if [[ $(echo "${ReconMatrixPE}/${AcquisitionMatrixPE}" | bc) -ne 1 ]]; then
 			mkdir -p ${PreprocDir}/0_BIDS_NIFTI/Preresize
 			resizefile=$(basename ${prerename_filename}.nii.gz)
 			mv ${prerename_filename}.nii.gz ${PreprocDir}/0_BIDS_NIFTI/Preresize
