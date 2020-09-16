@@ -25,6 +25,7 @@ System will automatically detect all folders in directory if no input arguments 
 
 Options:
 	-p 	Input directory; [default = pwd directory]
+	-t  Input Bzero threhold; [default = 10]; 
 
 EOF
 exit 1
@@ -32,6 +33,7 @@ exit 1
 
 # Setup default variables
 OriDir=$(pwd)
+Bzerothr=10
 run_script=y
 args="$(sed -E 's/(-[A-Za-z]+ )([^-]*)( |$)/\1"\2"\3/g' <<< $@)"
 declare -a a="($args)"
@@ -40,7 +42,7 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hp:" optionName; 
+while getopts "hp:t:" optionName; 
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
@@ -50,7 +52,9 @@ do
 	p)
 		OriDir=$OPTARG
 		;;
-
+	t)
+		Bzerothr=$OPTARG
+		;;
 	\?) 
 		exit 42
 		;;
@@ -130,27 +134,6 @@ fi
 
 [ -d ${OriDir}/5_CSDpreproc ] || mkdir ${OriDir}/5_CSDpreproc
 
-# echo ${handleT1}
-# echo ${handleB0}
-# echo ${handleDWI}
-
-
-### BE CAREFUL ###
-# Adding bzero threshold into configure file
-# Will CREATE the new configure file and RENAME the old configure files into ${conf}.back
-# cd ~/
-# if [[ -f .mrtrix.conf ]]; then 
-# 	for file in .mrtrix.conf*; do
-# 		cp ${file} ${file}.back
-# 	done
-# 	echo "BZeroThreshold: 66" > .mrtrix.conf
-# else
-# echo "BZeroThreshold: 66">.mrtrix.conf # with a threshold of 65 (HCP 7T b0 <=65)
-#default shell tolerance = 80 (BValueEpsilon: 80)
-# fi
-Bzerothr=66
-
-
 ## Main Processing
 #Generate 5tt (lack: compare 5tt and freesurfer)
 mkdir ${OriDir}/5_CSDpreproc/S1_T1proc
@@ -215,7 +198,7 @@ if [[ ${shell_num_all} -ge 2 ]]; then
 	# dwi2response tournier ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt 
 
 	# dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask}
-# elif [[ ${shell_num_all} -ge 3 ]]; then
+	# elif [[ ${shell_num_all} -ge 3 ]]; then
 	if [[ ${shell_num_all} -eq 2 && ${hb} -eq 0 ]]; then
 		echo "lack of high b-value (may cause poor angular resolution)"
 	fi
@@ -229,8 +212,8 @@ else
 fi
 
 #S4 generate Track
-mkdir ${OriDir}/5_CSDpreproc/S3_Tractography
-tckgen ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -backtrack -crop_at_gmwmi -seed_dynamic ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif -maxlength 250 -minlength 5 -mask ${handleMask} -select 1M
+# mkdir ${OriDir}/5_CSDpreproc/S3_Tractography
+# tckgen ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -backtrack -crop_at_gmwmi -seed_dynamic ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif -maxlength 250 -minlength 5 -mask ${handleMask} -select 1M
 
-tcksift2 ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT2_weights.txt -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -out_mu ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT_mu.txt
+# tcksift2 ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT2_weights.txt -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -out_mu ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT_mu.txt
 

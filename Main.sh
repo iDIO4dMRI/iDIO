@@ -41,7 +41,7 @@ exit 1
 
 SubjectDir=
 BIDSDir=
-mainS=$(pwd)
+export mainS=$(pwd)
 cuda=0
 
 while [ "$#" -gt 0 ]; do
