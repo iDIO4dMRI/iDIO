@@ -23,9 +23,9 @@ Usage(){
 	cat <<EOF
 
 4_DTIFIT - Diffusion Tensor model fitting function. Only low-b (<1500s/mm^2) images were used for fitting. 
-		    b < Bzero threshold will be considered to null images [default = 10].
-		    2_BiasCo and 3_EddyCo are needed before processing this script.
-		    4_DTIFIT will be created
+		   b < Bzero threshold will be considered to null images [default = 10].
+		   2_BiasCo and 3_EddyCo are needed before processing this script.
+		   4_DTIFIT will be created
 
 Usage:	4_DTIFIT -[options] 
 

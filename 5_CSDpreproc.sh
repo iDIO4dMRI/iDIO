@@ -15,9 +15,10 @@
 Usage(){
 	cat <<EOF
 
-5_CSDpreproc - CSD preprocessing via MRtrix. b < 65s/mm^2 will be considered to null images.
-		    3_EddyCo and 4_DTIFIT are needed before processing this script.
-		    5_CSDpreproc will be created
+5_CSDpreproc - CSD preprocessing via MRtrix with Dhollanders algorithm.
+			   b < Bzero threshold will be considered to null images [default = 10].
+		       3_EddyCo and 4_DTIFIT are needed before processing this script.
+		       5_CSDpreproc will be created
 
 Usage:	5_CSDpreproc -[options] 
 
