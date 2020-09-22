@@ -86,15 +86,15 @@ if [ ! -d "${OriDir}/5_CSDpreproc" ]; then
 	exit 1
 fi
 # Check needed file
-if [ -f "`find ${OriDir}/5_CSDpreproc/S3_Tractography -maxdepth 1 -name "*1M.tck"`" ]; then
-	tckname=$(basename -- $(find ${OriDir}/5_CSDpreproc/S3_Tractography -maxdepth 1 -name "*1M.tck") | cut -f1 -d '.')
-	handletck=${OriDir}/5_CSDpreproc/S3_Tractography/${tckname}
+# if [ -f "`find ${OriDir}/5_CSDpreproc/S3_Tractography -maxdepth 1 -name "*1M.tck"`" ]; then
+# 	tckname=$(basename -- $(find ${OriDir}/5_CSDpreproc/S3_Tractography -maxdepth 1 -name "*1M.tck") | cut -f1 -d '.')
+# 	handletck=${OriDir}/5_CSDpreproc/S3_Tractography/${tckname}
 
-else
-	echo ""
-	echo "No tck image found..."
-	exit 1
-fi
+# else
+# 	echo ""
+# 	echo "No tck image found..."
+# 	exit 1
+# fi
 
 if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1w.nii.gz"`" ]; then
 	handleT1=${OriDir}/0_BIDS_NIFTI/*T1w.nii.gz
