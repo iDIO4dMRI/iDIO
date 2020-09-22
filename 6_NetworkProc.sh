@@ -85,16 +85,6 @@ if [ ! -d "${OriDir}/5_CSDpreproc" ]; then
 	echo "Please process previous step..."
 	exit 1
 fi
-# Check needed file
-# if [ -f "`find ${OriDir}/5_CSDpreproc/S3_Tractography -maxdepth 1 -name "*1M.tck"`" ]; then
-# 	tckname=$(basename -- $(find ${OriDir}/5_CSDpreproc/S3_Tractography -maxdepth 1 -name "*1M.tck") | cut -f1 -d '.')
-# 	handletck=${OriDir}/5_CSDpreproc/S3_Tractography/${tckname}
-
-# else
-# 	echo ""
-# 	echo "No tck image found..."
-# 	exit 1
-# fi
 
 if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1w.nii.gz"`" ]; then
 	handleT1=${OriDir}/0_BIDS_NIFTI/*T1w.nii.gz
@@ -106,6 +96,7 @@ else
 fi
 
 subjid=$(basename ${OriDir})
+handleMask=${OriDir}/4_DTIFIT/*b0-brain_mask.nii.gz
 
 #S4 generate Track
 mkdir ${OriDir}/5_CSDpreproc/S3_Tractography
@@ -166,7 +157,16 @@ done
 
 
 # ---- Network reconstruction 
+# Check needed file
+if [ -f "`find ${OriDir}/5_CSDpreproc/S3_Tractography -maxdepth 1 -name "*1M.tck"`" ]; then
+	tckname=$(basename -- $(find ${OriDir}/5_CSDpreproc/S3_Tractography -maxdepth 1 -name "*1M.tck") | cut -f1 -d '.')
+	handletck=${OriDir}/5_CSDpreproc/S3_Tractography/${tckname}
 
+else
+	echo ""
+	echo "No tck image found..."
+	exit 1
+fi
 for i in *; do 
 ## SIFT2-weighted connectome
 tck2connectome ${OriDir}/5_CSDpreproc/S3_Tractography/${tckname}.tck ${OriDir}/6_NetworkProc/Atlas/${subjid}_${i%%.*}_inDWI.nii.gz ${OriDir}/6_NetworkProc/${subjid}_connectome_${i%%.*}.csv -tck_weights_in ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT2_weights.txt -symmetric -zero_diagonal -out_assignments ${OriDir}/6_NetworkProc/${subjid}_${i%%.*}_Assignments.csv  -assignment_radial_search 2
