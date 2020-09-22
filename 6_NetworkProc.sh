@@ -96,9 +96,9 @@ else
 	exit 1
 fi
 
-if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1.nii.gz"`" ]; then
-	handleT1=${OriDir}/0_BIDS_NIFTI/*T1.nii.gz
-	T1name=$(basename -- $(find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1.nii.gz") | cut -f1 -d '.')
+if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1w.nii.gz"`" ]; then
+	handleT1=${OriDir}/0_BIDS_NIFTI/*T1w.nii.gz
+	T1name=$(basename -- $(find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1w.nii.gz") | cut -f1 -d '.')
 else
 	echo ""
 	echo "No Preprocessed T1 image found..."
@@ -120,7 +120,7 @@ cp ${handleT1} ${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET
 bet ${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET/${T1name}.nii.gz ${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET/${T1name}_bet.nii.gz -R -f 0.3 -g 0 -m
 fast -t 1 -n 3 -H 0.1 -I 4 -l 20.0 -g -B -b -p -o ${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET/${T1name}_bet_Corrected ${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET/${T1name}_bet.nii.gz
 #registration 
-mkdir ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix
+# mkdir ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix
 flirt -ref ${AtlasDir}/MNI/mni_icbm152_t1_tal_nlin_asym_09c_bet.nii.gz -in ${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET/${T1name}_bet_Corrected_restore.nii.gz -omat ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/str2mni_affine_transf.mat
 
 fnirt --ref=${AtlasDir}/MNI/mni_icbm152_t1_tal_nlin_asym_09c.nii.gz --in=${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET/${T1name}.nii.gz --aff=${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/str2mni_affine_transf.mat --cout=${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/str2mni_nonlinear_transf --config=T1_2_ICBM_MNI152_1mm

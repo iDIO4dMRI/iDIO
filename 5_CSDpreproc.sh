@@ -101,8 +101,8 @@ else
 	exit 1
 fi
 
-if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1.nii.gz"`" ]; then
-	handleT1=${OriDir}/0_BIDS_NIFTI/*T1.nii.gz
+if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1w.nii.gz"`" ]; then
+	handleT1=${OriDir}/0_BIDS_NIFTI/*T1w.nii.gz
 else
 	echo ""
 	echo "No Preprocessed T1 image found..."

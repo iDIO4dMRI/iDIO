@@ -111,7 +111,7 @@ CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
 echo " " >> ${SubjectDir}/mainlog.txt
 STARTTIME=$(date +"%s")
 echo "4_DTIFIT at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-sh 4_DTIFIT.sh -p $SubjectDir -s $mainS
+sh 4_DTIFIT.sh -p $SubjectDir
 CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
 
 
