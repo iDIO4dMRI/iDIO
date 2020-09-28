@@ -13,7 +13,7 @@
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
 Version=1.0
-VDate=2020.09.16
+VDate=2020.09.23
 
 Usage(){
     cat <<EOF
@@ -51,7 +51,7 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
-if [ "$SubjectDir" == "" ]; then
+if [ "${SubjectDir}" == "" ] || [ "${BIDSDir}" == "" ]; then
     Usage;
 fi
 
@@ -60,8 +60,10 @@ HOGIO=$(echo $HOGIO)
 if [[ -z "$HOGIO" ]]; then
     #statements
     export HOGIO=$(pwd)
+    echo ""
     echo "It seems that the HOGIO environment variable is not set. "
     echo "Lets set ONE TIME variable, HOGIO, to current working directory."
+    echo ""
 fi
 
 CalElapsedTime(){ #STARTTIME #mainlog.txt
@@ -70,8 +72,10 @@ CalElapsedTime(){ #STARTTIME #mainlog.txt
     echo "-------------$(date +"%Y-%m-%d %T") ## $((duration / 60)):$((duration % 60))" >> $2
 }
 
+echo ""
 echo "[Diffusion data processing pipeline] v${Version} ${VDate}"
 echo "Start process at $(date +"%Y-%m-%d %T")"
+echo ""
 
 
 echo "[Diffusion data processing pipeline] v${Version} ${VDate}" >> ${SubjectDir}/mainlog.txt 
@@ -136,3 +140,4 @@ CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
 
 
 echo "End process at $(date +"%Y-%m-%d %T")"
+echo ""
