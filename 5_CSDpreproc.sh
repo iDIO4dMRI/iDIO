@@ -148,7 +148,6 @@ transformconvert ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/T12DWI_flirt6.mat $
 mrtransform ${handleT1} ${OriDir}/5_CSDpreproc/S1_T1proc/T12dwispace.nii.gz -linear ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/T12DWI_mrtrix.txt
 
 ## 5tt include amygdala and hippocampus
-# 5ttgen fsl -nocrop ${OriDir}/5_CSDpreproc/S1_T1proc/T12dwispace.nii.gz ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -quiet
 5ttgen fsl -nocrop -sgm_amyg_hipp ${OriDir}/5_CSDpreproc/S1_T1proc/T12dwispace.nii.gz ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -quiet
 5tt2gmwmi ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz ${OriDir}/5_CSDpreproc/S1_T1proc/WMGM2dwispace.nii.gz -quiet
 
@@ -159,10 +158,8 @@ cp ${OriDir}/4_DTIFIT/${handlebv}.bval ${OriDir}/5_CSDpreproc/
 
 mrconvert ${handleDWI} ${OriDir}/5_CSDpreproc/${handle}.mif -fslgrad ${OriDir}/5_CSDpreproc/${handlebv}.bvec ${OriDir}/5_CSDpreproc/${handlebv}.bval 
 
-# # doing bias correct
-# dwibiascorrect -ants ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/${handle}-unbiased.mif
-# not producing the b0 mask via MRTRIX, using bet instead
-# dwi2mask ${OriDir}/5_CSDpreproc/${handle}-unbiased.mif ${OriDir}/5_CSDpreproc/dwi_mask.mif -fslgrad ${OriDir}/5_CSDpreproc/${handle}.bvec ${OriDir}/5_CSDpreproc/${handle}.bval 
+#erode FSL Bet mask
+maskfilter ${handleMask} erode ${OriDir}/5_CSDpreproc/${handlebv}-mask-erode.mif -npass 2 #this setting since to be okay
 
 # detemine shell numbers
 shell_num_all=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_bvalues -config BZeroThreshold ${Bzerothr}| awk '{print NF}')
@@ -194,27 +191,29 @@ fi
 
 if [[ ${shell_num_all} -ge 2 ]]; then
 	# All shell data were calculated by dhollander algorithm
-	# for single-shell data 
 
-	# dwi2response tournier ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt 
-
-	# dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask}
-	# elif [[ ${shell_num_all} -ge 3 ]]; then
-	if [[ ${shell_num_all} -eq 2 && ${hb} -eq 0 ]]; then
-		echo "lack of high b-value (may cause poor angular resolution)"
-	fi
-	# for multi-shell data
 	dwi2response dhollander ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt -config BZeroThreshold ${Bzerothr}
 
-	dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr}
+	if [[ ${shell_num_all} -eq 2 && ${hb} -eq 0 ]]; then
+		echo "lack of high b-value (may cause poor angular resolution)"
+	
+		# for single-shell
+
+		dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr}
+
+		# multi-tissue informed log-domain intensity normalisation
+		mtnormalise ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_wm_norm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_csf_norm.mif -mask ${OriDir}/5_CSDpreproc/${handlebv}-mask-erode.mif
+
+	else	
+		#for multi-shell
+
+		dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr}
+
+		# multi-tissue informed log-domain intensity normalisation
+		mtnormalise ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_wm_norm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_gm_norm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_csf_norm.mif -mask ${OriDir}/5_CSDpreproc/${handlebv}-mask-erode.mif
+	fi 
+
 else
 	echo " Error: Input is not valid..."
 	exit 1
 fi
-
-#S4 generate Track
-# mkdir ${OriDir}/5_CSDpreproc/S3_Tractography
-# tckgen ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -backtrack -crop_at_gmwmi -seed_dynamic ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif -maxlength 250 -minlength 5 -mask ${handleMask} -select 1M
-
-# tcksift2 ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT2_weights.txt -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -out_mu ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT_mu.txt
-

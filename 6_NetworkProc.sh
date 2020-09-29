@@ -102,9 +102,9 @@ handleMask=${OriDir}/4_DTIFIT/*b0-brain_mask.nii.gz
 
 #S4 generate Track
 mkdir ${OriDir}/5_CSDpreproc/S3_Tractography
-tckgen ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -backtrack -crop_at_gmwmi -seed_dynamic ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif -maxlength 250 -minlength 5 -mask ${handleMask} -select 1M
+tckgen ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -backtrack -crop_at_gmwmi -seed_dynamic ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif -maxlength 250 -minlength 5 -mask ${handleMask} -select 1M 
 
-tcksift2 ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT2_weights.txt -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -out_mu ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT_mu.txt
+tcksift2 ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT2_weights.txt -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -out_mu ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT_mu.txt 
 
 cd ${OriDir}/5_CSDpreproc/S1_T1proc
 #T1 doing bet and fast
@@ -149,10 +149,10 @@ cd ${AtlasDir}/Atlas
 for i in *; do 
 	applywarp --ref=${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET/${T1name}_bet_Corrected_restore.nii.gz --in=${AtlasDir}/Atlas/${i} --warp=${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/mni2str_nonlinear_transf.nii.gz --rel --out=${OriDir}/6_NetworkProc/Atlas/${subjid}_${i%%.*}_inT1.nii.gz --interp=nn
 
-	mrtransform ${OriDir}/6_NetworkProc/Atlas/${subjid}_${i%%.*}_inT1.nii.gz ${OriDir}/6_NetworkProc/Atlas/${subjid}_${i%%.*}_inDWI.nii.gz -linear ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/T12DWI_mrtrix.txt -interp nearest
+	mrtransform ${OriDir}/6_NetworkProc/Atlas/${subjid}_${i%%.*}_inT1.nii.gz ${OriDir}/6_NetworkProc/Atlas/${subjid}_${i%%.*}_inDWI.nii.gz -linear ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/T12DWI_mrtrix.txt -interp nearest 
 	if [[ ${i} == "DK_resample_ICBM.nii.gz" ]]; then
 		#Relabel DK atlas
-		labelconvert ${OriDir}/6_NetworkProc/Atlas/${subjid}_${i%%.*}_inDWI.nii.gz ${AtlasDir}/colorlabel/FreeSurferColorLUT_DK.txt ${AtlasDir}/colorlabel/fs_default_DK.txt ${OriDir}/6_NetworkProc/Atlas/${subjid}_${i%%.*}_inDWI.nii.gz -force
+		labelconvert ${OriDir}/6_NetworkProc/Atlas/${subjid}_${i%%.*}_inDWI.nii.gz ${AtlasDir}/colorlabel/FreeSurferColorLUT_DK.txt ${AtlasDir}/colorlabel/fs_default_DK.txt ${OriDir}/6_NetworkProc/Atlas/${subjid}_${i%%.*}_inDWI.nii.gz -force 
 	fi
 done
 
@@ -171,7 +171,7 @@ else
 fi
 for i in *; do 
 ## SIFT2-weighted connectome
-tck2connectome ${OriDir}/5_CSDpreproc/S3_Tractography/${tckname}.tck ${OriDir}/6_NetworkProc/Atlas/${subjid}_${i%%.*}_inDWI.nii.gz ${OriDir}/6_NetworkProc/${subjid}_connectome_${i%%.*}.csv -tck_weights_in ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT2_weights.txt -symmetric -zero_diagonal -out_assignments ${OriDir}/6_NetworkProc/${subjid}_${i%%.*}_Assignments.csv  -assignment_radial_search 2
+tck2connectome ${OriDir}/5_CSDpreproc/S3_Tractography/${tckname}.tck ${OriDir}/6_NetworkProc/Atlas/${subjid}_${i%%.*}_inDWI.nii.gz ${OriDir}/6_NetworkProc/${subjid}_connectome_${i%%.*}.csv -tck_weights_in ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT2_weights.txt -symmetric -zero_diagonal -out_assignments ${OriDir}/6_NetworkProc/${subjid}_${i%%.*}_Assignments.csv  -assignment_radial_search 2 
 
 ## need to scale the SIFT2-weighted connectome by mu 
 ## SIFT2-weighted connectome with node volumes 
