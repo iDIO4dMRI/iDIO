@@ -24,7 +24,7 @@ Usage(){
 
 6_NetworkProc - 5_CSDpreproc is needed before processing this script.
 				This step will generate the track file based on the ODF in 5_CSDpreproc. 
-				Connectivity matrix will be generate with five atlases (AAL3, DKm HCPMMP w/o Subcortical regions, Yeo) 
+				Connectivity matrix will be generate with five atlases (AAL3, DK, HCPMMP w/o Subcortical regions, Yeo) 
 			  	please setting the AtlasDir first
 			  	6_NetworkProc will be created
 
