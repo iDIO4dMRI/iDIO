@@ -3,7 +3,7 @@
 ##########################################################################################################################
 ## Diffusion data processing pipeline
 ## Written by Clementine Kung
-## Version 1.3.1 2020/09/07
+## Version 1.3.1 2020/12/29
 ##########################################################################################################################
 # 20200424 - check dwi.bval dwi.bvec exist
 # 20200429 - fixing imaging resize floating number problem
@@ -11,6 +11,7 @@
 # 20200730 - no .json, fix bug of mrgird
 # 20200807 - bugdix C4=TE
 # 20200826 - check C4 from mrconvert and add mrconvert function (use mrconvert)
+# 20201229 - bug fixed (bc)
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -22,7 +23,7 @@ Usage() {
 
     1_DWIprep - DWI data preperation for the following processing
 
-    Usage: 1_DWIprep -b <BIDSDir> -p <PreprocDir> -s <PhaseEncoding>
+    Usage: 1_DWIprep -b <BIDSDir> -p <PreprocDir>
     
     Options:
 	-c 	C4 
@@ -81,11 +82,13 @@ for DWI_file in *DWI*; do
  	mv ${DWI_file} $nname
 done
 
-for bvals_file in *.bvals; do
+bvals_tmp=$(ls -f *.bvals 2>>error.log) 
+for bvals_file in ${bvals_tmp}; do
 	mv ${bvals_file} ${bvals_file:0:${#bvals_file}-1}
 done
 
-for bvecs_file in *.bvecs; do
+bvecs_tmp=$(ls -f *.bvecs 2>>error.log)
+for bvecs_file in ${bvecs_tmp}; do
 	mv ${bvecs_file} ${bvecs_file:0:${#bvecs_file}-1}
 done
 
@@ -229,8 +232,7 @@ else
 
 
 		prerename_filename=${json_file:0:${#json_file}-5}
-		echo "\n====Check inforamtion for $(basename ${prerename_filename})===="
-
+		echo "\\n====Check inforamtion for $(basename ${prerename_filename})====\n"
 		while read line; do
 
 			tmp=(${line})
@@ -345,10 +347,10 @@ else
 
 		# C4: total readout time
 		if [ "$EPIfactor" != 0 ] && [ "$EffectiveEchoSpacing" != 0 ]; then
-			C4=$(echo ${EffectiveEchoSpacing}*(${EPIfactor}-1) | bc)
+			C4=$(echo "${EffectiveEchoSpacing}*(${EPIfactor}-1)" | bc)
 			echo "<method 1> C4: ${C4}"
 		elif [ "$DwellTime" != 0 ] && [ "$PhaseEncodingSteps" != 0 ]; then
-			C4=$(echo ${DwellTime}*(${PhaseEncodingSteps}-1) | bc)
+			C4=$(echo "${DwellTime}*(${PhaseEncodingSteps}-1)" | bc)
 			echo "C4: ${C4}"
 		elif [ "$BandwidthPerPixelPhaseEncode" != 0 ]; then
 			C4=$(echo "scale=4; 1/${BandwidthPerPixelPhaseEncode}" | bc)
@@ -399,7 +401,7 @@ else
 		for file_format in nii.gz json bval bvec; do
 			mv ${prerename_filename}.${file_format} dwi_${PED}.${file_format}
 		done
-		echo "filename change from $(basename ${prerename_filename}) to dwi_${PED}"
+		echo "filename changed from $(basename ${prerename_filename}) to dwi_${PED}"
 
 	done
 
