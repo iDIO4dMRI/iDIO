@@ -6,7 +6,7 @@
       {
         "id": "26d8dce246452b4d",
         "type": "leaf",
-        "dimension": 42.91470785762257,
+        "dimension": 50.235373234700745,
         "active": true,
         "state": {
           "type": "markdown",
@@ -20,7 +20,7 @@
       {
         "id": "2b6a6925c0259ce2",
         "type": "leaf",
-        "dimension": 57.08529214237743,
+        "dimension": 49.764626765299255,
         "state": {
           "type": "markdown",
           "state": {
@@ -72,12 +72,11 @@
               "state": {}
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "horizontal",
-    "width": 100
+    "width": 313
   },
   "right": {
     "id": "4b513bd6066c6cf3",

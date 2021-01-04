@@ -98,8 +98,24 @@ DWI data preparation (identify phase encoding, generate needed description file)
 
 - -b *InputDir* datapath that including two directory- anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwi.bval, dwi.bvec, dwi.json)
 - -p *OutputDir* Provide a output path for saving the output processed data
-
-![[Pasted image 20201221114033.png]]
+```
+├── 0_BIDS_NIFTI
+│   ├── dwi_AP.bval
+│   ├── dwi_AP.bvec
+│   ├── dwi_AP.json
+│   ├── dwi_AP.nii.gz
+│   ├── dwi_PA.bval
+│   ├── dwi_PA.bvec
+│   ├── dwi_PA.json
+│   ├── dwi_PA.nii.gz
+│   ├── sub-TPN0100_T1w.json
+│   └── sub-TPN0100_T1w.nii.gz
+├── 1_DWIprep
+│   ├── Acqparams_Topup.txt
+│   ├── Eddy_Index.txt
+│   ├── Index_PE.txt
+│   └── MBF.txt
+```
 
 **Options**
 - **-c C4**
@@ -115,7 +131,18 @@ implement the gibbs ringing correction, 4D signal denoise and drifting correctio
 **Usage**
 > sh 2_BiasCo.sh  [ options ]
 
-![[Pasted image 20201221114134.png]]
+```
+├── 2_BiasCo
+│   ├── Drifting_Correction_B0only.png
+│   ├── Drifting_Correction_allData.png
+│   ├── b0_report.txt
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo.nii.gz
+│   ├── dwi_APPA-denoise-deGibbs.nii.gz
+│   ├── dwi_APPA.bval
+│   ├── dwi_APPA.bvec
+│   ├── dwi_APPA.nii.gz
+│   └── temp.nii.gz
+```
 
 **Options**
 - **-p OutputDir** the OutputDir has to include the 1_DWIprep folder (includes the converted files) [default = pwd directory]
@@ -130,8 +157,45 @@ implement the distortion and eddy correction
 
 **Usage**
 > sh 3_eddyCo.sh [ options ]
-
-![[Pasted image 20201221114234.png]]
+```
+├── 3_EddyCo
+│   ├── Acqparams_Topup.txt
+│   ├── B0.nii.gz
+│   ├── B0.topup_log
+│   ├── Eddy_Index.txt
+│   ├── Field.nii.gz
+│   ├── Mean_Unwarped_Images.nii.gz
+│   ├── Mean_Unwarped_Images_Brain.nii.gz
+│   ├── Mean_Unwarped_Images_Brain_mask.nii.gz
+│   ├── Topup_Output_fieldcoef.nii.gz
+│   ├── Topup_Output_movpar.txt
+│   ├── Unwarped_Images.nii.gz
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.bval
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.bvec
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_command_txt
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_movement_rms
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_outlier_map
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_outlier_n_sqr_stdev_map
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_outlier_n_stdev_map
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_outlier_report
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_parameters
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_post_eddy_shell_PE_translation_parameters
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_post_eddy_shell_alignment_parameters
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_restricted_movement_rms
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_values_of_all_input_parameters
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.nii.gz
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.qc
+│   │   ├── avg_b0.png
+│   │   ├── avg_b1000.png
+│   │   ├── avg_b3000.png
+│   │   ├── qc.json
+│   │   ├── qc.pdf
+│   │   ├── ref.txt
+│   │   └── ref_list.png
+│   ├── dwi_APPA-denoise-deGibbs-DriftCo.nii.gz
+│   ├── first_B0.nii.gz
+│   └── second_B0.nii.gz
+```
 
 **Options**
 - **-p OutputDir** the OutputDir has to include the 1_DWIprep and 2_BiasCo folder (includes the converted files). [default = pwd directory]
@@ -148,8 +212,30 @@ Diffusion tensor estimation. Only low-b (b<1500 s/mm^2) images were used for fur
 
 **Usage**
 > sh 4_DTIFIT.sh [ options ]
-
-![[Pasted image 20201221114256.png]]
+```
+├── 4_DTIFIT
+│   ├── sub-TPN0100-preproc-Average_b0-brain.nii.gz
+│   ├── sub-TPN0100-preproc-Average_b0-brain_mask.nii.gz
+│   ├── sub-TPN0100-preproc-Average_b0.nii.gz
+│   ├── sub-TPN0100-preproc-lowb-data.bval
+│   ├── sub-TPN0100-preproc-lowb-data.bvec
+│   ├── sub-TPN0100-preproc-lowb-data.nii.gz
+│   ├── sub-TPN0100-preproc-unbiased.nii.gz
+│   ├── sub-TPN0100-preproc.bval
+│   ├── sub-TPN0100-preproc.bvec
+│   ├── sub-TPN0100-preproc.nii.gz
+│   ├── sub-TPN0100_FA.nii.gz
+│   ├── sub-TPN0100_L1.nii.gz
+│   ├── sub-TPN0100_L2.nii.gz
+│   ├── sub-TPN0100_L3.nii.gz
+│   ├── sub-TPN0100_MD.nii.gz
+│   ├── sub-TPN0100_MO.nii.gz
+│   ├── sub-TPN0100_RD.nii.gz
+│   ├── sub-TPN0100_S0.nii.gz
+│   ├── sub-TPN0100_V1.nii.gz
+│   ├── sub-TPN0100_V2.nii.gz
+│   └── sub-TPN0100_V3.nii.gz
+```
 
 **Options**
 - **-p OutputDir** the ProcPath has to include the 2_BiasCo and 3_EddyCo folder (includes the converted files). [default = pwd directory]
@@ -165,8 +251,56 @@ DWI preprocessing of constrained spherical deconvolution with Dhollanders algori
 
 **Usage**
 > sh 5_CSDpreproc.sh [ options ]
-
-![[Pasted image 20201221114319.png]]
+```
+├── 5_CSDpreproc
+│   ├── S1_T1proc
+│   │   ├── 5tt2dwispace.nii.gz
+│   │   ├── Reg_matrix
+│   │   │   ├── T12DWI_flirt6.mat
+│   │   │   ├── T12DWI_mrtrix.txt
+│   │   │   ├── mni2str_nonlinear_transf.nii.gz
+│   │   │   ├── str2mni_affine_transf.mat
+│   │   │   └── str2mni_nonlinear_transf.nii.gz
+│   │   ├── T12dwispace.nii.gz
+│   │   ├── T1_BET
+│   │   │   ├── sub-TPN0100_T1w.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_bias.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_mixeltype.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_prob_0.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_prob_1.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_prob_2.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_pve_0.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_pve_1.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_pve_2.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_pveseg.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_restore.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_seg.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_seg_0.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_seg_1.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_Corrected_seg_2.nii.gz
+│   │   │   ├── sub-TPN0100_T1w_bet_mask.nii.gz
+│   │   │   └── sub-TPN0100_T1w_to_mni_icbm152_t1_tal_nlin_asym_09c.log
+│   │   └── WMGM2dwispace.nii.gz
+│   ├── S2_Response
+│   │   ├── odf_csf.mif
+│   │   ├── odf_csf_norm.mif
+│   │   ├── odf_gm.mif
+│   │   ├── odf_gm_norm.mif
+│   │   ├── odf_wm.mif
+│   │   ├── odf_wm_norm.mif
+│   │   ├── response_csf.txt
+│   │   ├── response_gm.txt
+│   │   └── response_wm.txt
+│   ├── S3_Tractography
+│   │   ├── SIFT2_weights.txt
+│   │   ├── SIFT_mu.txt
+│   │   └── track_DynamicSeed_1M.tck
+│   ├── sub-TPN0100-preproc-mask-erode.mif
+│   ├── sub-TPN0100-preproc-unbiased.mif
+│   ├── sub-TPN0100-preproc.bval
+│   └── sub-TPN0100-preproc.bvec
+```
 
 **Options**
 - **-p OutputDir** the OutputDir has to include the 3_EddyCo and 4_DTIFIT folder (includes the converted files). [default = pwd directory]
@@ -186,8 +320,35 @@ Generate the tractogram based (anatomical constrained tractography with dynamic 
 
 **Usage**
 > sh 6_NetworkProc.sh [ options ]
-
-![[Pasted image 20201221114349.png]]
+```
+├── 6_NetworkProc
+│   ├── Atlas
+│   │   ├── sub-TPN0100_AAL3_resample_ICBM_inDWI.nii.gz
+│   │   ├── sub-TPN0100_AAL3_resample_ICBM_inT1.nii.gz
+│   │   ├── sub-TPN0100_DK_resample_ICBM_inDWI.nii.gz
+│   │   ├── sub-TPN0100_DK_resample_ICBM_inT1.nii.gz
+│   │   ├── sub-TPN0100_HCPMMP_SUBC_resample_ICBM_inDWI.nii.gz
+│   │   ├── sub-TPN0100_HCPMMP_SUBC_resample_ICBM_inT1.nii.gz
+│   │   ├── sub-TPN0100_HCPMMP_resample_ICBM_inDWI.nii.gz
+│   │   ├── sub-TPN0100_HCPMMP_resample_ICBM_inT1.nii.gz
+│   │   ├── sub-TPN0100_Yeo400_resample_ICBM_inDWI.nii.gz
+│   │   └── sub-TPN0100_Yeo400_resample_ICBM_inT1.nii.gz
+│   ├── sub-TPN0100_AAL3_resample_ICBM_Assignments.csv
+│   ├── sub-TPN0100_DK_resample_ICBM_Assignments.csv
+│   ├── sub-TPN0100_HCPMMP_SUBC_resample_ICBM_Assignments.csv
+│   ├── sub-TPN0100_HCPMMP_resample_ICBM_Assignments.csv
+│   ├── sub-TPN0100_Yeo400_resample_ICBM_Assignments.csv
+│   ├── sub-TPN0100_connectome_AAL3_resample_ICBM.csv
+│   ├── sub-TPN0100_connectome_AAL3_resample_ICBM_scalenodevol.csv
+│   ├── sub-TPN0100_connectome_DK_resample_ICBM.csv
+│   ├── sub-TPN0100_connectome_DK_resample_ICBM_scalenodevol.csv
+│   ├── sub-TPN0100_connectome_HCPMMP_SUBC_resample_ICBM.csv
+│   ├── sub-TPN0100_connectome_HCPMMP_SUBC_resample_ICBM_scalenodevol.csv
+│   ├── sub-TPN0100_connectome_HCPMMP_resample_ICBM.csv
+│   ├── sub-TPN0100_connectome_HCPMMP_resample_ICBM_scalenodevol.csv
+│   ├── sub-TPN0100_connectome_Yeo400_resample_ICBM.csv
+│   └── sub-TPN0100_connectome_Yeo400_resample_ICBM_scalenodevol.csv
+```
 
 **Options**
 - **-p OutputDir** the OutputDir has to include the 5_CSDpreproc folder (includes the converted files). [default = pwd directory]
