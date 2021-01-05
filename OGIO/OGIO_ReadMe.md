@@ -71,7 +71,6 @@ automatically convert the DICOM file into ${BIDSDir}/dwi and ${BIDSDir}/anat dir
 - a
 ##### 2. BIDS format images applied
 Data have saved in BIDS format 
-![[螢幕快照 2020-12-21 上午11.28.03 1.png]]
 
 ###### Main.sh
 **Synopsis**
