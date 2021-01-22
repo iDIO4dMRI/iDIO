@@ -13,19 +13,14 @@
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
 Version=1.0
-VDate=2020/08/03
+VDate=2020.09.16
 
 Usage(){
     cat <<EOF
     
-dMRI processing  v${Version}, ${VDate}
-
-Main - Diffusion data processing pipeline
-       "MRtrix3" "MatlabR2018b: spm12, export_fig" "FSL 6.0.3" "ANTs"
-       are required for running this script.
-    
-Usage: Main -[options]   
-
+OGIO - Diffusion MRI processing  v${Version}, ${VDate}
+   
+Usage: Main -[options]
 System will automatically detect all folders in directory if no input arguments supplied
 
 Options:
@@ -41,7 +36,7 @@ exit 1
 
 SubjectDir=
 BIDSDir=
-mainS=$(pwd)
+# export mainS=$(pwd)
 cuda=0
 
 while [ "$#" -gt 0 ]; do
@@ -58,6 +53,15 @@ done
 
 if [ "$SubjectDir" == "" ]; then
     Usage;
+fi
+
+# Detect environment variable
+HOGIO=$(echo $HOGIO)
+if [[ -z "$HOGIO" ]]; then
+    #statements
+    export HOGIO=$(pwd)
+    echo "It seems that the HOGIO environment variable is not set. "
+    echo "Lets set ONE TIME variable, HOGIO, to current working directory."
 fi
 
 CalElapsedTime(){ #STARTTIME #mainlog.txt
@@ -107,7 +111,7 @@ CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
 echo " " >> ${SubjectDir}/mainlog.txt
 STARTTIME=$(date +"%s")
 echo "4_DTIFIT at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-sh 4_DTIFIT.sh -p $SubjectDir -s $mainS
+sh 4_DTIFIT.sh -p $SubjectDir
 CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
 
 
@@ -126,7 +130,7 @@ echo "6_NetworkProc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
 if [ -z "${AtlasDir}" ]; then
     sh 6_NetworkProc.sh -p $SubjectDir
 else
-    sh 6_NetworkProc.sh -p $SubjectDir -a AtlasDir
+    sh 6_NetworkProc.sh -p $SubjectDir -a $AtlasDir
 fi
 CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
 

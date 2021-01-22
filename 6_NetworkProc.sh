@@ -22,9 +22,11 @@
 Usage(){
 	cat <<EOF
 
-6_NetworkProc - 5_CSDpreproc and the track.tck files are needed before processing this script.
-			  - please setting the AtlasDir first
-			  - 6_NetworkProc will be created
+6_NetworkProc - 5_CSDpreproc is needed before processing this script.
+				This step will generate the track file based on the ODF in 5_CSDpreproc. 
+				Connectivity matrix will be generate with five atlases (AAL3, DKm HCPMMP w/o Subcortical regions, Yeo) 
+			  	please setting the AtlasDir first
+			  	6_NetworkProc will be created
 
 Usage:	6_NetworkProc -[options] 
 
@@ -44,7 +46,8 @@ exit 1
 
 
 # Setup default variables
-AtlasDir=$(pwd)/share
+#Replace pwd to HOMEDI
+AtlasDir=${HOGIO}/share
 OriDir=$(pwd)
 run_script=y
 args="$(sed -E 's/(-[A-Za-z]+ )([^-]*)( |$)/\1"\2"\3/g' <<< $@)"
@@ -84,28 +87,10 @@ if [ ! -d "${OriDir}/5_CSDpreproc" ]; then
 	echo "Please process previous step..."
 	exit 1
 fi
-# Check needed file
-if [ -f "`find ${OriDir}/5_CSDpreproc/S3_Tractography -maxdepth 1 -name "*1M.tck"`" ]; then
-	tckname=$(basename -- $(find ${OriDir}/5_CSDpreproc/S3_Tractography -maxdepth 1 -name "*1M.tck") | cut -f1 -d '.')
-	handletck=${OriDir}/5_CSDpreproc/S3_Tractography/${tckname}
 
-else
-	echo ""
-	echo "No tck image found..."
-	exit 1
-fi
-
-# if [ -f "`find ${OriDir}/4_DTIFIT -maxdepth 1 -name "*Average_b0.nii.gz"`" ]; then
-# 	handleB0=${OriDir}/4_DTIFIT/*Average_b0.nii.gz
-# else
-# 	echo ""
-# 	echo "No Preprocessed AveragedB0 image found..."
-# 	exit 1
-# fi
-
-if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1.nii.gz"`" ]; then
-	handleT1=${OriDir}/0_BIDS_NIFTI/*T1.nii.gz
-	T1name=$(basename -- $(find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1.nii.gz") | cut -f1 -d '.')
+if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1w.nii.gz"`" ]; then
+	handleT1=${OriDir}/0_BIDS_NIFTI/*T1w.nii.gz
+	T1name=$(basename -- $(find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1w.nii.gz") | cut -f1 -d '.')
 else
 	echo ""
 	echo "No Preprocessed T1 image found..."
@@ -113,8 +98,13 @@ else
 fi
 
 subjid=$(basename ${OriDir})
-# echo ${handleT1}
-# echo ${T1name}
+handleMask=${OriDir}/4_DTIFIT/*b0-brain_mask.nii.gz
+
+#S4 generate Track
+mkdir ${OriDir}/5_CSDpreproc/S3_Tractography
+tckgen ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -backtrack -crop_at_gmwmi -seed_dynamic ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif -maxlength 250 -minlength 5 -mask ${handleMask} -select 1M
+
+tcksift2 ${OriDir}/5_CSDpreproc/S3_Tractography/track_DynamicSeed_1M.tck ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT2_weights.txt -act ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -out_mu ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT_mu.txt
 
 cd ${OriDir}/5_CSDpreproc/S1_T1proc
 #T1 doing bet and fast
@@ -123,7 +113,7 @@ cp ${handleT1} ${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET
 bet ${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET/${T1name}.nii.gz ${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET/${T1name}_bet.nii.gz -R -f 0.3 -g 0 -m
 fast -t 1 -n 3 -H 0.1 -I 4 -l 20.0 -g -B -b -p -o ${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET/${T1name}_bet_Corrected ${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET/${T1name}_bet.nii.gz
 #registration 
-mkdir ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix
+# mkdir ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix
 flirt -ref ${AtlasDir}/MNI/mni_icbm152_t1_tal_nlin_asym_09c_bet.nii.gz -in ${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET/${T1name}_bet_Corrected_restore.nii.gz -omat ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/str2mni_affine_transf.mat
 
 fnirt --ref=${AtlasDir}/MNI/mni_icbm152_t1_tal_nlin_asym_09c.nii.gz --in=${OriDir}/5_CSDpreproc/S1_T1proc/T1_BET/${T1name}.nii.gz --aff=${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/str2mni_affine_transf.mat --cout=${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/str2mni_nonlinear_transf --config=T1_2_ICBM_MNI152_1mm
@@ -169,7 +159,16 @@ done
 
 
 # ---- Network reconstruction 
+# Check needed file
+if [ -f "`find ${OriDir}/5_CSDpreproc/S3_Tractography -maxdepth 1 -name "*1M.tck"`" ]; then
+	tckname=$(basename -- $(find ${OriDir}/5_CSDpreproc/S3_Tractography -maxdepth 1 -name "*1M.tck") | cut -f1 -d '.')
+	handletck=${OriDir}/5_CSDpreproc/S3_Tractography/${tckname}
 
+else
+	echo ""
+	echo "No tck image found..."
+	exit 1
+fi
 for i in *; do 
 ## SIFT2-weighted connectome
 tck2connectome ${OriDir}/5_CSDpreproc/S3_Tractography/${tckname}.tck ${OriDir}/6_NetworkProc/Atlas/${subjid}_${i%%.*}_inDWI.nii.gz ${OriDir}/6_NetworkProc/${subjid}_connectome_${i%%.*}.csv -tck_weights_in ${OriDir}/5_CSDpreproc/S3_Tractography/SIFT2_weights.txt -symmetric -zero_diagonal -out_assignments ${OriDir}/6_NetworkProc/${subjid}_${i%%.*}_Assignments.csv  -assignment_radial_search 2

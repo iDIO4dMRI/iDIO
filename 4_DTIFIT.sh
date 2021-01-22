@@ -12,7 +12,11 @@
 # 20200424 - cancle fixing null and lowb as 0 and 1000
 #		   - convert floating number to integer
 # 20200605 - change shell detecting - using MRtrix (-s function remove)
-# 20200825 - without adapting configure files
+# 20200825 - adapting without configure files (-t add Bzerothr function)
+# 20200907 - bug fixed: ${Bzerothr}
+# 20210121 - moved biasco to step 3
+#		   - copy files from Preprocessed_data folder
+
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -20,9 +24,10 @@
 Usage(){
 	cat <<EOF
 
-4_DTIFIT - Diffusion Tensor model fitting function. Only low-b (<1500s/mm^2) images were used for fitting. b <65s/mm^2 will be considered to null images.
-		    2_BiasCo and 3_EddyCo are needed before processing this script.
-		    4_DTIFIT will be created
+4_DTIFIT - Diffusion Tensor model fitting function. Only low-b (<1500s/mm^2) images were used for fitting. 
+		   b < Bzero threshold will be considered to null images [default = 10].
+		   Preprocessed_data is needed before processing this script.
+		   4_DTIFIT will be created
 
 Usage:	4_DTIFIT -[options] 
 
@@ -30,6 +35,7 @@ System will automatically detect all folders in directory if no input arguments 
 
 Options:
 	-p 	Input directory; [default = pwd directory]
+	-t  Input Bzero threshold; [default = 10]; 
 
 EOF
 exit 1
@@ -37,6 +43,7 @@ exit 1
 
 # Setup default variables
 OriDir=$(pwd)
+Bzerothr=10
 run_script=y
 args="$(sed -E 's/(-[A-Za-z]+ )([^-]*)( |$)/\1"\2"\3/g' <<< $@)"
 declare -a a="($args)"
@@ -45,7 +52,7 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hp:" optionName; 
+while getopts "hp:t:" optionName; 
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
@@ -54,6 +61,9 @@ do
 		;;
 	p)
 		OriDir=$OPTARG
+		;;
+	t)
+		Bzerothr=$OPTARG
 		;;
 	\?) 
 		exit 42
@@ -66,19 +76,19 @@ do
 done
 
 # Check if previous step was done
-if [ ! -d "${OriDir}/3_EddyCo" ] || [ ! -d "${OriDir}/2_BiasCo" ]; then
+if [ ! -d "${OriDir}/Preprocessed_data" ]; then
 	echo ""
-	echo "Error: 2_BiasCo or 3_EddyCo are not detected."
+	echo "Error: Preprocessed_data is not detected."
 	echo "Please process previous step..."
 	exit 1
 fi
 
 # Check if DWI exists 
-if [ -f "`find ${OriDir}/3_EddyCo -maxdepth 1 -name "*EddyCo.nii.gz*"`" ]; then
-	handle=$(basename -- $(find ${OriDir}/3_EddyCo -maxdepth 1 -name "*EddyCo.nii.gz*") | cut -f1 -d '.')
+if [ -f "`find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz"`" ]; then
+	handle=$(basename -- $(find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz") | cut -f1 -d '.')
 else
 	echo ""
-	echo "No EddyCo image found..."
+	echo "No dwi image found..."
 	exit 1
 fi
 
@@ -107,47 +117,33 @@ fi
 
 [ -d ${OriDir}/4_DTIFIT ] || mkdir ${OriDir}/4_DTIFIT
 
-cp ${OriDir}/3_EddyCo/${handle}.nii.gz ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz
-cp ${OriDir}/3_EddyCo/${handle}.bval ${OriDir}/4_DTIFIT/${subjid}-preproc.bval
-cp ${OriDir}/3_EddyCo/${handle}.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec
+cp ${OriDir}/Preprocessed_data/${handle}.nii.gz ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz
+cp ${OriDir}/Preprocessed_data/${handle}.bval ${OriDir}/4_DTIFIT/${subjid}-preproc.bval
+cp ${OriDir}/Preprocessed_data/${handle}.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec
 
-# Doing bias correct
-dwibiascorrect ants ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -force
+# # Doing bias correct
+# dwibiascorrect ants ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -force
 
 cd ${OriDir}/4_DTIFIT
 
-## BE CAREFUL ###
-# Adding bzero threshold into configure file
-# Will CREATE the new configure file and RENAME the old configure files into ${conf}.back
-
-# cd ~/
-# if [[ -f .mrtrix.conf ]]; then 
-# 	cp .mrtrix.conf .mrtrix.conf.back
-# fi
-Bzerothr=66
-# echo "BZeroThreshold: 66" > .mrtrix.conf
-# with a threshold of 65 (HCP 7T b0 <=65)
-#default shell tolerance = 80 (BValueEpsilon: 80)
-
 # detemine shell numbers
-shell_num_all=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_bvalues -config BZeroThreshold ${Bzerothr} | awk '{print NF}')
+shell_num_all=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_bvalues -config BZeroThreshold ${Bzerothr} | awk '{print NF}')
 
 echo "A total of ${shell_num_all} b-values were found..."
-
 
 lowb_tmp=0
 null_tmp=0
 for (( i=1; i<=${shell_num_all}; i=i+1 )); do
 # echo ${i}
-	bv=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_bvalues -config BZeroThreshold ${Bzerothr} | awk '{print $'${i}'}')
-	bv_num=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_sizes -config BZeroThreshold ${Bzerothr} | awk '{print $'${i}'}')
+	bv=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_bvalues -config BZeroThreshold ${Bzerothr} | awk '{print $'${i}'}')
+	bv_num=$(mrinfo ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -shell_sizes -config BZeroThreshold ${Bzerothr} | awk '{print $'${i}'}')
 	echo ${bv}
 	if [ `echo "${bv} > 1500" | bc` -eq 1 ]; then
 		tput setaf 1 # change terminal color to red color
 		echo "${bv_num} of b=${bv}s/mm^2, high b-value found."
 		tput sgr0 # change terminal color to default color
 
-	elif [ `echo "${bv} < 66" | bc` -eq 1 ]; then
+	elif [ `echo "${bv} < ${Bzerothr}" | bc` -eq 1 ]; then
 		echo "${bv_num} of b=${bv}s/mm^2 (null image(s))"
 		null_tmp=$((${null_tmp}+${bv_num}))
 	else
@@ -163,7 +159,7 @@ if [[ ${null_tmp} -eq 0 ]]; then
 fi
 
 # Average DWI null images
-dwiextract ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz - -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -bzero -config BZeroThreshold ${Bzerothr} | mrmath - mean -axis 3 ${OriDir}/4_DTIFIT/${subjid}-preproc-Average_b0.nii.gz
+dwiextract ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz - -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -bzero -config BZeroThreshold ${Bzerothr} | mrmath - mean -axis 3 ${OriDir}/4_DTIFIT/${subjid}-preproc-Average_b0.nii.gz
 
 # Extract DWI low-b images
 tags=""
@@ -176,7 +172,7 @@ elif [ ${#lowb[*]} -gt 1 ]; then
 fi
 echo bvalue ${tags}
 
-dwiextract ${OriDir}/4_DTIFIT/${subjid}-preproc-unbiased.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -no_bzero -shells ${tags} ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.nii.gz -export_grad_fsl ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.bval -config BZeroThreshold ${Bzerothr} 
+dwiextract ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -no_bzero -shells ${tags} ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.nii.gz -export_grad_fsl ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.bval -config BZeroThreshold ${Bzerothr} 
 
 cd ${OriDir}/4_DTIFIT
 fslmerge -t ${subjid}-preproc-lowb-data.nii.gz ${subjid}-preproc-Average_b0.nii.gz ${subjid}-preproc-lowb-only-data.nii.gz 
