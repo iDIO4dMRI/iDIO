@@ -7,6 +7,10 @@
 ##
 ## Edit: 2020/04/20, Tsen, MBF location
 ## Edit: 2020/07/30, Tai, .json file detection for eddy input
+## Edit: 2020/01/22, Tai, use eddy function for non-topup dwi
+##						  add a zero image if number of z-dimension is odd (-zeropad)
+##						  move biasco from step 4
+##						  created [Preprocessed_data] folder for preprocessed data
 ##########################################################################################################################
 
 
@@ -17,9 +21,9 @@
 Usage(){
 	cat <<EOF
 
-3_EddyCo - Distortion & eddy correction for DWI dataset.
+3_EddyCo - Distortion & eddy correction and bias filed correction for DWI dataset.
 		    1_DWIprep and 2_BiasCo are needed before processing this script.
-		    3_EddyCo will be created
+		    3_EddyCo and Preprocessed_data will be created
 
 Usage:	3_EddyCo -[options] 
 
@@ -36,6 +40,7 @@ exit 1
 
 # Setup default variables
 OriDir=$(pwd)
+zeropad=0
 MBF=sw
 cuda_ver=0
 mporder=0
@@ -143,11 +148,56 @@ case ${Topup} in
 		b_handle=$(basename -- $(find ${OriDir}/2_BiasCo -maxdepth 1 -name "*.bval*") | cut -f1 -d '.')
 		cp ${OriDir}/2_BiasCo/${b_handle}.bval ${OriDir}/3_EddyCo
 		cp ${OriDir}/2_BiasCo/${b_handle}.bvec ${OriDir}/3_EddyCo
+		cp ${OriDir}/1_DWIprep/Acqparams_Topup.txt ${OriDir}/3_EddyCo
+		cp ${OriDir}/1_DWIprep/Eddy_Index.txt ${OriDir}/3_EddyCo
 		cd ${OriDir}/3_EddyCo
-		eddy_correct ${handle}.nii.gz ${handle}-EddyCo.nii.gz 0
-		fdt_rotate_bvecs ${b_handle}.bvec ${handle}-EddyCo.bvec ${handle}-EddyCo.ecclog
+		bet ${handle}.nii.gz bet_Brain.nii.gz -m -f 0.2 -R
+		if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`" ]; then
+			# with .json file
+			j=1
+			json_DIR=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
+			cp ${json_DIR} ${OriDir}/3_EddyCo/DWI.json
+		else # without .json file
+			j=0
+		fi
+		case ${cuda_ver} in 
+			0) # without cuda
+				if [ ${j} == 0 ]; then # without .json file
+					eddy --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --verbose
+				elif [ ${j} ==1 ]; then 	
+					eddy --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
+				fi
+				;;
+			9.1) # cuda9.1
+				if [ ${j} == 0 ]; then # without .json file
+					eddy_cuda9.1 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --verbose
+				elif [ ${j} ==1 ]; then 
+					if [ ${mporder} == 0 ]; then
+						eddy_cuda9.1 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
+					else # with --mporder 8
+						eddy_cuda9.1 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF --mporder=8
+					fi
+				fi
+				;;
+			8.0) # cuda8.0
+				if [ ${j} == 0 ]; then # without .json file
+					eddy_cuda8.0 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --verbose
+				elif [ ${j} ==1 ]; then 
+					if [ ${mporder} == 0 ]; then
+						eddy_cuda8.0 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
+					else # with --mporder 8
+						eddy_cuda8.0 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF --mporder=8
+					fi
+				fi
+				;;
+		esac
 		cp ${b_handle}.bval ${handle}-EddyCo.bval
-		rm ${b_handle}.bvec ${b_handle}.bval
+		cp ${handle}-EddyCo.eddy_rotated_bvecs ${handle}-EddyCo.bvec
+		rm ${b_handle}.bvec ${b_handle}.bval ${handle}-EddyCo.eddy_rotated_bvecs
+
+		# Output QC 
+		eddy_quad ${handle}-EddyCo -idx Eddy_Index.txt -par Acqparams_Topup.txt -m bet_Brain_mask.nii.gz -b ${handle}-EddyCo.bval
+
 		;;
 
 	3) # With Topup
@@ -167,6 +217,17 @@ case ${Topup} in
 		cp ${OriDir}/2_BiasCo/${b_handle}.bval ${OriDir}/3_EddyCo
 		cp ${OriDir}/2_BiasCo/${b_handle}.bvec ${OriDir}/3_EddyCo
 		cd ${OriDir}/3_EddyCo
+
+		# check dwi slice number
+		dimz=$(fslinfo ${OriDir}/3_EddyCo/${handle}.nii.gz | awk 'NR==4{print $2}')
+		if (( $dimz % 2 )); then
+			zeropad=1
+        	echo "The dwi data z-dimansion is $dimz"
+        	echo "a zero slice will be added on the top of dwi"
+        	mrgrid ${OriDir}/3_EddyCo/${handle}.nii.gz pad -all_axes -axis 2 0,1 ${OriDir}/3_EddyCo/${handle}-zeropad.nii.gz
+        	handle_raw=${handle}
+        	handle=${handle}-zeropad
+    	fi
 
 		# find the second B0 from Eddy_index.txt
 		line=($(cat ${OriDir}/3_EddyCo/Eddy_Index.txt))
@@ -224,3 +285,15 @@ case ${Topup} in
 		eddy_quad ${handle}-EddyCo -idx Eddy_Index.txt -par Acqparams_Topup.txt -m Mean_Unwarped_Images_Brain_mask.nii.gz -b ${handle}-EddyCo.bval
 		;;
 esac
+
+# Bias correct
+dwibiascorrect ants ${OriDir}/3_EddyCo/${handle}-EddyCo.nii.gz ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz -fslgrad ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/3_EddyCo/${handle}-EddyCo.bval -force
+
+if [ ${zeropad} == 1 ]; then # Remove padding slice
+	mrgrid ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz pad -all_axes -axis 2 0,-1 ${OriDir}/3_EddyCo/${handle_raw}-EddyCo-unbiased.nii.gz
+fi
+
+[ -d ${OriDir}/Preprocessed_data ] || mkdir ${OriDir}/Preprocessed_data
+cp ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz
+cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bval ${OriDir}/Preprocessed_data/dwi_preprocessed.bval
+cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/Preprocessed_data/dwi_preprocessed.bvec
