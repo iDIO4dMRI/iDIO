@@ -7,6 +7,7 @@
 ##########################################################################################################################
 # 20200730 - Establish from DICOM using mrconvert
 # 20200826 - Change to dcm2niix 
+# 20210122 - change BIDSDir structure
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -53,8 +54,8 @@ if [ "${dcmDir}" == "" ] || [ "${BIDSDir}" == "" ]; then
     Usage
 fi
 
-mkdir -p ${BIDSDir}/0_BIDS/anat
-mkdir -p ${BIDSDir}/0_BIDS/dwi
+mkdir -p ${BIDSDir}/anat
+mkdir -p ${BIDSDir}/dwi
 
 cd ${dcmDir}
 
@@ -64,8 +65,8 @@ for folder in ${all_folder}; do
 	cd ${dcmDir}
 	dw_scheme=$(mrinfo ${folder} -property dw_scheme)
 	if [[ ! -z ${dw_scheme} ]]; then
-		dcm2niix -z y -f dwi_${folder} -o ${BIDSDir}/0_BIDS/dwi ${folder} 
+		dcm2niix -z y -f dwi_${folder} -o ${BIDSDir}/dwi ${folder} 
 	else
-		dcm2niix -z y -f T1w -o ${BIDSDir}/0_BIDS/anat ${folder} 
+		dcm2niix -z y -f T1w -o ${BIDSDir}/anat ${folder} 
 	fi
 done
