@@ -125,7 +125,7 @@ DWI data preparation (identify phase encoding, generate needed description file)
 	
 ###### 2_BiasCo.sh
 **Synopsis**
-implement the gibbs ringing correction, 4D signal denoise and drifting correction 
+implement the 4D signal denoise, gibbs ringing correction, and drifting correction 
 
 **Usage**
 > sh 2_BiasCo.sh  [ options ]

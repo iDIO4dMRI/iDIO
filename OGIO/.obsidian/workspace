@@ -4,31 +4,16 @@
     "type": "split",
     "children": [
       {
-        "id": "26d8dce246452b4d",
-        "type": "leaf",
-        "dimension": 50.235373234700745,
-        "active": true,
-        "state": {
-          "type": "markdown",
-          "state": {
-            "file": "OGIO_ReadMe.md",
-            "mode": "source"
-          }
-        },
-        "group": "34130b7d42351fad"
-      },
-      {
         "id": "2b6a6925c0259ce2",
         "type": "leaf",
-        "dimension": 49.764626765299255,
+        "active": true,
         "state": {
           "type": "markdown",
           "state": {
             "file": "OGIO_ReadMe.md",
             "mode": "preview"
           }
-        },
-        "group": "34130b7d42351fad"
+        }
       }
     ],
     "direction": "vertical"
@@ -76,7 +61,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 313
+    "width": 100
   },
   "right": {
     "id": "4b513bd6066c6cf3",
@@ -107,7 +92,8 @@
             "state": {
               "type": "tag",
               "state": {
-                "sortOrder": "frequency"
+                "sortOrder": "frequency",
+                "useHierarchy": true
               }
             }
           }
