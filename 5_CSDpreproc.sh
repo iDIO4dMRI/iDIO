@@ -6,8 +6,8 @@
 ## Version 1.0 /2020/02/05
 ## **All shell data were calculated by dhollander algorithm** 
 ##########################################################################################################################
-
-
+## 20210123 - copy files from Preprocessed_data
+##          - dwi preprocessed only, T1 processing habe been move to step 6
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -45,7 +45,6 @@ arg=-1
 # Parse options
 while getopts "hp:t:" optionName; 
 do
-	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
 	h)  
 		Usage
@@ -66,27 +65,32 @@ do
 	esac
 done
 
-# Check if previous step was done
+# Check if previous step was done -
+# Check needed file
+if [ ! -d "${OriDir}/Preprocessed_data" ]; then
+	echo ""
+	echo "Error: Preprocessed_data is not detected."
+	echo "Please process previous step..."
+	exit 1
+fi
+
 if [ ! -d "${OriDir}/4_DTIFIT" ]; then
 	echo ""
 	echo "Error: 4_DTIFIT is not detected."
 	echo "Please process previous step..."
 	exit 1
 fi
-# Check needed file
-if [ -f "`find ${OriDir}/4_DTIFIT -maxdepth 1 -name "*unbiased.nii.gz"`" ]; then
-	handleDWI=${OriDir}/4_DTIFIT/*unbiased.nii.gz
-	handle=$(basename -- $(find ${OriDir}/4_DTIFIT -maxdepth 1 -name "*unbiased.nii.gz") | cut -f1 -d '.')
 
+
+if [ -f "`find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz"`" ]; then
+	handle=$(basename -- $(find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz") | cut -f1 -d '.')
 else
 	echo ""
 	echo "No Preprocessed DWI image found..."
 	exit 1
 fi
 
-if [ -f "`find ${OriDir}/4_DTIFIT -maxdepth 1 -name "*preproc.bval"`" ]; then
-	handlebv=$(basename -- $(find ${OriDir}/4_DTIFIT -maxdepth 1 -name "*preproc.bval") | cut -f1 -d '.')
-else
+if [ ! -f "`find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.bval"`" ] || [ ! -f "`find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.bvec"`" ]; then
 	echo ""
 	echo "No bvals/bvecs image found..."
 	exit 1
@@ -110,9 +114,6 @@ else
 	exit 1
 fi
 
-# Subject_ID
-# subjid=$(basename ${OriDir})
-
 if [ -d ${OriDir}/5_CSDpreproc ]; then
 	echo ""
 	echo "5_CSDpreproc was detected,"
@@ -135,31 +136,20 @@ fi
 
 [ -d ${OriDir}/5_CSDpreproc ] || mkdir ${OriDir}/5_CSDpreproc
 
-## Main Processing
-#Generate 5tt (lack: compare 5tt and freesurfer)
-mkdir ${OriDir}/5_CSDpreproc/S1_T1proc
-mkdir ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix
+# S1 CSDproproc
 
-# 6 degree registration without resampling
-flirt -in ${handleT1} -ref ${handleB0} -omat ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/T12DWI_flirt6.mat -dof 6
+# copy data
+cp ${OriDir}/Preprocessed_data/${handle}.nii.gz ${OriDir}/5_CSDpreproc/
+cp ${OriDir}/Preprocessed_data/${handle}.bvec ${OriDir}/5_CSDpreproc/
+cp ${OriDir}/Preprocessed_data/${handle}.bval ${OriDir}/5_CSDpreproc/
+mkdir ${OriDir}/5_CSDpreproc/S1_Response
 
-transformconvert ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/T12DWI_flirt6.mat ${handleT1} ${handleB0} flirt_import ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/T12DWI_mrtrix.txt
+cd ${OriDir}/5_CSDpreproc/
+# convert into MRtrix format
+mrconvert ${handle}.nii.gz ${OriDir}/5_CSDpreproc/${handle}.mif -fslgrad ${OriDir}/5_CSDpreproc/${handle}.bvec ${OriDir}/5_CSDpreproc/${handle}.bval 
 
-mrtransform ${handleT1} ${OriDir}/5_CSDpreproc/S1_T1proc/T12dwispace.nii.gz -linear ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/T12DWI_mrtrix.txt
-
-## 5tt include amygdala and hippocampus
-5ttgen fsl -nocrop -sgm_amyg_hipp ${OriDir}/5_CSDpreproc/S1_T1proc/T12dwispace.nii.gz ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -quiet
-5tt2gmwmi ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz ${OriDir}/5_CSDpreproc/S1_T1proc/WMGM2dwispace.nii.gz -quiet
-
-# S2 CSDproproc
-mkdir ${OriDir}/5_CSDpreproc/S2_Response
-cp ${OriDir}/4_DTIFIT/${handlebv}.bvec ${OriDir}/5_CSDpreproc/
-cp ${OriDir}/4_DTIFIT/${handlebv}.bval ${OriDir}/5_CSDpreproc/
-
-mrconvert ${handleDWI} ${OriDir}/5_CSDpreproc/${handle}.mif -fslgrad ${OriDir}/5_CSDpreproc/${handlebv}.bvec ${OriDir}/5_CSDpreproc/${handlebv}.bval 
-
-#erode FSL Bet mask
-maskfilter ${handleMask} erode ${OriDir}/5_CSDpreproc/${handlebv}-mask-erode.mif -npass 2 #this setting seems to be okay
+#erode FSL Bet mask - which will generate in step4
+maskfilter ${handleMask} erode ${OriDir}/5_CSDpreproc/${handle}-mask-erode.mif -npass 2 #this setting seems to be okay
 
 # detemine shell numbers
 shell_num_all=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_bvalues -config BZeroThreshold ${Bzerothr}| awk '{print NF}')
@@ -172,7 +162,7 @@ for (( i=1; i<=${shell_num_all}; i=i+1 )); do
 	if [ `echo "${bv} > 1500" | bc` -eq 1 ]; then
 		echo "${bv_num} of b=${bv}s/mm^2, high b-value found."
 		hb=$((${hb}+1))
-	elif [ `echo "${bv} < 66" | bc` -eq 1 ]; then
+	elif [ `echo "${bv} < ${Bzerothr}" | bc` -eq 1 ]; then
 		echo "${bv_num} of b=${bv}s/mm^2 (null image(s))"
 		null_tmp=$((${null_tmp}+${bv_num}))
 		null_shell=$((${null_tmp}+1))
@@ -188,29 +178,28 @@ if [[ ${null_shell} -eq 0 ]]; then
 	exit 1
 fi
 
+# dwi2response - shell data were calculated by dhollander algorithm
 
 if [[ ${shell_num_all} -ge 2 ]]; then
-	# All shell data were calculated by dhollander algorithm
 
-	dwi2response dhollander ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt -config BZeroThreshold ${Bzerothr}
+	dwi2response dhollander ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S1_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S1_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S1_Response/response_csf.txt -config BZeroThreshold ${Bzerothr}
 
 	if [[ ${shell_num_all} -eq 2 && ${hb} -eq 0 ]]; then
 		echo "lack of high b-value (may cause poor angular resolution)"
 	
 		# for single-shell, 2 tissue
-
-		dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr}
+		dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S1_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S1_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S1_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr}
 
 		# multi-tissue informed log-domain intensity normalisation
-		mtnormalise ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_wm_norm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_csf_norm.mif -mask ${OriDir}/5_CSDpreproc/${handlebv}-mask-erode.mif
+		mtnormalise ${OriDir}/5_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_csf.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_csf_norm.mif -mask ${OriDir}/5_CSDpreproc/${handle}-mask-erode.mif
 
 	else	
 		#for multi-shell
 
-		dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr}
+		dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S1_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S1_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S1_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S1_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S1_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr}
 
 		# multi-tissue informed log-domain intensity normalisation
-		mtnormalise ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_wm_norm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_gm_norm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_csf_norm.mif -mask ${OriDir}/5_CSDpreproc/${handlebv}-mask-erode.mif
+		mtnormalise ${OriDir}/5_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_gm_norm.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_csf.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_csf_norm.mif -mask ${OriDir}/5_CSDpreproc/${handle}-mask-erode.mif
 	fi 
 
 else

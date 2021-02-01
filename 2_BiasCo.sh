@@ -21,12 +21,12 @@ Usage(){
 		 1_DWIprep is needed before processing this script.
 		 2_BiasCo will be created
 
-Usage:	2_BiasCo -[options] 
+Usage:	2_BiasCo -[options]
 
 System will automatically detect all folders in directory if no input arguments supplied
 
 Options:
-	-p 	Input directory; [default = pwd directory]	
+	-p 	Input directory; [default = pwd directory]
 
 EOF
 exit 1
@@ -41,15 +41,15 @@ arg=-1
 OriDir=$(pwd)
 
 # Parse options
-while getopts "hp:" optionName; 
+while getopts "hp:" optionName;
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
-	h)  
+	h)
 		Usage;;
 	p)
 		OriDir=$OPTARG;;
-	\?) 
+	\?)
 		exit 42;;
 	*)
 	  echo "Unrecognised option $1" 1>&2
@@ -120,7 +120,7 @@ case $Topup in
 		cp $(echo ${File1%.*.*}).bvec ${OriDir}/2_BiasCo
 
 		cd $OriDir/2_BiasCo
-		
+
 		dwidenoise $(echo ${File1%.*.*}).nii.gz Temp-denoise.nii.gz
 		mrdegibbs Temp-denoise.nii.gz $(echo ${File1%.*.*})-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
 		;;
@@ -130,16 +130,16 @@ case $Topup in
 		File2=`ls *${direction[1]}.nii.gz`
 		fslmerge -a $(echo ${File1%.*.*})${direction[1]} $File1 $File2
 
-		mv $(echo ${File1%.*.*})${direction[1]}.nii.gz $OriDir/2_BiasCo	
+		mv $(echo ${File1%.*.*})${direction[1]}.nii.gz $OriDir/2_BiasCo
 
 		bval1=$(cat $(echo ${File1%.*.*}).bval)
 		bval2=$(cat $(echo ${File2%.*.*}).bval)
 		echo $bval1 $bval2 > $OriDir/2_BiasCo/$(echo ${File1%.*.*})${direction[1]}.bval
-		
+
 		paste -d " " ${File1%.*.*}.bvec ${File2%.*.*}.bvec > $OriDir/2_BiasCo/$(echo ${File1%.*.*})${direction[1]}.bvec
-        
+
 		cd $OriDir/2_BiasCo
-		
+
 		dwidenoise $(echo ${File1%.*.*})${direction[1]}.nii.gz Temp-denoise.nii.gz
 		mrdegibbs Temp-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
 		;;
@@ -155,10 +155,8 @@ B0num=$(echo $(cat b0_report.txt) | awk -F "--vols=" '/--vols=/{print $2}' | sed
 
 if [[ "${B0num}" -gt "3"  ]]; then
 	echo "Calling Matlab for Drifting Correction"
-	CMD="correct_signal_drift_v2('${File_denoise}.nii.gz', '${File_bval}', 0, 'multilinear', '${File_denoise}-DriftCo.nii.gz')"
+	CMD="addpath('${HOGIO}/matlab');correct_signal_drift_v2('${File_denoise}.nii.gz', '${File_bval}', 0, 'multilinear', '${File_denoise}-DriftCo.nii.gz')"
 	matlab -nodisplay -r "${CMD}; quit"
 else
 	echo "Not enough number of b0 (null scans), drifting correction skipped"
 fi
-
-

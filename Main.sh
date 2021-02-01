@@ -132,9 +132,9 @@ echo " " >> ${SubjectDir}/mainlog.txt
 STARTTIME=$(date +"%s")
 echo "6_NetworkProc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
 if [ -z "${AtlasDir}" ]; then
-    sh 6_NetworkProc.sh -p $SubjectDir
+    sh 6_NetworkProc.sh -p $SubjectDir -n 10M
 else
-    sh 6_NetworkProc.sh -p $SubjectDir -a $AtlasDir
+    sh 6_NetworkProc.sh -p $SubjectDir -a $AtlasDir -n 10M
 fi
 CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
 
