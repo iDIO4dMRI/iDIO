@@ -152,7 +152,8 @@ case ${Topup} in
 		cp ${OriDir}/1_DWIprep/Eddy_Index.txt ${OriDir}/3_EddyCo
 		cd ${OriDir}/3_EddyCo
 		bet ${handle}.nii.gz bet_Brain.nii.gz -m -f 0.2 -R
-		if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`" ]; then
+		json_DIR=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
+		if [ -f ${json_DIR} ]; then
 			# with .json file
 			j=1
 			json_DIR=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
@@ -204,7 +205,8 @@ case ${Topup} in
 		[ -d ${OriDir}/3_EddyCo ] || mkdir ${OriDir}/3_EddyCo
 		cp ${OriDir}/1_DWIprep/Acqparams_Topup.txt ${OriDir}/3_EddyCo
 		cp ${OriDir}/1_DWIprep/Eddy_Index.txt ${OriDir}/3_EddyCo
-		if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`" ]; then
+		json_DIR=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
+		if [ -f ${json_DIR} ]; then
 			# with .json file
 			j=1
 			json_DIR=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
