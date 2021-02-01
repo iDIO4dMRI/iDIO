@@ -4,13 +4,13 @@
 ## Diffusion data processing pipeline
 ## Written by Heather Hsu
 ## Version 1.0 /2020/02/05
-## 20210125 
+## 20210125
 ##########################################################################################################################
 
 
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
-##---- Atlas Registration 							
+##---- Atlas Registration
 ## pre/ () test to give full path in configure files
 ## need to save configure file(T1_2_ICBM_MNI152_1mm.cnf) to /usr/local/fsl/etc/flirtsch
 ## need to save MNI template (mni_icbm152_t1_tal_nlin_asym_09c_/bet/mask.nii.gz) to /usr/local/fsl/data/standard
@@ -23,12 +23,12 @@ Usage(){
 
 6_NetworkProc - please setting the AtlasDir first
 				5_CSDpreproc is needed before processing this script.
-				This step will generate the track file based on the ODF in "5_CSDpreproc."" 
+				This step will generate the track file based on the ODF in "5_CSDpreproc.""
 				T1 processing will also include in this step. output file will save in "Preprocessed_data" file
-				Connectivity matrix will be generate with five atlases (AAL3, DK, HCPMMP w/o Subcortical regions, Yeo) 			  	
+				Connectivity matrix will be generate with five atlases (AAL3, DK, HCPMMP w/o Subcortical regions, Yeo)
 			  	6_Tractography/7_Network will be created
 
-Usage:	6_NetworkProc -[options] 
+Usage:	6_NetworkProc -[options]
 
 System will automatically detect all folders in directory if no input arguments supplied
 need to save configure file(T1_2_ICBM_MNI152_1mm.cnf) to /usr/local/fsl/etc/flirtsch
@@ -45,8 +45,9 @@ exit 1
 
 
 # Setup default variables
-#Replace pwd to HOMEDIR
+#Replace pwd to HOGIO
 #setting HOGIO DIR
+
 AtlasDir=${HOGIO}/share
 OriDir=$(pwd)
 tckNum=10M
@@ -58,23 +59,23 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hp:a:n:" optionName; 
+while getopts "hp:a:n:" optionName;
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
-	h)  
+	h)
 		Usage
 		;;
 	p)
 		OriDir=$OPTARG
 		;;
-	a) 
+	a)
 		AtlasDir=$OPTARG
 		;;
 	n)
 		tckNum=$OPTARG
 		;;
-	\?) 
+	\?)
 		exit 42
 		;;
 	*)
@@ -136,12 +137,12 @@ cp ${handleT1} ${OriDir}/6_Tractography/S1_T1proc/T1w.nii.gz
 
 cd ${OriDir}/6_Tractography/S1_T1proc
 echo T1 preprocessing
-# degibbs 
+# degibbs
 mrdegibbs T1w.nii.gz T1-deGibbs.nii.gz -quiet
 
 # Ants N4 bias correction
 
-N4BiasFieldCorrection -d 3 -v 0 -s 4 -b [180] -c [50x50x50, 0.0 ] -i T1-deGibbs.nii.gz -o [T1w-deGibbs-BiasCo.nii.gz, T1w_BiasField.nii.gz ] 
+N4BiasFieldCorrection -d 3 -v 0 -s 4 -b [180] -c [50x50x50, 0.0 ] -i T1-deGibbs.nii.gz -o [T1w-deGibbs-BiasCo.nii.gz, T1w_BiasField.nii.gz ]
 cp ${OriDir}/6_Tractography/S1_T1proc/T1w-deGibbs-BiasCo.nii.gz ${OriDir}/Preprocessed_data/T1w_preprocessed.nii.gz
 
 # using 5tt seg to replace bet and fast, and save the scratch file
@@ -165,7 +166,7 @@ cp ${OriDir}/4_DTIFIT/*Average_b0.nii.gz ${OriDir}/6_Tractography/Average_b0.nii
 # bbr-linear registration of B0 to T1
 echo Registrting DWI to T1
 
-flirt -in ${OriDir}/6_Tractography/Average_b0-brain.nii.gz -ref T1w-deGibbs-BiasCo_BET.nii.gz -dof 6 -cost corratio -omat ${OriDir}/6_Tractography/S1_T1proc/Reg_matrix/epi2str_init.mat 
+flirt -in ${OriDir}/6_Tractography/Average_b0-brain.nii.gz -ref T1w-deGibbs-BiasCo_BET.nii.gz -dof 6 -cost corratio -omat ${OriDir}/6_Tractography/S1_T1proc/Reg_matrix/epi2str_init.mat
 flirt -ref ./T1w-deGibbs-BiasCo.nii.gz -in ${OriDir}/6_Tractography/Average_b0-brain.nii.gz -dof 6 -cost bbr -wmseg ./WMseg.nii.gz -init ${OriDir}/6_Tractography/S1_T1proc/Reg_matrix/epi2str_init.mat -omat ${OriDir}/6_Tractography/S1_T1proc/Reg_matrix/epi2str.mat -schedule ${FSLDIR}/etc/flirtsch/bbr.sch
 convert_xfm ${OriDir}/6_Tractography/S1_T1proc/Reg_matrix/epi2str.mat -omat ${OriDir}/6_Tractography/S1_T1proc/Reg_matrix/str2epi.mat -inverse
 
@@ -202,7 +203,7 @@ mkdir ${OriDir}/Connectivity_Matrix/Mat_ScaleMu
 
 echo Reconstructing connectome
 
-for i in *; do 
+for i in *; do
 	AtName=$(echo ${i}|cut -f1 -d'_')
 	applywarp --ref=${OriDir}/6_Tractography/S1_T1proc/T1w-deGibbs-BiasCo_BET.nii.gz --in=${AtlasDir}/Atlas/${i} --warp=${OriDir}/6_Tractography/S1_T1proc/Reg_matrix/mni2str_nonlinear_transf.nii.gz --rel --out=${OriDir}/Connectivity_Matrix/Atlas/${AtName}_inT1.nii.gz --interp=nn
 
@@ -211,11 +212,11 @@ for i in *; do
 		#Relabel DK atlas
 		labelconvert ${OriDir}/Connectivity_Matrix/Atlas/${AtName}_inDWI.nii.gz ${AtlasDir}/colorlabel/FreeSurferColorLUT_DK.txt ${AtlasDir}/colorlabel/fs_default_DK.txt ${OriDir}/Connectivity_Matrix/Atlas/${AtName}_inDWI.nii.gz -force
 	fi
-	# ----- Network reconstruction 
+	# ----- Network reconstruction
 	## SIFT2-weighted connectome
 	tck2connectome ${OriDir}/6_Tractography/Track_DynamicSeed_${tckNum}.tck ${OriDir}/Connectivity_Matrix/Atlas/${AtName}_inDWI.nii.gz ${OriDir}/Connectivity_Matrix/Mat_SIFT2Wei/${AtName}_SIFT2.csv -tck_weights_in ${OriDir}/6_Tractography/SIFT2_weights.txt -symmetric -zero_diagonal -out_assignments ${OriDir}/Connectivity_Matrix/Assignment/${AtName}_Assignments.csv
 
-	## streamline length connectome  
+	## streamline length connectome
 	tck2connectome ${OriDir}/6_Tractography/Track_DynamicSeed_${tckNum}.tck ${OriDir}/Connectivity_Matrix/Atlas/${AtName}_inDWI.nii.gz ${OriDir}/Connectivity_Matrix/Mat_Length/${AtName}_Length.csv -symmetric -zero_diagonal -scale_length -stat_edge mean
 done
 
@@ -224,9 +225,9 @@ CMDALL=""
 for i in *;	do
 	AtName=$(echo ${i}|cut -f1 -d'_')
 
-	## scale the SIFT2-weighted connectome by mu
-	# echo "Generated Scale Mu matrix"
-	CMD="scale_mu('${OriDir}/Connectivity_Matrix/Mat_SIFT2Wei/${AtName}_SIFT2.csv','${OriDir}/6_Tractography/SIFT_mu.txt','${OriDir}/Connectivity_Matrix/Mat_ScaleMu/${AtName}_ScaleMu.csv')"
+	# scale the SIFT2-weighted connectome by mu
+	echo "Generated Scale Mu matrix"
+	CMD="addpath('${HOGIO}/matlab');scale_mu('${OriDir}/Connectivity_Matrix/Mat_SIFT2Wei/${AtName}_SIFT2.csv','${OriDir}/6_Tractography/SIFT_mu.txt','${OriDir}/Connectivity_Matrix/Mat_ScaleMu/${AtName}_ScaleMu.csv')"
 	CMDALL="${CMDALL}${CMD};"
 done
 	matlab -nodisplay -r "${CMDALL}; quit"
