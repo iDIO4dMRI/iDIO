@@ -7,7 +7,8 @@ OGIO is a software toolkit for processing diffusion-weighted MRI data. It integr
 ## Installation Guide
 ---
 
-OGIO can be run in Linux and macOS systems. Its major functionalities come from *FSL*, *MRtrix3*, and *ANTS*, and therefore these software tools and their relevant dependencies need to be installed before using OGIO. Please check the links below for the installation of them:
+OGIO can be run in Linux and macOS systems. Its major functionalities come from *FSL*, *MRtrix3*, and *ANTS*, and therefore these software tools and their relevant dependencies need to be installed before using OGIO. Please check the links below for the installation of them: 
+==need to specify the software version==
 
 * *FSL 6.0.3*: <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki>
 * *MRtrix3*: <https://www.mrtrix.org/>
@@ -19,9 +20,9 @@ Currently, OGIO also relies on *MATLAB* to perform one specific bias in DWI data
 * *SPM12*: <https://www.fil.ion.ucl.ac.uk/spm/software/spm12/>
 
 ### Setting
-     $ export HOGIO_DIR = pipeline location
-     $ cp ${HOGIO_DIR}/share/MNI/T1_2_ICBM_MNI152_1mm.cnf ${FSL_DIR}/etc/flirtsch
-     $ cp ${HOGIO_DIR}/share/MNI/mni_icbm152_t1_tal_nlin_asym_09c*.nii.gz ${FSL_DIR}/data/standard
+     $ export HOGIO = pipeline location
+     $ cp ${HOGIO}/share/MNI/T1_2_ICBM_MNI152_1mm.cnf ${FSL_DIR}/etc/flirtsch
+     $ cp ${HOGIO}/share/MNI/mni_icbm152_t1_tal_nlin_asym_09c*.nii.gz ${FSL_DIR}/data/standard
 
 
 ## References
