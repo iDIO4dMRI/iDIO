@@ -165,14 +165,14 @@ case ${Topup} in
 			0) # without cuda
 				if [ ${j} == 0 ]; then # without .json file
 					eddy --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --verbose
-				elif [ ${j} ==1 ]; then 	
+				elif [ ${j} == 1 ]; then 	
 					eddy --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
 				fi
 				;;
 			9.1) # cuda9.1
 				if [ ${j} == 0 ]; then # without .json file
 					eddy_cuda9.1 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --verbose
-				elif [ ${j} ==1 ]; then 
+				elif [ ${j} == 1 ]; then 
 					if [ ${mporder} == 0 ]; then
 						eddy_cuda9.1 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
 					else # with --mporder 8
@@ -183,7 +183,7 @@ case ${Topup} in
 			8.0) # cuda8.0
 				if [ ${j} == 0 ]; then # without .json file
 					eddy_cuda8.0 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --verbose
-				elif [ ${j} ==1 ]; then 
+				elif [ ${j} == 1 ]; then 
 					if [ ${mporder} == 0 ]; then
 						eddy_cuda8.0 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
 					else # with --mporder 8
@@ -251,14 +251,14 @@ case ${Topup} in
 			0) # without cuda
 				if [ ${j} == 0 ]; then # without .json file
 					eddy --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --verbose
-				elif [ ${j} ==1 ]; then 	
+				elif [ ${j} == 1 ]; then 	
 					eddy --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
 				fi
 				;;
 			9.1) # cuda9.1
 				if [ ${j} == 0 ]; then # without .json file
 					eddy_cuda9.1 --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --verbose
-				elif [ ${j} ==1 ]; then 
+				elif [ ${j} == 1 ]; then 
 					if [ ${mporder} == 0 ]; then
 						eddy_cuda9.1 --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
 					else # with --mporder 8
@@ -269,7 +269,7 @@ case ${Topup} in
 			8.0) # cuda8.0
 				if [ ${j} == 0 ]; then # without .json file
 					eddy_cuda8.0 --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --verbose
-				elif [ ${j} ==1 ]; then 
+				elif [ ${j} == 1 ]; then 
 					if [ ${mporder} == 0 ]; then
 						eddy_cuda8.0 --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
 					else # with --mporder 8
