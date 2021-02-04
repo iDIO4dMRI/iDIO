@@ -227,7 +227,7 @@ for i in *;	do
 
 	# scale the SIFT2-weighted connectome by mu
 	echo "Generated Scale Mu matrix"
-	CMD="addpath('${HOGIO}/matlab');scale_mu('${OriDir}/Connectivity_Matrix/Mat_SIFT2Wei/${AtName}_SIFT2.csv','${OriDir}/6_Tractography/SIFT_mu.txt','${OriDir}/Connectivity_Matrix/Mat_ScaleMu/${AtName}_ScaleMu.csv')"
+	CMD="addpath(genpath('${HOGIO}/matlab'));scale_mu('${OriDir}/Connectivity_Matrix/Mat_SIFT2Wei/${AtName}_SIFT2.csv','${OriDir}/6_Tractography/SIFT_mu.txt','${OriDir}/Connectivity_Matrix/Mat_ScaleMu/${AtName}_ScaleMu.csv')"
 	CMDALL="${CMDALL}${CMD};"
 done
 	matlab -nodisplay -r "${CMDALL}; quit"
