@@ -126,6 +126,8 @@ for bvecs_file in ${bvecs_tmp}; do
 	mv ${bvecs_file} ${bvecs_file:0:${#bvecs_file}-1}
 done
 
+/bin/rm -f error.log
+
 # prerename
 for dwi_files in *dwi*; do
 	mv ${dwi_files} prerename_${dwi_files}

@@ -16,7 +16,7 @@
 # 20200907 - bug fixed: ${Bzerothr}
 # 20210121 - moved biasco to step 3
 #		   - copy files from Preprocessed_data folder
-
+# 20210203 - skip dtifit if no low-b image
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -160,6 +160,7 @@ fi
 
 # Average DWI null images
 dwiextract ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz - -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -bzero -config BZeroThreshold ${Bzerothr} | mrmath - mean -axis 3 ${OriDir}/4_DTIFIT/${subjid}-preproc-Average_b0.nii.gz
+bet ${subjid}-preproc-Average_b0.nii.gz ${subjid}-preproc-Average_b0-brain -f 0.2 -m
 
 # Extract DWI low-b images
 tags=""
@@ -170,7 +171,14 @@ elif [ ${#lowb[*]} -gt 1 ]; then
 	 	tags="${tags},${lowb[$i]}"
 	done
 fi
-echo bvalue ${tags}
+
+if [[ -z $tags ]]; then	
+	echo "No low-b image was found..."
+	echo "Skip diffusion tensor model fitting..."
+	exit 0
+else
+	echo bvalue ${tags}
+fi
 
 dwiextract ${OriDir}/4_DTIFIT/${subjid}-preproc.nii.gz -fslgrad ${OriDir}/4_DTIFIT/${subjid}-preproc.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc.bval -no_bzero -shells ${tags} ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.nii.gz -export_grad_fsl ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.bvec ${OriDir}/4_DTIFIT/${subjid}-preproc-lowb-only-data.bval -config BZeroThreshold ${Bzerothr} 
 
@@ -182,9 +190,9 @@ echo 0 >> b0
 echo 0 >> b0
 paste -d ' ' b0 ${subjid}-preproc-lowb-only-data.bvec > ${subjid}-preproc-lowb-data.bvec
 
-bet ${subjid}-preproc-Average_b0.nii.gz ${subjid}-preproc-Average_b0-brain -f 0.2 -m
 
 dtifit -k ${subjid}-preproc-lowb-data.nii.gz -o ${subjid} -m ${subjid}-preproc-Average_b0-brain_mask.nii.gz -r ${subjid}-preproc-lowb-data.bvec -b ${subjid}-preproc-lowb-data.bval
+
 
 fslmaths ${subjid}_L2.nii.gz -add ${subjid}_L3 ${subjid}_RD_tmp.nii.gz
 fslmaths ${subjid}_RD_tmp.nii.gz -div 2 ${subjid}_RD.nii.gz

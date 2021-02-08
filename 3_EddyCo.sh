@@ -292,7 +292,8 @@ esac
 dwibiascorrect ants ${OriDir}/3_EddyCo/${handle}-EddyCo.nii.gz ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz -fslgrad ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/3_EddyCo/${handle}-EddyCo.bval -force
 
 if [ ${zeropad} == 1 ]; then # Remove padding slice
-	mrgrid ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz pad -all_axes -axis 2 0,-1 ${OriDir}/3_EddyCo/${handle_raw}-EddyCo-unbiased.nii.gz
+	echo "remove padding slice..."
+	mrgrid ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz pad -all_axes -axis 2 0,-1 ${OriDir}/3_EddyCo/${handle_raw}-EddyCo-unbiased.nii.gz	
 fi
 
 [ -d ${OriDir}/Preprocessed_data ] || mkdir ${OriDir}/Preprocessed_data
