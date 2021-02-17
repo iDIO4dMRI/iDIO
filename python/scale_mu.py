@@ -28,6 +28,7 @@ def ScaleMu(OriMat, Mu, SavePath):
 
 # ouput arguments
 if __name__ == '__main__':
+    # for help function
     args = parseArguments()
     # Run function
     ScaleMu(args.OriMat, args.Mu, args.SavePath)
