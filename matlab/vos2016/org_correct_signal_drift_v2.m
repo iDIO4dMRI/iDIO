@@ -132,7 +132,7 @@ end
 
 if size(grad_info,2)==1
     % Extract which images were b=0-images from b-values (e.g., FSL format)
-    b_to_use = find(abs(grad_info-bval_to_use)<=b_thr);
+    b_to_use = find(abs(grad_info-bval_to_use)<b_thr);
 elseif size(grad_info,2)==3
     if bval_to_use==0
         % Get vector length for each entry if gradient info is given - not compatible with FSL format

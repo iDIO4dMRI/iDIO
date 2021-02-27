@@ -3,8 +3,8 @@
 ##########################################################################################################################
 ## Diffusion data processing pipeline
 ## Written by Heather Hsu
-## Version 1.0 /2020/02/05
-## 20210125
+## Version 1.0 /2020/02/08
+## 20210208 replace matlab with python3 (argparse,pandas)
 ##########################################################################################################################
 
 
@@ -220,14 +220,7 @@ for i in *; do
 	tck2connectome ${OriDir}/6_Tractography/Track_DynamicSeed_${tckNum}.tck ${OriDir}/Connectivity_Matrix/Atlas/${AtName}_inDWI.nii.gz ${OriDir}/Connectivity_Matrix/Mat_Length/${AtName}_Length.csv -symmetric -zero_diagonal -scale_length -stat_edge mean
 done
 
-# prevent to restart matlab too many times
-CMDALL=""
 for i in *;	do
 	AtName=$(echo ${i}|cut -f1 -d'_')
-
-	# scale the SIFT2-weighted connectome by mu
-	echo "Generated Scale Mu matrix"
-	CMD="addpath(genpath('${HOGIO}/matlab'));scale_mu('${OriDir}/Connectivity_Matrix/Mat_SIFT2Wei/${AtName}_SIFT2.csv','${OriDir}/6_Tractography/SIFT_mu.txt','${OriDir}/Connectivity_Matrix/Mat_ScaleMu/${AtName}_ScaleMu.csv')"
-	CMDALL="${CMDALL}${CMD};"
+	python3 ${HOGIO}/python/scale_mu.py ${OriDir}/Connectivity_Matrix/Mat_SIFT2Wei/${AtName}_SIFT2.csv ${OriDir}/6_Tractography/SIFT_mu.txt ${OriDir}/Connectivity_Matrix/Mat_ScaleMu/${AtName}_ScaleMu.csv
 done
-	matlab -nodisplay -r "${CMDALL}; quit"

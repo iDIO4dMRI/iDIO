@@ -28,7 +28,7 @@ Usage() {
     
     Options:
 	-c 	C4 
-	-s 	Please provide the series of phase-encoding direction {PA, AP, LR, RL} 
+	-s 	Please provide the series of phase-encoding direction {PA, AP, RL, LR} 
 		Two scans for AP and PA  => 2 1 0 0
 		One scan for PA => 1 0 0 0
 
