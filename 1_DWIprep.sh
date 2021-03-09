@@ -12,6 +12,7 @@
 # 20200807 - bugdix C4=TE
 # 20200826 - check C4 from mrconvert and add mrconvert function (use mrconvert)
 # 20201229 - bug fixed (bc)
+# 20210122 - fmap, 1 phase encoding direction
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -27,7 +28,7 @@ Usage() {
     
     Options:
 	-c 	C4 
-	-s 	Please provide the series of phase-encoding direction {PA, AP, LR, RL} 
+	-s 	Please provide the series of phase-encoding direction {PA, AP, RL, LR} 
 		Two scans for AP and PA  => 2 1 0 0
 		One scan for PA => 1 0 0 0
 
@@ -76,7 +77,40 @@ cd ${PreprocDir}/0_BIDS_NIFTI
 /bin/cp -f ${BIDSDir}/dwi/*DWI* .
 /bin/cp -f ${BIDSDir}/anat/*T1* .
 
+# compress
+gzip *.nii
+
+# check fieldmap
+n_dwi=$(ls *dwi*.nii.gz | wc -l)
+n_DWI=$(ls *DWI*.nii.gz | wc -l)
+n_dwi=$[${n_dwi}+${n_DWI}]
+
+if [ ${n_dwi}==1 ] && [ -d "${BIDSDir}/fmap/" ]; then
+
+	cd ${BIDSDir}/fmap/
+	fmap_name_all=$(ls *)
+
+	cd ${PreprocDir}/0_BIDS_NIFTI
+
+	for fmap_name in ${fmap_name_all}; do
+		/bin/cp -f ${BIDSDir}/fmap/${fmap_name} .
+		mv ${fmap_name} dwi_${fmap_name}
+	done
+
+fi
+
+gzip *.nii
+
+
 # check filenames
+for T1_file in *T1*.nii.gz; do
+ 	mv ${T1_file} T1w.nii.gz
+done
+
+for T1_file in *T1*.json; do
+ 	mv ${T1_file} T1w.json
+done
+
 for DWI_file in *DWI*; do
 	nname=$(echo ${DWI_file} | sed 's/DWI/dwi/g')
  	mv ${DWI_file} $nname
@@ -92,6 +126,8 @@ for bvecs_file in ${bvecs_tmp}; do
 	mv ${bvecs_file} ${bvecs_file:0:${#bvecs_file}-1}
 done
 
+/bin/rm -f error.log
+
 # prerename
 for dwi_files in *dwi*; do
 	mv ${dwi_files} prerename_${dwi_files}
@@ -106,7 +142,8 @@ for nifti_file in prerename_*dwi*.nii.gz; do
     	for (( i=2; i <= ${dim[1]}; i++ )); do
 		    b="$b 0"
       	done
-    		echo $b >> ${dwi_filename}.bval
+
+    	echo $b >> ${dwi_filename}.bval
       	for (( i=1; i<=3; i++ )); do
       		echo $b >> ${dwi_filename}.bvec
       	done
@@ -417,9 +454,4 @@ else
 	EddyIndex=$(cat Eddy_Index.txt)
 	echo $EddyIndex > Eddy_Index.txt
 
-	## check files
-	if [ $DirectionNumner -eq 1 ]; then
-		/bin/rm -f Acqparams_Topup.txt
-		/bin/rm -f Eddy_Index.txt
-	fi
 fi
