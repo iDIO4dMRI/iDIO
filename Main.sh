@@ -53,13 +53,33 @@ if [[ ! -d ${HOGIO} ]]; then
 fi
 
 source ${HOGIO}/SetUpOGIOArg.sh
+aStep=(${Step//./ })
+runStep=($(echo "${aStep[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+
+if [[ "1" -eq "${cuda}" ]]; then
+    step3Arg="-c"
+    if [[ "1" -eq "${stv}" ]]; then
+        step3Arg="${step3Arg} -m"
+    fi
+fi
+if [[ "1" -eq "${rsimg}" ]]; then
+    step4Arg="-r"; step5Arg="-r"
+fi
+if [[ ! -z "${bzero}" ]]; then
+    step4Arg="${step4Arg} -t ${bzero}"
+fi
 if [[ ! -z "${AtlasDir}" ]]; then
     if [[ ! -d ${AtlasDir} ]]; then
         echo "Error: ${AtlasDir}"
         echo "       does not exist. Check that this value is correct."
         echo ""
         exit 1
+    else
+        step6Arg="${step6Arg} -a ${AtlasDir}"
     fi
+fi
+if [[ ! -z "${trkNum}" ]]; then
+    step6Arg="${step6Arg} -n ${trkNum}"
 fi
 
 SubjectDir=
@@ -111,10 +131,10 @@ pinfo+="\n"
 echo $pinfo
 echo $pinfo >> ${SubjectDir}/mainlog.txt
 
-arrStep=(${Step//./ })
-for (( i = 0; i < ${#arrStep[@]}; i++ )); do
+
+for (( i = 0; i < ${#runStep[@]}; i++ )); do
     #statements
-    case ${arrStep[i]} in
+    case ${runStep[i]} in
         1 )
             # Step 1_DWIprep            
             STARTTIME=$(date +"%s")
@@ -133,42 +153,46 @@ for (( i = 0; i < ${#arrStep[@]}; i++ )); do
             # Step 3_EddyCo            
             STARTTIME=$(date +"%s")
             echo "3_EddyCo at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-            case ${cuda} in 
-                0 ) # without cuda
-                    sh ${HOGIO}/3_EddyCo.sh -p $SubjectDir
-                ;;
-                1 ) # with cuda
-                    case ${stv} in
-                        0 ) 
-                            sh ${HOGIO}/3_EddyCo.sh -p $SubjectDir -c
-                            ;;
-                        1 ) #slice-to-vol motion correction.
-                            sh ${HOGIO}/3_EddyCo.sh -p $SubjectDir -c -m
-                            ;;
-                    esac
-                ;;
-            esac
+            # case ${cuda} in 
+            #     0 ) # without cuda
+            #         sh ${HOGIO}/3_EddyCo.sh -p $SubjectDir
+            #     ;;
+            #     1 ) # with cuda
+            #         case ${stv} in
+            #             0 ) 
+            #                 sh ${HOGIO}/3_EddyCo.sh -p $SubjectDir -c
+            #                 ;;
+            #             1 ) #slice-to-vol motion correction.
+            #                 sh ${HOGIO}/3_EddyCo.sh -p $SubjectDir -c -m
+            #                 ;;
+            #         esac
+            #     ;;
+            # esac
+            sh ${HOGIO}/3_EddyCo.sh -p $SubjectDir ${step3Arg}
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         4 )
             # Step 4_DTIFIT            
             STARTTIME=$(date +"%s")
             echo "4_DTIFIT at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-            sh ${HOGIO}/4_DTIFIT.sh -p $SubjectDir -t $bzero
+            # sh ${HOGIO}/4_DTIFIT.sh -p $SubjectDir -t $bzero
+            sh ${HOGIO}/4_DTIFIT.sh -p $SubjectDir ${step4Arg}
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         5 )
             # Step 5_CSDpreproc            
             STARTTIME=$(date +"%s")
             echo "5_CSDpreproc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-            sh ${HOGIO}/5_CSDpreproc.sh -p $SubjectDir
+            # sh ${HOGIO}/5_CSDpreproc.sh -p $SubjectDir
+            sh ${HOGIO}/5_CSDpreproc.sh -p $SubjectDir ${step5Arg}
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         6 )
             # Step 6_NetworkProc            
             STARTTIME=$(date +"%s")
             echo "6_NetworkProc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-            sh ${HOGIO}/6_NetworkProc.sh -p $SubjectDir -a $AtlasDir -n $trkNum
+            # sh ${HOGIO}/6_NetworkProc.sh -p $SubjectDir -a $AtlasDir -n $trkNum
+            sh ${HOGIO}/6_NetworkProc.sh -p $SubjectDir ${step6Arg}
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
     esac

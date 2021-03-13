@@ -7,7 +7,7 @@
 ##
 ## Edit: 2020/04/20, Tsen, MBF location
 ## Edit: 2020/07/30, Tai, .json file detection for eddy input
-## Edit: 2020/01/22, Tai, use eddy function for non-topup dwi
+## Edit: 2021/01/22, Tai, use eddy function for non-topup dwi
 ##						  add a zero image if number of z-dimension is odd (-zeropad)
 ##						  move biasco from step 4
 ##						  created [Preprocessed_data] folder for preprocessed data
@@ -79,7 +79,7 @@ do
 		;;
 	esac
 done
-
+echo cuda_ver $cuda_ver; echo mporder $mporder;exit 1
 # CUDA version 
 if [ -z ${cuda_ver} ]; then
 	echo ""
@@ -300,3 +300,8 @@ fi
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bval ${OriDir}/Preprocessed_data/dwi_preprocessed.bval
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/Preprocessed_data/dwi_preprocessed.bvec
+
+json_file=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
+if [ -f ${json_file} ]; then
+	cp ${json_file} ${OriDir}/Preprocessed_data/DWI.json
+fi

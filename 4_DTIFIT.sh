@@ -35,7 +35,8 @@ System will automatically detect all folders in directory if no input arguments 
 
 Options:
 	-p 	Input directory; [default = pwd directory]
-	-t  Input Bzero threshold; [default = 10]; 
+	-t  Input Bzero threshold; [default = 10];
+	-r  rResize dwi image by .json text file with information about matrix size.
 
 EOF
 exit 1
@@ -45,6 +46,7 @@ exit 1
 OriDir=$(pwd)
 Bzerothr=10
 run_script=y
+rsimg=0
 args="$(sed -E 's/(-[A-Za-z]+ )([^-]*)( |$)/\1"\2"\3/g' <<< $@)"
 declare -a a="($args)"
 set - "${a[@]}"
@@ -52,7 +54,7 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hp:t:" optionName; 
+while getopts "hp:t:r" optionName; 
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
@@ -64,6 +66,9 @@ do
 		;;
 	t)
 		Bzerothr=$OPTARG
+		;;
+	r)
+		rsimg=1
 		;;
 	\?) 
 		exit 42
@@ -80,15 +85,6 @@ if [ ! -d "${OriDir}/Preprocessed_data" ]; then
 	echo ""
 	echo "Error: Preprocessed_data is not detected."
 	echo "Please process previous step..."
-	exit 1
-fi
-
-# Check if DWI exists 
-if [ -f "`find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz"`" ]; then
-	handle=$(basename -- $(find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz") | cut -f1 -d '.')
-else
-	echo ""
-	echo "No dwi image found..."
 	exit 1
 fi
 
@@ -114,6 +110,57 @@ if [ $run_script != "y" ]; then
 	echo "Error: Input is not valid..."
 	exit 1
 fi
+
+# # Check if DWI exists 
+if [[ ${rsimg} -eq "1" ]]; then
+	handle=dwi_preprocessed_resized
+	if [[ -f ${OriDir}/Preprocessed_data/${handle}.nii.gz ]] && [[ -f ${OriDir}/Preprocessed_data/${handle}.bval ]] && [[ -f ${OriDir}/Preprocessed_data/${handle}.bvec ]]; then
+		:
+	elif [[ ! -f ${OriDir}/Preprocessed_data/${handle}.nii.gz ]] && [[ -f ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz ]] ; then
+		if [[ ! -f ${OriDir}/Preprocessed_data/DWI.json ]]; then
+			echo "No .json text file found..."
+			echo "use dwi_preprocessed.nii.gz"
+			handle=dwi_preprocessed			
+		else
+			json_file=${OriDir}/Preprocessed_data/DWI.json
+			while read line; do
+				tmp=(${line})
+				case ${tmp[0]} in
+					'"AcquisitionMatrixPE":')
+						d=${tmp[1]}
+						AcquisitionMatrixPE=${d:0:${#d}-1}				
+					;;
+				esac
+			done < $json_file
+
+			g=($(fslinfo ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz | grep -i dim))	
+			dim1=${g[1]}; dim2=${g[3]};	dim3=${g[5]}
+			echo dim1,2: ${AcquisitionMatrixPE}
+			echo dim3: ${dim3}
+			if [[ "$dim1" != "${AcquisitionMatrixPE}" ]] || [[ "$dim2" != "${AcquisitionMatrixPE}" ]]; then		
+				echo "mrgridmrgridmrgridmrgridmrgrid"
+				mrgrid ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz regrid ${OriDir}/Preprocessed_data/${handle}.nii.gz -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}		
+				cp ${OriDir}/Preprocessed_data/dwi_preprocessed.bval ${OriDir}/Preprocessed_data/${handle}.bval
+				cp ${OriDir}/Preprocessed_data/dwi_preprocessed.bvec ${OriDir}/Preprocessed_data/${handle}.bvec
+			else
+				handle=dwi_preprocessed
+			fi
+		fi
+	else
+		echo ""
+		echo "No dwi image found..."
+		exit 1
+	fi	
+else
+	if [ -f "`find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz"`" ]; then
+		handle=$(basename -- $(find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz") | cut -f1 -d '.')
+	else
+		echo ""
+		echo "No dwi image found..."
+		exit 1
+	fi		
+fi
+
 
 [ -d ${OriDir}/4_DTIFIT ] || mkdir ${OriDir}/4_DTIFIT
 

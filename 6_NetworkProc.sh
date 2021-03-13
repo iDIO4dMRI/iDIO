@@ -98,7 +98,7 @@ if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1w.nii.gz"`" ]; then
 	# T1name=$(basename -- $(find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1w.nii.gz") | cut -f1 -d '.')
 else
 	echo ""
-	echo "No Preprocessed T1 image found..."
+	echo "No T1 image found..."
 	exit 1
 fi
 
