@@ -28,7 +28,7 @@ Usage() {
     
     Options:
 	-c 	C4 
-	-s 	Please provide the series of phase-encoding direction {PA, AP, LR, RL} 
+	-s 	Please provide the series of phase-encoding direction {PA, AP, RL, LR} 
 		Two scans for AP and PA  => 2 1 0 0
 		One scan for PA => 1 0 0 0
 
@@ -125,6 +125,8 @@ bvecs_tmp=$(ls -f *.bvecs 2>>error.log)
 for bvecs_file in ${bvecs_tmp}; do
 	mv ${bvecs_file} ${bvecs_file:0:${#bvecs_file}-1}
 done
+
+/bin/rm -f error.log
 
 # prerename
 for dwi_files in *dwi*; do

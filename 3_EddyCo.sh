@@ -7,7 +7,7 @@
 ##
 ## Edit: 2020/04/20, Tsen, MBF location
 ## Edit: 2020/07/30, Tai, .json file detection for eddy input
-## Edit: 2020/01/22, Tai, use eddy function for non-topup dwi
+## Edit: 2021/01/22, Tai, use eddy function for non-topup dwi
 ##						  add a zero image if number of z-dimension is odd (-zeropad)
 ##						  move biasco from step 4
 ##						  created [Preprocessed_data] folder for preprocessed data
@@ -79,7 +79,7 @@ do
 		;;
 	esac
 done
-
+echo cuda_ver $cuda_ver; echo mporder $mporder;exit 1
 # CUDA version 
 if [ -z ${cuda_ver} ]; then
 	echo ""
@@ -152,7 +152,8 @@ case ${Topup} in
 		cp ${OriDir}/1_DWIprep/Eddy_Index.txt ${OriDir}/3_EddyCo
 		cd ${OriDir}/3_EddyCo
 		bet ${handle}.nii.gz bet_Brain.nii.gz -m -f 0.2 -R
-		if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`" ]; then
+		json_DIR=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
+		if [ -f ${json_DIR} ]; then
 			# with .json file
 			j=1
 			json_DIR=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
@@ -164,14 +165,14 @@ case ${Topup} in
 			0) # without cuda
 				if [ ${j} == 0 ]; then # without .json file
 					eddy --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --verbose
-				elif [ ${j} ==1 ]; then 	
+				elif [ ${j} == 1 ]; then 	
 					eddy --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
 				fi
 				;;
 			9.1) # cuda9.1
 				if [ ${j} == 0 ]; then # without .json file
 					eddy_cuda9.1 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --verbose
-				elif [ ${j} ==1 ]; then 
+				elif [ ${j} == 1 ]; then 
 					if [ ${mporder} == 0 ]; then
 						eddy_cuda9.1 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
 					else # with --mporder 8
@@ -182,7 +183,7 @@ case ${Topup} in
 			8.0) # cuda8.0
 				if [ ${j} == 0 ]; then # without .json file
 					eddy_cuda8.0 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --verbose
-				elif [ ${j} ==1 ]; then 
+				elif [ ${j} == 1 ]; then 
 					if [ ${mporder} == 0 ]; then
 						eddy_cuda8.0 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
 					else # with --mporder 8
@@ -204,7 +205,8 @@ case ${Topup} in
 		[ -d ${OriDir}/3_EddyCo ] || mkdir ${OriDir}/3_EddyCo
 		cp ${OriDir}/1_DWIprep/Acqparams_Topup.txt ${OriDir}/3_EddyCo
 		cp ${OriDir}/1_DWIprep/Eddy_Index.txt ${OriDir}/3_EddyCo
-		if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`" ]; then
+		json_DIR=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
+		if [ -f ${json_DIR} ]; then
 			# with .json file
 			j=1
 			json_DIR=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
@@ -249,14 +251,14 @@ case ${Topup} in
 			0) # without cuda
 				if [ ${j} == 0 ]; then # without .json file
 					eddy --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --verbose
-				elif [ ${j} ==1 ]; then 	
+				elif [ ${j} == 1 ]; then 	
 					eddy --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
 				fi
 				;;
 			9.1) # cuda9.1
 				if [ ${j} == 0 ]; then # without .json file
 					eddy_cuda9.1 --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --verbose
-				elif [ ${j} ==1 ]; then 
+				elif [ ${j} == 1 ]; then 
 					if [ ${mporder} == 0 ]; then
 						eddy_cuda9.1 --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
 					else # with --mporder 8
@@ -267,7 +269,7 @@ case ${Topup} in
 			8.0) # cuda8.0
 				if [ ${j} == 0 ]; then # without .json file
 					eddy_cuda8.0 --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --verbose
-				elif [ ${j} ==1 ]; then 
+				elif [ ${j} == 1 ]; then 
 					if [ ${mporder} == 0 ]; then
 						eddy_cuda8.0 --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --json=DWI.json --verbose --data_is_shelled --ol_type=$MBF
 					else # with --mporder 8
@@ -290,10 +292,16 @@ esac
 dwibiascorrect ants ${OriDir}/3_EddyCo/${handle}-EddyCo.nii.gz ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz -fslgrad ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/3_EddyCo/${handle}-EddyCo.bval -force
 
 if [ ${zeropad} == 1 ]; then # Remove padding slice
-	mrgrid ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz pad -all_axes -axis 2 0,-1 ${OriDir}/3_EddyCo/${handle_raw}-EddyCo-unbiased.nii.gz
+	echo "remove padding slice..."
+	mrgrid ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz pad -all_axes -axis 2 0,-1 ${OriDir}/3_EddyCo/${handle_raw}-EddyCo-unbiased.nii.gz	
 fi
 
 [ -d ${OriDir}/Preprocessed_data ] || mkdir ${OriDir}/Preprocessed_data
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bval ${OriDir}/Preprocessed_data/dwi_preprocessed.bval
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/Preprocessed_data/dwi_preprocessed.bvec
+
+json_file=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
+if [ -f ${json_file} ]; then
+	cp ${json_file} ${OriDir}/Preprocessed_data/DWI.json
+fi

@@ -6,8 +6,8 @@
 ## Version 1.0 /2020/02/05
 ## **All shell data were calculated by dhollander algorithm** 
 ##########################################################################################################################
-
-
+## 20210123 - copy files from Preprocessed_data
+##          - dwi preprocessed only, T1 processing habe been move to step 6
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -17,7 +17,7 @@ Usage(){
 
 5_CSDpreproc - CSD preprocessing via MRtrix with Dhollanders algorithm.
 			   b < Bzero threshold will be considered to null images [default = 10].
-		       3_EddyCo and 4_DTIFIT are needed before processing this script.
+		       4_DTIFIT are needed before processing this script.
 		       5_CSDpreproc will be created
 
 Usage:	5_CSDpreproc -[options] 
@@ -26,7 +26,8 @@ System will automatically detect all folders in directory if no input arguments 
 
 Options:
 	-p 	Input directory; [default = pwd directory]
-	-t  Input Bzero threhold; [default = 10]; 
+	-t  Input Bzero threhold; [default = 10];
+	-r  rResize dwi image by .json text file with information about matrix size.
 
 EOF
 exit 1
@@ -36,6 +37,7 @@ exit 1
 OriDir=$(pwd)
 Bzerothr=10
 run_script=y
+rsimg=0
 args="$(sed -E 's/(-[A-Za-z]+ )([^-]*)( |$)/\1"\2"\3/g' <<< $@)"
 declare -a a="($args)"
 set - "${a[@]}"
@@ -43,9 +45,8 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hp:t:" optionName; 
+while getopts "hp:t:r" optionName; 
 do
-	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
 	h)  
 		Usage
@@ -55,6 +56,9 @@ do
 		;;
 	t)
 		Bzerothr=$OPTARG
+		;;
+	r)
+		rsimg=1
 		;;
 	\?) 
 		exit 42
@@ -66,31 +70,36 @@ do
 	esac
 done
 
-# Check if previous step was done
+# Check if previous step was done -
+# Check needed file
+if [ ! -d "${OriDir}/Preprocessed_data" ]; then
+	echo ""
+	echo "Error: Preprocessed_data is not detected."
+	echo "Please process previous step..."
+	exit 1
+fi
+
 if [ ! -d "${OriDir}/4_DTIFIT" ]; then
 	echo ""
 	echo "Error: 4_DTIFIT is not detected."
 	echo "Please process previous step..."
 	exit 1
 fi
-# Check needed file
-if [ -f "`find ${OriDir}/4_DTIFIT -maxdepth 1 -name "*unbiased.nii.gz"`" ]; then
-	handleDWI=${OriDir}/4_DTIFIT/*unbiased.nii.gz
-	handle=$(basename -- $(find ${OriDir}/4_DTIFIT -maxdepth 1 -name "*unbiased.nii.gz") | cut -f1 -d '.')
 
-else
-	echo ""
-	echo "No Preprocessed DWI image found..."
-	exit 1
-fi
 
-if [ -f "`find ${OriDir}/4_DTIFIT -maxdepth 1 -name "*preproc.bval"`" ]; then
-	handlebv=$(basename -- $(find ${OriDir}/4_DTIFIT -maxdepth 1 -name "*preproc.bval") | cut -f1 -d '.')
-else
-	echo ""
-	echo "No bvals/bvecs image found..."
-	exit 1
-fi
+# if [ -f "`find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz"`" ]; then
+# 	handle=$(basename -- $(find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz") | cut -f1 -d '.')
+# else
+# 	echo ""
+# 	echo "No Preprocessed DWI image found..."
+# 	exit 1
+# fi
+
+# if [ ! -f "`find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.bval"`" ] || [ ! -f "`find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.bvec"`" ]; then
+# 	echo ""
+# 	echo "No bvals/bvecs image found..."
+# 	exit 1
+# fi
 
 
 if [ -f "`find ${OriDir}/4_DTIFIT -maxdepth 1 -name "*Average_b0.nii.gz"`" ]; then
@@ -101,17 +110,6 @@ else
 	echo "No Preprocessed AveragedB0 image found..."
 	exit 1
 fi
-
-if [ -f "`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*T1w.nii.gz"`" ]; then
-	handleT1=${OriDir}/0_BIDS_NIFTI/*T1w.nii.gz
-else
-	echo ""
-	echo "No Preprocessed T1 image found..."
-	exit 1
-fi
-
-# Subject_ID
-# subjid=$(basename ${OriDir})
 
 if [ -d ${OriDir}/5_CSDpreproc ]; then
 	echo ""
@@ -133,33 +131,73 @@ if [ $run_script != "y" ]; then
 	exit 1
 fi
 
+# # Check if DWI exists 
+if [[ ${rsimg} -eq "1" ]]; then
+	handle=dwi_preprocessed_resized
+	if [[ -f ${OriDir}/Preprocessed_data/${handle}.nii.gz ]] && [[ -f ${OriDir}/Preprocessed_data/${handle}.bval ]] && [[ -f ${OriDir}/Preprocessed_data/${handle}.bvec ]]; then
+		:
+	elif [[ ! -f ${OriDir}/Preprocessed_data/${handle}.nii.gz ]] && [[ -f ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz ]] ; then
+		if [[ ! -f ${OriDir}/Preprocessed_data/DWI.json ]]; then
+			echo "No .json text file found..."
+			echo "use dwi_preprocessed.nii.gz"
+			handle=dwi_preprocessed			
+		else
+			json_file=${OriDir}/Preprocessed_data/DWI.json
+			while read line; do
+				tmp=(${line})
+				case ${tmp[0]} in
+					'"AcquisitionMatrixPE":')
+						d=${tmp[1]}
+						AcquisitionMatrixPE=${d:0:${#d}-1}				
+					;;
+				esac
+			done < $json_file
+
+			g=($(fslinfo ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz | grep -i dim))	
+			dim1=${g[1]}; dim2=${g[3]};	dim3=${g[5]}
+			echo dim1,2: ${AcquisitionMatrixPE}
+			echo dim3: ${dim3}
+			if [[ "$dim1" != "${AcquisitionMatrixPE}" ]] || [[ "$dim2" != "${AcquisitionMatrixPE}" ]]; then		
+				echo "mrgridmrgridmrgridmrgridmrgrid"
+				mrgrid ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz regrid ${OriDir}/Preprocessed_data/${handle}.nii.gz -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}		
+				cp ${OriDir}/Preprocessed_data/dwi_preprocessed.bval ${OriDir}/Preprocessed_data/${handle}.bval
+				cp ${OriDir}/Preprocessed_data/dwi_preprocessed.bvec ${OriDir}/Preprocessed_data/${handle}.bvec
+			else
+				handle=dwi_preprocessed
+			fi
+		fi
+	else
+		echo ""
+		echo "No dwi image found..."
+		exit 1
+	fi	
+else
+	if [ -f "`find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz"`" ]; then
+		handle=$(basename -- $(find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz") | cut -f1 -d '.')
+	else
+		echo ""
+		echo "No dwi image found..."
+		exit 1
+	fi		
+fi
+
+
 [ -d ${OriDir}/5_CSDpreproc ] || mkdir ${OriDir}/5_CSDpreproc
 
-## Main Processing
-#Generate 5tt (lack: compare 5tt and freesurfer)
-mkdir ${OriDir}/5_CSDpreproc/S1_T1proc
-mkdir ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix
+# S1 CSDproproc
 
-# 6 degree registration without resampling
-flirt -in ${handleT1} -ref ${handleB0} -omat ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/T12DWI_flirt6.mat -dof 6
+# copy data
+cp ${OriDir}/Preprocessed_data/${handle}.nii.gz ${OriDir}/5_CSDpreproc/
+cp ${OriDir}/Preprocessed_data/${handle}.bvec ${OriDir}/5_CSDpreproc/
+cp ${OriDir}/Preprocessed_data/${handle}.bval ${OriDir}/5_CSDpreproc/
+mkdir ${OriDir}/5_CSDpreproc/S1_Response
 
-transformconvert ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/T12DWI_flirt6.mat ${handleT1} ${handleB0} flirt_import ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/T12DWI_mrtrix.txt
+cd ${OriDir}/5_CSDpreproc/
+# convert into MRtrix format
+mrconvert ${handle}.nii.gz ${OriDir}/5_CSDpreproc/${handle}.mif -fslgrad ${OriDir}/5_CSDpreproc/${handle}.bvec ${OriDir}/5_CSDpreproc/${handle}.bval 
 
-mrtransform ${handleT1} ${OriDir}/5_CSDpreproc/S1_T1proc/T12dwispace.nii.gz -linear ${OriDir}/5_CSDpreproc/S1_T1proc/Reg_matrix/T12DWI_mrtrix.txt
-
-## 5tt include amygdala and hippocampus
-5ttgen fsl -nocrop -sgm_amyg_hipp ${OriDir}/5_CSDpreproc/S1_T1proc/T12dwispace.nii.gz ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz -quiet
-5tt2gmwmi ${OriDir}/5_CSDpreproc/S1_T1proc/5tt2dwispace.nii.gz ${OriDir}/5_CSDpreproc/S1_T1proc/WMGM2dwispace.nii.gz -quiet
-
-# S2 CSDproproc
-mkdir ${OriDir}/5_CSDpreproc/S2_Response
-cp ${OriDir}/4_DTIFIT/${handlebv}.bvec ${OriDir}/5_CSDpreproc/
-cp ${OriDir}/4_DTIFIT/${handlebv}.bval ${OriDir}/5_CSDpreproc/
-
-mrconvert ${handleDWI} ${OriDir}/5_CSDpreproc/${handle}.mif -fslgrad ${OriDir}/5_CSDpreproc/${handlebv}.bvec ${OriDir}/5_CSDpreproc/${handlebv}.bval 
-
-#erode FSL Bet mask
-maskfilter ${handleMask} erode ${OriDir}/5_CSDpreproc/${handlebv}-mask-erode.mif -npass 2 #this setting seems to be okay
+#erode FSL Bet mask - which will generate in step4
+maskfilter ${handleMask} erode ${OriDir}/5_CSDpreproc/${handle}-mask-erode.mif -npass 2 #this setting seems to be okay
 
 # detemine shell numbers
 shell_num_all=$(mrinfo ${OriDir}/5_CSDpreproc/${handle}.mif -shell_bvalues -config BZeroThreshold ${Bzerothr}| awk '{print NF}')
@@ -172,7 +210,7 @@ for (( i=1; i<=${shell_num_all}; i=i+1 )); do
 	if [ `echo "${bv} > 1500" | bc` -eq 1 ]; then
 		echo "${bv_num} of b=${bv}s/mm^2, high b-value found."
 		hb=$((${hb}+1))
-	elif [ `echo "${bv} < 66" | bc` -eq 1 ]; then
+	elif [ `echo "${bv} < ${Bzerothr}" | bc` -eq 1 ]; then
 		echo "${bv_num} of b=${bv}s/mm^2 (null image(s))"
 		null_tmp=$((${null_tmp}+${bv_num}))
 		null_shell=$((${null_tmp}+1))
@@ -188,29 +226,28 @@ if [[ ${null_shell} -eq 0 ]]; then
 	exit 1
 fi
 
+# dwi2response - shell data were calculated by dhollander algorithm
 
 if [[ ${shell_num_all} -ge 2 ]]; then
-	# All shell data were calculated by dhollander algorithm
 
-	dwi2response dhollander ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt -config BZeroThreshold ${Bzerothr}
+	dwi2response dhollander ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S1_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S1_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S1_Response/response_csf.txt -config BZeroThreshold ${Bzerothr}
 
 	if [[ ${shell_num_all} -eq 2 && ${hb} -eq 0 ]]; then
 		echo "lack of high b-value (may cause poor angular resolution)"
 	
 		# for single-shell, 2 tissue
-
-		dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr}
+		dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S1_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S1_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S1_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr}
 
 		# multi-tissue informed log-domain intensity normalisation
-		mtnormalise ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_wm_norm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_csf_norm.mif -mask ${OriDir}/5_CSDpreproc/${handlebv}-mask-erode.mif
+		mtnormalise ${OriDir}/5_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_csf.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_csf_norm.mif -mask ${OriDir}/5_CSDpreproc/${handle}-mask-erode.mif
 
 	else	
 		#for multi-shell
 
-		dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S2_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S2_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr}
+		dwi2fod msmt_csd ${OriDir}/5_CSDpreproc/${handle}.mif ${OriDir}/5_CSDpreproc/S1_Response/response_wm.txt ${OriDir}/5_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S1_Response/response_gm.txt ${OriDir}/5_CSDpreproc/S1_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S1_Response/response_csf.txt ${OriDir}/5_CSDpreproc/S1_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr}
 
 		# multi-tissue informed log-domain intensity normalisation
-		mtnormalise ${OriDir}/5_CSDpreproc/S2_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_wm_norm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_gm_norm.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_csf.mif ${OriDir}/5_CSDpreproc/S2_Response/odf_csf_norm.mif -mask ${OriDir}/5_CSDpreproc/${handlebv}-mask-erode.mif
+		mtnormalise ${OriDir}/5_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_gm.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_gm_norm.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_csf.mif ${OriDir}/5_CSDpreproc/S1_Response/odf_csf_norm.mif -mask ${OriDir}/5_CSDpreproc/${handle}-mask-erode.mif
 	fi 
 
 else
