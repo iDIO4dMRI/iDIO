@@ -80,6 +80,17 @@ do
 	esac
 done
 
+# Check if configure file, default atlas exist
+if [[ ! -f "/usr/local/fsl/etc/flirtsch/T1_2_ICBM_MNI152_1mm.cnf" ]] || 
+   [[ ! -f "/usr/local/fsl/data/standard/mni_icbm152_t1_tal_nlin_asym_09c.nii.gz" ]] || 
+   [[ ! -f "/usr/local/fsl/data/standard/mni_icbm152_t1_tal_nlin_asym_09c_bet.nii.gz" ]] || 
+   [[ ! -f "/usr/local/fsl/data/standard/mni_icbm152_t1_tal_nlin_asym_09c_mask.nii.gz" ]]; then	
+	echo ""
+	echo "No configure file or default atlas found..."
+	Usage
+fi
+
+
 # Check if previous step was done
 if [ ! -d "${OriDir}/5_CSDpreproc" ]; then
 	echo ""
@@ -98,7 +109,13 @@ else
 fi
 
 subjid=$(basename ${OriDir})
-handleMask=${OriDir}/4_DTIFIT/*b0-brain_mask.nii.gz
+if [ -f "`find ${OriDir}/4_DTIFIT -maxdepth 1 -name "*Average_b0.nii.gz"`" ]; then
+	handleMask=${OriDir}/4_DTIFIT/*b0-brain_mask.nii.gz
+else
+	echo ""
+	echo "No Preprocessed B0-Mask image found..."
+	exit 1
+fi
 
 #S4 generate Track
 mkdir ${OriDir}/5_CSDpreproc/S3_Tractography
