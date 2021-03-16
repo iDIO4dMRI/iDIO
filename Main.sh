@@ -5,7 +5,7 @@
 ## Written by Kuantsen Kuo
 ## Version 1.0 /2020/03/10
 ##
-## Edit: parse command args, 2020/08/03, Kuo 
+## Edit: parse command args, 2020/08/03, Kuo
 ## Edit: add SetUpOGIOEnv.sh, 2021/02/03, Kuo
 ##########################################################################################################################
 
@@ -18,9 +18,9 @@ VDate=2021.02.03
 
 Usage(){
     cat <<EOF
-    
+
 OGIO - Diffusion MRI processing  v${Version}, ${VDate}
-   
+
 Usage: Main -[options]
 Options:
     -proc <output dir>  Output directory
@@ -34,9 +34,9 @@ EOF
 exit 1
 }
 
-# Check if HOGIO variable exists, 
+# Check if HOGIO variable exists,
 HOGIO=$(echo ${HOGIO})
-if [[ -z "${HOGIO}" ]]; then   
+if [[ -z "${HOGIO}" ]]; then
     echo ""
     echo "Error: It seems that the HOGIO environment variable is not defined.          "
     echo "       Run the command 'export HOGIO=/usr/local/OGIO'                        "
@@ -102,7 +102,7 @@ if [[ ! -d ${SubjectDir} ]]; then
     echo "${SubjectDir} does not exist ... creating"
     mkdir -p ${SubjectDir}
 fi
-if [[ ! -d ${BIDSDir} ]]; then    
+if [[ ! -d ${BIDSDir} ]]; then
     echo "Error: ${BIDSDir} "
     echo "       does not exist. Check that this value is correct."
     echo ""
@@ -136,30 +136,30 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
     #statements
     case ${runStep[i]} in
         1 )
-            # Step 1_DWIprep            
+            # Step 1_DWIprep
             STARTTIME=$(date +"%s")
             echo "1_DWIprep at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
             sh ${HOGIO}/1_DWIprep.sh -b $BIDSDir -p $SubjectDir
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         2 )
-            # Step 2_BiasCo            
+            # Step 2_BiasCo
             STARTTIME=$(date +"%s")
             echo "2_BiasCo at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
             sh ${HOGIO}/2_BiasCo.sh -p $SubjectDir
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
-        3 )            
-            # Step 3_EddyCo            
+        3 )
+            # Step 3_EddyCo
             STARTTIME=$(date +"%s")
             echo "3_EddyCo at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-            # case ${cuda} in 
+            # case ${cuda} in
             #     0 ) # without cuda
             #         sh ${HOGIO}/3_EddyCo.sh -p $SubjectDir
             #     ;;
             #     1 ) # with cuda
             #         case ${stv} in
-            #             0 ) 
+            #             0 )
             #                 sh ${HOGIO}/3_EddyCo.sh -p $SubjectDir -c
             #                 ;;
             #             1 ) #slice-to-vol motion correction.
@@ -172,7 +172,7 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         4 )
-            # Step 4_DTIFIT            
+            # Step 4_DTIFIT
             STARTTIME=$(date +"%s")
             echo "4_DTIFIT at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
             # sh ${HOGIO}/4_DTIFIT.sh -p $SubjectDir -t $bzero
@@ -180,7 +180,7 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         5 )
-            # Step 5_CSDpreproc            
+            # Step 5_CSDpreproc
             STARTTIME=$(date +"%s")
             echo "5_CSDpreproc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
             # sh ${HOGIO}/5_CSDpreproc.sh -p $SubjectDir
@@ -188,7 +188,7 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         6 )
-            # Step 6_NetworkProc            
+            # Step 6_NetworkProc
             STARTTIME=$(date +"%s")
             echo "6_NetworkProc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
             # sh ${HOGIO}/6_NetworkProc.sh -p $SubjectDir -a $AtlasDir -n $trkNum
