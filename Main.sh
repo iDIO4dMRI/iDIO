@@ -14,7 +14,7 @@
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
 Version=1.0
-VDate=2021.02.03
+VDate=2021.03.16
 
 Usage(){
     cat <<EOF
@@ -128,8 +128,8 @@ pinfo+="AtlasDir=${AtlasDir}\n"
 pinfo+="trkNum=${trkNum}\n"
 pinfo+="\n"
 
-echo $pinfo
-echo $pinfo >> ${SubjectDir}/mainlog.txt
+echo -e $pinfo
+echo -e $pinfo >> ${SubjectDir}/mainlog.txt
 
 
 for (( i = 0; i < ${#runStep[@]}; i++ )); do
