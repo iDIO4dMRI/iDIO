@@ -55,7 +55,7 @@ sub-001
 
 ### Step 0: SetUpOGIOArg.sh and run Main.sh
 **Synopsis**
-Performing the OGIO pipeline with predefined options.  
+Performing the OGIO pipeline with predefined options. Run the Main.sh and  done all the process! 
 
 **Usage**
 > sh Main.sh -bids InputDir -proc OutputDir
@@ -73,6 +73,7 @@ All options need to be predefined are list in the ** SetUpOGIOArg.sh** file. OGI
 - **AtlasDir**: Default needed files were save in ${HOGIO}/share with several folders, we recommend not to change this path, but save Atlas you need  in ${HOGIO}/share/Atlas instead. [default = ${HOGIO}/share]
 - **trkNum**: Set the desired number of streamlines to be selected when generating the tractogram [default = 10M]
 
+Details for each step are shown as follows: 
 ### Step 1: 1_DWIprep.sh
 **Synopsis**
 DWI data preparation (identify phase encoding of DWI image and generate needed description files in 0_BIDS_NIFTI and 1_DWIprep folders)
@@ -334,7 +335,6 @@ For other purpose that may need preprocessed dwi and T1 image data, we save the 
 ```
 
 ## References
----
 Please cite the following articles if *OGIO* is utilized in your research publications:
 
 ### ***FSL***
@@ -360,7 +360,7 @@ Please cite the following articles if *OGIO* is utilized in your research public
 10. Hagmann, P.; Cammoun, L.; Gigandet, X.; Meuli, R.; Honey, C.; Wedeen, V. & Sporns, O. Mapping the Structural Core of Human Cerebral Cortex. PLoS Biology, 2008, 6(7), e159
 11. Raffelt, D.; Dhollander, T.; Tournier, J.-D.; Tabbara, R.; Smith, R. E.; Pierre, E. & Connelly, A. Bias Field Correction and Intensity Normalisation for Quantitative Analysis of Apparent Fibre Density. In Proc. ISMRM, 2017, 26, 3541
 
-### *** ANTs***
+### ***ANTs***
 1. Tustison, N. J.; Avants, B. B.; Cook, P. A.; Zheng, Y.; Egan, A.; Yushkevich, P. A. Gee, J. C. N4ITK: Improved N3 Bias Correction. IEEE Transactions on Medical Imaging, 2010, 29(6), 1310-1320
 2. Tustison, N.J.; Cook, P.A.; Klein A.; Song, G.; Das, S.R.; Duda, J.T.; Kandel, B.M.; van Strien, N.; Stone, J.R.; Gee, J.C.; Avants, B.B. Large-scale evaluation of ANTs and FreeSurfer cortical thickness measurements. Neuroimag, 2014, 99, 166-79. 
 3. Avants, B.B.; Tustison, N.J.; Wu, J.; Cook, P.A.; Gee, J.C. An open source multivariate framework for n-tissue segmentation with evaluation on public data. Neuroinformatics. 2011, 9(4), 381-400. 
