@@ -8,6 +8,7 @@
 ## Edit: 2020/04/07, Tsen, Options
 ## Edit: 2020/04/20, Tsen, Options
 ## Edit: 2021/02/18, Heather, (1) python, (2) dwicat, (3) replace dwi_select_vol with mrinfo and bvalue threshold
+## Edit: 2021/05/18, Heather, (1) bug fixed
 ##########################################################################################################################
 
 
@@ -159,7 +160,7 @@ File_bvec=$(ls *.bvec)
 #
 B0num=$(mrinfo ${File_denoise}.nii.gz -fslgrad ${File_bvec} ${File_bval}  -shell_sizes -config BZeroThreshold ${Bzerothr}|awk '{print $1}')
 
-B0index=$(mrinfo ${File_denoise}.nii.gz -fslgrad dwi_APPA.bvec dwi_APPA.bval  -shell_indices -config BZeroThreshold ${Bzerothr}|awk {'print $1'})
+B0index=$(mrinfo ${File_denoise}.nii.gz -fslgrad ${File_bvec} ${File_bval}  -shell_indices -config BZeroThreshold ${Bzerothr}|awk {'print $1'})
 
 #B0num > 3 -> do drift correction
 if [[ "${B0num}" -gt "3"  ]]; then
