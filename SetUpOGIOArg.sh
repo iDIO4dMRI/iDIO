@@ -12,7 +12,7 @@
 # The defaults should work with most installations.
 
 # Set the process you need. [default=1.2.3.4.5.6.]
-Step=1.2.3.4.5.6.
+Step=1.2.3.4.5.6
 # 1: 1_DWIprep
 # 2: 2_BiasCo
 # 3: 3_EddyCo
@@ -22,10 +22,13 @@ Step=1.2.3.4.5.6.
 
 # 3_EddyCo: Using CUDA to speed up. NVIDIA GPU with CUDA v9.1 is available to use this option. [true=1 / false=0]
 cuda=0
-
-# 3_EddyCo: Slice-to-vol motion correction. 
+# 3_EddyCo: Slice-to-vol motion correction.
 #           This option is only implemented for the CUDA version(cuda=1). [true=1 / false=0]
 stv=0
+
+# Resize dwi image by .json text file with information about matrix size. [true=1 / false=0]
+# apply for 4_DTIFIT, 5_CSDpreproc
+rsimg=0
 
 # 4_DTIFIT: Bzero threshold. [default=10]
 bzero=10
@@ -35,4 +38,3 @@ AtlasDir=${HOGIO}/share
 
 # 6_NetworkProc: Set track select number. [default=10M]
 trkNum=10M
-

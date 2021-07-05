@@ -19,16 +19,16 @@
 
 Usage() {
     cat<<EOF
-    
+
     dMRI processing  v1.0
 
     1_DWIprep - DWI data preperation for the following processing
 
     Usage: 1_DWIprep -b <BIDSDir> -p <PreprocDir>
-    
+
     Options:
-	-c 	C4 
-	-s 	Please provide the series of phase-encoding direction {PA, AP, RL, LR} 
+	-c 	C4
+	-s 	Please provide the series of phase-encoding direction {PA, AP, RL, LR}
 		Two scans for AP and PA  => 2 1 0 0
 		One scan for PA => 1 0 0 0
 
@@ -46,14 +46,17 @@ PhaseEncoding=
 while getopts "hb:p:c:s:v" OPTION
 do
     case $OPTION in
-    h)  
+    h)
         Usage
-        ;; 
+        ;;
     b)
         BIDSDir=$OPTARG
         ;;
     p)
         PreprocDir=$OPTARG
+        ;;
+    c)
+        C4=$OPTARG
         ;;
     s)
         PhaseEncoding=$OPTARG
@@ -116,7 +119,7 @@ for DWI_file in *DWI*; do
  	mv ${DWI_file} $nname
 done
 
-bvals_tmp=$(ls -f *.bvals 2>>error.log) 
+bvals_tmp=$(ls -f *.bvals 2>>error.log)
 for bvals_file in ${bvals_tmp}; do
 	mv ${bvals_file} ${bvals_file:0:${#bvals_file}-1}
 done
@@ -206,18 +209,18 @@ if [ "${json_dir}" == "" ] || [ "${n_json_file}" == "0" ]; then
 					done
 				done
 
-				case "$d" in			
+				case "$d" in
 				"PA")
-					Acqparams_Topup_tmp="0 1 0" 
+					Acqparams_Topup_tmp="0 1 0"
 					;;
-				"AP") 
+				"AP")
 					Acqparams_Topup_tmp="0 -1 0"
 					;;
-				"RL") 
+				"RL")
 					Acqparams_Topup_tmp="1 0 0"
 					;;
-				"LR") 
-					Acqparams_Topup_tmp="-1 0 0" 
+				"LR")
+					Acqparams_Topup_tmp="-1 0 0"
 					;;
 				esac
 
@@ -228,14 +231,14 @@ if [ "${json_dir}" == "" ] || [ "${n_json_file}" == "0" ]; then
 		echo "${PhaseEncodingDirectionCode[0]} ${PhaseEncodingDirectionCode[1]} ${PhaseEncodingDirectionCode[2]} ${PhaseEncodingDirectionCode[3]}" > Index_PE.txt
 	fi
 else
-	
+
 	cd ${PreprocDir}/1_DWIprep
 	PhaseEncodingDirectionCode=(0 0 0 0)
 	Rec=0
 
 	sn=(0 0)
 	if [[ ${n_json_file} -gt 1 ]]; then
-		
+
 		for n in {1..2}; do
 			n_tmp=$[${n}-1]
 			while read line; do
@@ -244,9 +247,9 @@ else
 				if [[ ${tmp[0]} == \"SeriesNumber\": ]]; then
 					d=${tmp[1]}
 
-					sn_tmp=${d:0:${#d}-1}	
+					sn_tmp=${d:0:${#d}-1}
 					sn[${n_tmp}]=${sn_tmp}
-				fi 
+				fi
 			done < ${json_dir_tmp[${n_tmp}]}
 		done
 
@@ -279,30 +282,30 @@ else
 				d=${tmp[1]}
 				d_tmp=${d:1:${#d}-3}
 
-				case "$d_tmp" in			
+				case "$d_tmp" in
 				"j")
 					PED=PA
 					PED_PA=PA
 					PhaseEncodingDirectionCode[0]=${Rec}
-					Acqparams_Topup_tmp="0 1 0" 
+					Acqparams_Topup_tmp="0 1 0"
 					;;
-				"j-") 
+				"j-")
 					PED=AP
 					PED_AP=AP
 					PhaseEncodingDirectionCode[1]=${Rec}
 					Acqparams_Topup_tmp="0 -1 0"
 					;;
-				"i") 
+				"i")
 					PED=RL
 					PED_RL=RL
 					PhaseEncodingDirectionCode[2]=${Rec}
 					Acqparams_Topup_tmp="1 0 0"
 					;;
-				"i-") 
+				"i-")
 					PED=LR
 					PED_LR=LR
 					PhaseEncodingDirectionCode[3]=${Rec}
-					Acqparams_Topup_tmp="-1 0 0" 
+					Acqparams_Topup_tmp="-1 0 0"
 					;;
 				esac
 				echo "PED: ${PED}"
@@ -310,13 +313,13 @@ else
 
 			'"EchoTime":')
 			 	d=${tmp[1]}
-				TE=${d:0:${#d}-1}	
+				TE=${d:0:${#d}-1}
 				echo "TE: $TE"
 			;;
 
 			'"EffectiveEchoSpacing":')
 				d=${tmp[1]}
-				EffectiveEchoSpacing=${d:0:${#d}-1}	
+				EffectiveEchoSpacing=${d:0:${#d}-1}
 				echo "EffectiveEchoSpacing: $EffectiveEchoSpacing"
 			;;
 
@@ -362,16 +365,16 @@ else
 				echo "ReconMatrixPE: $ReconMatrixPE"
 			;;
 
-			'"MultibandAccelerationFactor":') 
+			'"MultibandAccelerationFactor":')
 				d=${tmp[1]}
-				MultibandAccelerationFactor=${d:0:${#d}-1}			
-				echo "MultibandAccelerationFactor: $MultibandAccelerationFactor" 
+				MultibandAccelerationFactor=${d:0:${#d}-1}
+				echo "MultibandAccelerationFactor: $MultibandAccelerationFactor"
 			;;
 
-			'"SliceThickness":') 
+			'"SliceThickness":')
 				d=${tmp[1]}
-				SliceThickness=${d:0:${#d}-1}			
-				echo "SliceThickness: $SliceThickness" 
+				SliceThickness=${d:0:${#d}-1}
+				echo "SliceThickness: $SliceThickness"
 			;;
 			esac
 
@@ -383,29 +386,31 @@ else
 		fi
 
 		# C4: total readout time
-		if [ "$EPIfactor" != 0 ] && [ "$EffectiveEchoSpacing" != 0 ]; then
-			C4=$(echo "${EffectiveEchoSpacing}*(${EPIfactor}-1)" | bc)
-			echo "<method 1> C4: ${C4}"
-		elif [ "$DwellTime" != 0 ] && [ "$PhaseEncodingSteps" != 0 ]; then
-			C4=$(echo "${DwellTime}*(${PhaseEncodingSteps}-1)" | bc)
-			echo "C4: ${C4}"
-		elif [ "$BandwidthPerPixelPhaseEncode" != 0 ]; then
-			C4=$(echo "scale=4; 1/${BandwidthPerPixelPhaseEncode}" | bc)
-			echo "<method 2> C4: ${C4}"
-		else
-			mrconvert ${prerename_filename}.nii.gz -json_import ${json_file} - | mrinfo - -export_pe_eddy Acqparams_Topup_mrconvert.txt indices.txt
-			tmp=($(cat Acqparams_Topup_mrconvert.txt))
-			echo "<method 3> C4: ${tmp[3]}"
-		fi
-
-
 		if [ -n "${C4}" ]; then
-			echo "${Acqparams_Topup_tmp} ${C4}" >> Acqparams_Topup.txt
-		elif [ -f "Acqparams_Topup_mrconvert.txt" ]; then
-			cat Acqparams_Topup_mrconvert.txt >> Acqparams_Topup.txt
-			rm -f Acqparams_Topup_mrconvert.txt indices.txt
+			echo "<method 1> C4=input: ${C4}"
+			echo "${Acqparams_Topup_tmp} ${C4}" >> Acqparams_Topup.txt	
 		else
-			echo "${Acqparams_Topup_tmp} ${TE}" >> Acqparams_Topup.txt
+			if [ "$EPIfactor" != 0 ] && [ "$EffectiveEchoSpacing" != 0 ]; then
+				C4=$(echo "${EffectiveEchoSpacing}*(${EPIfactor}-1)" | bc)
+				echo "<method 2> C4: ${C4}"
+			elif [ "$DwellTime" != 0 ] && [ "$PhaseEncodingSteps" != 0 ]; then
+				C4=$(echo "${DwellTime}*(${PhaseEncodingSteps}-1)" | bc)
+			elif [ "$BandwidthPerPixelPhaseEncode" != 0 ]; then
+				C4=$(echo "scale=4; 1/${BandwidthPerPixelPhaseEncode}" | bc)
+				echo "<method 3> C4: ${C4}"
+			else
+				mrconvert ${prerename_filename}.nii.gz -json_import ${json_file} - | mrinfo - -export_pe_eddy Acqparams_Topup_mrconvert.txt indices.txt
+				tmp=($(cat Acqparams_Topup_mrconvert.txt))
+				echo "<method 4> C4: ${tmp[3]}"
+			fi
+
+			if [ -f "Acqparams_Topup_mrconvert.txt" ]; then
+				cat Acqparams_Topup_mrconvert.txt >> Acqparams_Topup.txt
+				rm -f Acqparams_Topup_mrconvert.txt indices.txt
+			else
+				echo "<method 5> C4=TE: ${TE}"
+				echo "${Acqparams_Topup_tmp} ${TE}" >> Acqparams_Topup.txt
+			fi
 		fi
 
 		## read .bval file
@@ -415,24 +420,24 @@ else
 		done
 
 		## resize
-		if [[ $(echo "${ReconMatrixPE}/${AcquisitionMatrixPE}" | bc) -ne 1 ]]; then
-			mkdir -p ${PreprocDir}/0_BIDS_NIFTI/Preresize
-			resizefile=$(basename ${prerename_filename}.nii.gz)
-			mv ${prerename_filename}.nii.gz ${PreprocDir}/0_BIDS_NIFTI/Preresize
-			cd ${PreprocDir}/0_BIDS_NIFTI/Preresize
-			fslinfo ${resizefile} > fslinfo.txt
-
-			g=($(grep -i dim3 fslinfo.txt))
-			dim3=${g[1]}
-
-			cd ${PreprocDir}/0_BIDS_NIFTI
-			echo dim1,2: ${AcquisitionMatrixPE}
-			echo dim3: ${dim3}
-			mrgrid ./Preresize/${resizefile} regrid ./${resizefile} -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}
-
-			cd ${PreprocDir}/0_BIDS_NIFTI/Preresize
-			mv ${resizefile} dwi_${PED}.nii.gz
-		fi
+		# if [[ $(echo "${ReconMatrixPE}/${AcquisitionMatrixPE}" | bc) -ne 1 ]]; then
+		# 	mkdir -p ${PreprocDir}/0_BIDS_NIFTI/Preresize
+		# 	resizefile=$(basename ${prerename_filename}.nii.gz)
+		# 	mv ${prerename_filename}.nii.gz ${PreprocDir}/0_BIDS_NIFTI/Preresize
+		# 	cd ${PreprocDir}/0_BIDS_NIFTI/Preresize
+		# 	fslinfo ${resizefile} > fslinfo.txt
+    	#
+		# 	g=($(grep -i dim3 fslinfo.txt))
+		# 	dim3=${g[1]}
+    	#
+		# 	cd ${PreprocDir}/0_BIDS_NIFTI
+		# 	echo dim1,2: ${AcquisitionMatrixPE}
+		# 	echo dim3: ${dim3}
+		# 	mrgrid ./Preresize/${resizefile} regrid ./${resizefile} -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}
+    	#
+		# 	cd ${PreprocDir}/0_BIDS_NIFTI/Preresize
+		# 	mv ${resizefile} dwi_${PED}.nii.gz
+		# fi
 
 		cd ${PreprocDir}/0_BIDS_NIFTI
 		for file_format in nii.gz json bval bvec; do
