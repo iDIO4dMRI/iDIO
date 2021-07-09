@@ -18,7 +18,7 @@ Currently, OGIO also relies on ***Python3*** to perform (1) bias correction in D
 
 you can install those library with:
 ```
-$ pip install argparse numpy nibabel scikit-image matplotlib
+$ pip install argparse numpy pandas scipy nibabel scikit-image matplotlib
 ```
 
 ### Setting
