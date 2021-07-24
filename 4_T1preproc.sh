@@ -161,7 +161,7 @@ else
         exit 1
 fi
 
-cp ${OriDir}/Preprocessed_data/dwi_preprocessed-Average_b0-brain.nii.gz ${OriDir}/4_T1preproc/Average_b0-brain.nii.gz
+cp ${OriDir}/Preprocessed_data/${handle}-Average_b0.nii.gz ${OriDir}/4_T1preproc/Average_b0-brain.nii.gz
 
 # bbr-linear registration of B0 to T1
 echo Registrting DWI to T1

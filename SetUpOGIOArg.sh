@@ -38,4 +38,4 @@ bzero=10
 AtlasDir=${HOGIO}/share
 
 # 7_NetworkProc: Set track select number. [default=10M]
-trkNum=1000
+trkNum=10M

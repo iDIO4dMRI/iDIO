@@ -168,7 +168,7 @@ if [[ ${null_tmp} -eq 0 ]]; then
 fi
 
 # Average DWI null images
-cp ${OriDir}/Preprocessed_data/dwi_preprocessed-Average_b0-brain.nii.gz ${OriDir}/5_DTIFIT/Average_b0.nii.gz
+cp ${OriDir}/Preprocessed_data/${handle}-Average_b0.nii.gz ${OriDir}/5_DTIFIT/Average_b0.nii.gz
 cp ${OriDir}/Preprocessed_data/T1w_mask_inDWIspace.nii.gz ${OriDir}/5_DTIFIT/T1w_mask_inDWIspace.nii.gz
 
 # Extract DWI low-b images

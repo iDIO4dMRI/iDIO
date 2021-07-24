@@ -317,13 +317,6 @@ if [ -f ${json_file} ]; then
 	cp ${json_file} ${OriDir}/Preprocessed_data/DWI.json
 fi
 
-# Create Averaged B0 mask
-dwiextract ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz - -fslgrad ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/3_EddyCo/${handle}-EddyCo.bval -bzero -config BZeroThreshold ${Bzerothr} -quiet| mrmath - mean -axis 3 ${OriDir}/3_EddyCo/${handle}-EddyCo-Average_b0.nii.gz -quiet
-bet ${OriDir}/3_EddyCo/${handle}-EddyCo-Average_b0.nii.gz ${OriDir}/3_EddyCo/${handle}-EddyCo-Average_b0-brain -f 0.2 -m
-
-cp ${OriDir}/3_EddyCo/${handle}-EddyCo-Average_b0.nii.gz  ${OriDir}/Preprocessed_data/dwi_preprocessed-Average_b0.nii.gz
-cp ${OriDir}/3_EddyCo/${handle}-EddyCo-Average_b0-brain.nii.gz ${OriDir}/Preprocessed_data/dwi_preprocessed-Average_b0-brain.nii.gz
-
 # Check Resize
 if [[ ${rsimg} -eq "1" ]]; then
 	handle=dwi_preprocessed_resized
@@ -373,3 +366,7 @@ else
 		exit 1
 	fi		
 fi
+
+# Create Averaged B0 mask
+dwiextract ${OriDir}/Preprocessed_data/${handle}.nii.gz - -fslgrad ${OriDir}/Preprocessed_data/${handle}.bvec ${OriDir}/Preprocessed_data/${handle}.bval -bzero -config BZeroThreshold ${Bzerothr} -quiet| mrmath - mean -axis 3 ${OriDir}/Preprocessed_data/${handle}-Average_b0.nii.gz -quiet
+bet ${OriDir}/Preprocessed_data/${handle}-Average_b0.nii.gz ${OriDir}/3_EddyCo/${handle}-Average_b0-brain -f 0.2 -m
