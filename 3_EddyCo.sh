@@ -10,7 +10,8 @@
 ## Edit: 2020/01/22, Tai, use eddy function for non-topup dwi
 ##						  add a zero image if number of z-dimension is odd (-zeropad)
 ##						  move biasco from step 4
-##						  created [Preprocessed_data] folder for preprocessed data
+##						  created [Preprocessed_data] folder for preprocessed data 
+## Edit:2021/07/22, Heather, move resize step in the end
 ##########################################################################################################################
 
 
@@ -33,6 +34,8 @@ Options:
 	-p 	Input directory; [default = pwd directory]
 	-c 	Using CUDA to speed up. NVIDIA GPU with CUDA v9.1 or CUDA v8.0 is available to use this option.
 	-m 	Slice-to-vol motion correction. This option is only implemented for the CUDA version.
+	-r  rResize dwi image by .json text file with information about matrix size.
+	-t  Input Bzero threshold; [default = 10];
 
 EOF
 exit 1
@@ -44,6 +47,8 @@ zeropad=0
 MBF=sw
 cuda_ver=0
 mporder=0
+rsimg=0
+Bzerothr=10
 run_script=y
 
 args="$(sed -E 's/(-[A-Za-z]+ )([^-]*)( |$)/\1"\2"\3/g' <<< $@)"
@@ -53,7 +58,7 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hp:cm" optionName;
+while getopts "hp:cmrt:" optionName;
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
@@ -70,6 +75,12 @@ do
 	m)
 		mporder=1
 		;;
+	r)
+		rsimg=1
+		;;
+	t)
+		Bzerothr=$OPTARG
+        ;;
 	\?)
 		exit 42
 		;;
@@ -139,7 +150,6 @@ if [ $run_script != "y" ]; then
 	echo "Error: Input is not valid..."
 	exit 1
 fi
-
 
 case ${Topup} in
 	1) # Without Topup
@@ -296,6 +306,7 @@ if [ ${zeropad} == 1 ]; then # Remove padding slice
 	mrgrid ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz pad -all_axes -axis 2 0,-1 ${OriDir}/3_EddyCo/${handle_raw}-EddyCo-unbiased.nii.gz
 fi
 
+
 [ -d ${OriDir}/Preprocessed_data ] || mkdir ${OriDir}/Preprocessed_data
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bval ${OriDir}/Preprocessed_data/dwi_preprocessed.bval
@@ -304,4 +315,61 @@ cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/Preprocessed_data/dwi_prep
 json_file=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
 if [ -f ${json_file} ]; then
 	cp ${json_file} ${OriDir}/Preprocessed_data/DWI.json
+fi
+
+# Create Averaged B0 mask
+dwiextract ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz - -fslgrad ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/3_EddyCo/${handle}-EddyCo.bval -bzero -config BZeroThreshold ${Bzerothr} -quiet| mrmath - mean -axis 3 ${OriDir}/3_EddyCo/${handle}-EddyCo-Average_b0.nii.gz -quiet
+bet ${OriDir}/3_EddyCo/${handle}-EddyCo-Average_b0.nii.gz ${OriDir}/3_EddyCo/${handle}-EddyCo-Average_b0-brain -f 0.2 -m
+
+cp ${OriDir}/3_EddyCo/${handle}-EddyCo-Average_b0.nii.gz  ${OriDir}/Preprocessed_data/dwi_preprocessed-Average_b0.nii.gz
+cp ${OriDir}/3_EddyCo/${handle}-EddyCo-Average_b0-brain.nii.gz ${OriDir}/Preprocessed_data/dwi_preprocessed-Average_b0-brain.nii.gz
+
+# Check Resize
+if [[ ${rsimg} -eq "1" ]]; then
+	handle=dwi_preprocessed_resized
+	if [[ -f ${OriDir}/Preprocessed_data/${handle}.nii.gz ]] && [[ -f ${OriDir}/Preprocessed_data/${handle}.bval ]] && [[ -f ${OriDir}/Preprocessed_data/${handle}.bvec ]]; then
+		:
+	elif [[ ! -f ${OriDir}/Preprocessed_data/${handle}.nii.gz ]] && [[ -f ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz ]] ; then
+		if [[ ! -f ${OriDir}/Preprocessed_data/DWI.json ]]; then
+			echo "No .json text file found..."
+			echo "use dwi_preprocessed.nii.gz"
+			handle=dwi_preprocessed			
+		else
+			json_file=${OriDir}/Preprocessed_data/DWI.json
+			while read line; do
+				tmp=(${line})
+				case ${tmp[0]} in
+					'"AcquisitionMatrixPE":')
+						d=${tmp[1]}
+						AcquisitionMatrixPE=${d:0:${#d}-1}				
+					;;
+				esac
+			done < $json_file
+
+			g=($(fslinfo ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz | grep -i dim))	
+			dim1=${g[1]}; dim2=${g[3]};	dim3=${g[5]}
+			echo dim1,2: ${AcquisitionMatrixPE}
+			echo dim3: ${dim3}
+			if [[ "$dim1" != "${AcquisitionMatrixPE}" ]] || [[ "$dim2" != "${AcquisitionMatrixPE}" ]]; then		
+				echo "mrgridmrgridmrgridmrgridmrgrid"
+				mrgrid ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz regrid ${OriDir}/Preprocessed_data/${handle}.nii.gz -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}		
+				cp ${OriDir}/Preprocessed_data/dwi_preprocessed.bval ${OriDir}/Preprocessed_data/${handle}.bval
+				cp ${OriDir}/Preprocessed_data/dwi_preprocessed.bvec ${OriDir}/Preprocessed_data/${handle}.bvec
+			else
+				handle=dwi_preprocessed
+			fi
+		fi
+	else
+		echo ""
+		echo "No dwi image found..."
+		exit 1
+	fi	
+else
+	if [ -f "`find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz"`" ]; then
+		handle=$(basename -- $(find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz") | cut -f1 -d '.')
+	else
+		echo ""
+		echo "No dwi image found..."
+		exit 1
+	fi		
 fi
