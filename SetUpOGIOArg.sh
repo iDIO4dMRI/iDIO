@@ -12,7 +12,7 @@
 # The defaults should work with most installations.
 
 # Set the process you need. [default=1.2.3.4.5.6.7]
-Step=1.2.3.4.5.6.7.
+Step=1.2.3.4.5.6.7
 # 1: 1_DWIprep
 # 2: 2_BiasCo
 # 3: 3_EddyCo
@@ -27,11 +27,11 @@ cuda=0
 #           This option is only implemented for the CUDA version(cuda=1). [true=1 / false=0]
 stv=0
 
-# 3_EddyCo: Resize dwi image by .json text file with information about matrix size. [true=1 / false=0]
-# apply for 3_EddyCo and further steps
-rsimg=1
+# 3_EddyCo: Resize dwi image intp isotropic voxels (mm) by given value [values / false=0]
+# apply for 3_EddyCo  [defult = 0 ]
+rsimg=0
 
-# 3_EddyCo, 5_DTIFIT, 6_CSDpreproc: Bzero threshold. [default=10]
+# 2_BiasCo, 3_EddyCo, 5_DTIFIT, 6_CSDpreproc: Bzero threshold. [default=10]
 bzero=10
 
 # 4_T1preproc, 7_NetworkProc: Set input Atlas directory. [default=${HOGIO}/share]

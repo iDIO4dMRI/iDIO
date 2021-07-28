@@ -12,6 +12,7 @@
 ##						  move biasco from step 4
 ##						  created [Preprocessed_data] folder for preprocessed data 
 ## Edit:2021/07/22, Heather, move resize step in the end
+## Edit:2021/07/28, Heather, resize with vox size option (default = 2mm)
 ##########################################################################################################################
 
 
@@ -34,7 +35,7 @@ Options:
 	-p 	Input directory; [default = pwd directory]
 	-c 	Using CUDA to speed up. NVIDIA GPU with CUDA v9.1 or CUDA v8.0 is available to use this option.
 	-m 	Slice-to-vol motion correction. This option is only implemented for the CUDA version.
-	-r  rResize dwi image by .json text file with information about matrix size.
+	-r  Resize dwi image to input value = isotropic size [default = 2mm isotropic voxel, 0 = do not resize].
 	-t  Input Bzero threshold; [default = 10];
 
 EOF
@@ -58,7 +59,7 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hp:cmrt:" optionName;
+while getopts "hp:cmr:t:" optionName;
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
@@ -76,7 +77,7 @@ do
 		mporder=1
 		;;
 	r)
-		rsimg=1
+		rsimg=$OPTARG
 		;;
 	t)
 		Bzerothr=$OPTARG
@@ -121,6 +122,11 @@ fi
 subjid=$(basename ${OriDir})
 
 # Multi-Band factor
+
+
+
+
+
 if [ -f "${OriDir}/1_DWIprep/MBF.txt" ]; then
 	MBF=both
 else
@@ -317,56 +323,38 @@ if [ -f ${json_file} ]; then
 	cp ${json_file} ${OriDir}/Preprocessed_data/DWI.json
 fi
 
-# Check Resize
-if [[ ${rsimg} -eq "1" ]]; then
-	handle=dwi_preprocessed_resized
-	if [[ -f ${OriDir}/Preprocessed_data/${handle}.nii.gz ]] && [[ -f ${OriDir}/Preprocessed_data/${handle}.bval ]] && [[ -f ${OriDir}/Preprocessed_data/${handle}.bvec ]]; then
-		:
-	elif [[ ! -f ${OriDir}/Preprocessed_data/${handle}.nii.gz ]] && [[ -f ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz ]] ; then
-		if [[ ! -f ${OriDir}/Preprocessed_data/DWI.json ]]; then
-			echo "No .json text file found..."
-			echo "use dwi_preprocessed.nii.gz"
-			handle=dwi_preprocessed			
-		else
-			json_file=${OriDir}/Preprocessed_data/DWI.json
-			while read line; do
-				tmp=(${line})
-				case ${tmp[0]} in
-					'"AcquisitionMatrixPE":')
-						d=${tmp[1]}
-						AcquisitionMatrixPE=${d:0:${#d}-1}				
-					;;
-				esac
-			done < $json_file
+#Isotropic test
+g=($(fslinfo ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz | grep -i dim))	
+vox1=${g[9]}; vox2=${g[11]}; vox3=${g[13]};
 
-			g=($(fslinfo ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz | grep -i dim))	
-			dim1=${g[1]}; dim2=${g[3]};	dim3=${g[5]}
-			echo dim1,2: ${AcquisitionMatrixPE}
-			echo dim3: ${dim3}
-			if [[ "$dim1" != "${AcquisitionMatrixPE}" ]] || [[ "$dim2" != "${AcquisitionMatrixPE}" ]]; then		
-				echo "mrgridmrgridmrgridmrgridmrgrid"
-				mrgrid ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz regrid ${OriDir}/Preprocessed_data/${handle}.nii.gz -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}		
-				cp ${OriDir}/Preprocessed_data/dwi_preprocessed.bval ${OriDir}/Preprocessed_data/${handle}.bval
-				cp ${OriDir}/Preprocessed_data/dwi_preprocessed.bvec ${OriDir}/Preprocessed_data/${handle}.bvec
-			else
-				handle=dwi_preprocessed
-			fi
-		fi
+#Resize or not
+if [[  ${rsimg} -gt "0" ]]; then
+	if [[ ${vox1} == ${vox2} ]] && [[ ${vox1} == ${vox3} ]] && [[ `echo "${vox1} == ${rsimg}" | bc` -eq 1 ]]; then
+		echo "Image is isotropic and size is equal to the input resize value"
+		echo "Skip resize step"
+		handle=dwi_preprocessed
 	else
-		echo ""
-		echo "No dwi image found..."
-		exit 1
-	fi	
+		handle=dwi_preprocessed_resized
+		echo "Resizing matrix using mrgrid"
+		mrgrid ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz regrid ${OriDir}/Preprocessed_data/${handle}.nii.gz -voxel ${rsimg} -force
+		cp ${OriDir}/Preprocessed_data/dwi_preprocessed.bval ${OriDir}/Preprocessed_data/${handle}.bval
+		cp ${OriDir}/Preprocessed_data/dwi_preprocessed.bvec ${OriDir}/Preprocessed_data/${handle}.bvec
+	fi
+elif [[ ${rsimg} == "0" ]]; then
+	echo "Skip resize step"
+	handle=dwi_preprocessed
+	if [[ ${vox1} == ${vox2} ]] && [[ ${vox1} == ${vox3} ]]; then
+		:
+	else
+		echo "Warning: Image voxel is not isotropic, suggest to do resize"
+	fi
 else
-	if [ -f "`find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz"`" ]; then
-		handle=$(basename -- $(find ${OriDir}/Preprocessed_data -maxdepth 1 -name "dwi_preprocessed.nii.gz") | cut -f1 -d '.')
-	else
-		echo ""
-		echo "No dwi image found..."
-		exit 1
-	fi		
+	tput setaf 1 
+	echo "Error: Resize input is not valid, use dwi_preprocessed insetead..."
+	tput sgr0
+	handle=dwi_preprocessed
 fi
 
 # Create Averaged B0 mask
-dwiextract ${OriDir}/Preprocessed_data/${handle}.nii.gz - -fslgrad ${OriDir}/Preprocessed_data/${handle}.bvec ${OriDir}/Preprocessed_data/${handle}.bval -bzero -config BZeroThreshold ${Bzerothr} -quiet| mrmath - mean -axis 3 ${OriDir}/Preprocessed_data/${handle}-Average_b0.nii.gz -quiet
-bet ${OriDir}/Preprocessed_data/${handle}-Average_b0.nii.gz ${OriDir}/3_EddyCo/${handle}-Average_b0-brain -f 0.2 -m
+dwiextract ${OriDir}/Preprocessed_data/${handle}.nii.gz - -fslgrad ${OriDir}/Preprocessed_data/${handle}.bvec ${OriDir}/Preprocessed_data/${handle}.bval -bzero -config BZeroThreshold ${Bzerothr} -quiet| mrmath - mean -axis 3 ${OriDir}/Preprocessed_data/${handle}-Average_b0.nii.gz -quiet -force
+bet ${OriDir}/Preprocessed_data/${handle}-Average_b0.nii.gz ${OriDir}/Preprocessed_data/${handle}-Average_b0-brain -f 0.2 -m

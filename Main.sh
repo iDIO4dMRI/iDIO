@@ -67,6 +67,7 @@ if [[ "1" -eq "${rsimg}" ]]; then
 fi
 
 if [[ ! -z "${bzero}" ]]; then
+    step2Arg="${step2Arg} -t ${bzero}"
     step3Arg="${step3Arg} -t ${bzero}"
     step5Arg="${step5Arg} -t ${bzero}"
     step6Arg="${step6Arg} -t ${bzero}"
@@ -153,7 +154,7 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             # Step 2_BiasCo
             STARTTIME=$(date +"%s")
             echo "2_BiasCo at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-            sh ${HOGIO}/2_BiasCo.sh -p $SubjectDir
+            sh ${HOGIO}/2_BiasCo.sh -p $SubjectDir ${step2Arg}
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         3 )
