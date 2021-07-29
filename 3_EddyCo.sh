@@ -35,7 +35,7 @@ Options:
 	-p 	Input directory; [default = pwd directory]
 	-c 	Using CUDA to speed up. NVIDIA GPU with CUDA v9.1 or CUDA v8.0 is available to use this option.
 	-m 	Slice-to-vol motion correction. This option is only implemented for the CUDA version.
-	-r  Resize dwi image to input value = isotropic size [default = 2mm isotropic voxel, 0 = do not resize].
+	-r  Resize dwi image to input isotropic size [default = 2mm isotropic voxel, 0 = do not resize].
 	-t  Input Bzero threshold; [default = 10];
 
 EOF
