@@ -136,8 +136,8 @@ pinfo+="AtlasDir=${AtlasDir}\n"
 pinfo+="trkNum=${trkNum}\n"
 pinfo+="\n"
 
-echo $pinfo
-echo $pinfo >> ${SubjectDir}/mainlog.txt
+echo -e $pinfo
+echo -e $pinfo >> ${SubjectDir}/mainlog.txt
 
 
 for (( i = 0; i < ${#runStep[@]}; i++ )); do
