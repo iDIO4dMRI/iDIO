@@ -18,7 +18,7 @@ Currently, OGIO also relies on ***Python3*** to perform (1) bias correction in D
 
 you can install those library with:
 ```
-$ pip install argparse numpy nibabel scikit-image matplotlib
+$ pip install argparse numpy pandas scipy nibabel scikit-image matplotlib
 ```
 
 ### Setting
@@ -60,18 +60,18 @@ Performing the OGIO pipeline with predefined options. Run the Main.sh and  done 
 **Usage**
 > sh Main.sh -bids InputDir -proc OutputDir
 
-- -bids* InputDir*: datapath that including two directories - anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwi.bval, dwi.bvec, dwi.json) (As shown in the **Data Data preparing** section above )
+- -bids* InputDir*: datapath that including two directories - anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwi.bval, dwi.bvec, dwi.json) (As shown in the **Data preparing** section above )
 - -proc *OutputDir* Provide a output path for saving the output processed data
 
 **Options**
 All options need to be predefined are list in the ** SetUpOGIOArg.sh** file. OGIO pipeline include six steps in the following order, (1) data preprocessing, (2) bias correction, (3) eddy correction, (4) diffusion tensor fitting, (5) constrained spherical deconvolution, (6) network construction. 
-- **Step**: Set the wanted processing steps to perform [default=1.2.3.4.5.6.]
-- **cuda**: If the processing server has discrete GPU and support cuda >9.1, cuda version of eddy could be applied to speed up the processing procedure [default=0]
-- **stv**: If cuda version of eddy is applied, the function also support to perform the slice-to-volume correction [default=0]
-- **rsimg**: We noticed that some image may be  resampled during output from the MRI machine, if rsimg is set as 1, dwi image will be resized before step (4) diffusion tensor fitting and step (5) constrained spherical deconvolution. [default=0]
-- **bzero**: Values to determine the null image with certain b-value threshold [defult = 0]
-- **AtlasDir**: Default needed files were save in ${HOGIO}/share with several folders, we recommend not to change this path, but save Atlas you need  in ${HOGIO}/share/Atlas instead. [default = ${HOGIO}/share]
-- **trkNum**: Set the desired number of streamlines to be selected when generating the tractogram [default = 10M]
+- **Step**: Set the wanted processing steps to perform [default=1.2.3.4.5.6.7.]
+- **cuda**: If the processing server has discrete GPU and support cuda >9.1, cuda version of eddy could be applied to speed up the processing procedure [default=0] (True = 1/ False = 0)
+- **stv**: If cuda version of eddy is applied, the function also support to perform the slice-to-volume correction [default=0] (True = 1/ False = 0)
+- **rsimg**: resize the dwi image into isotropic voxels with given size value. DWI image will be resized after eddy correction. rsimg = 0 will skip the resize steps.  [default=0]
+- **bzero**: Values to determine the null image with certain b-value threshold [defult = 10]
+- **AtlasDir**: Default needed files were save in ${HOGIO}/share with several folders. We recommend not to change this path, but save Atlas you need in ${HOGIO}/share/Atlas instead. [default = ${HOGIO}/share]
+- **trkNum**: Set the desired number of streamlines to be selected when generating the tractogram [default = 10M].
 
 Details for each step are shown as follows: 
 ### Step 1: 1_DWIprep.sh
@@ -104,7 +104,6 @@ DWI data preparation (identify phase encoding of DWI image and generate needed d
 - -p *OutputDir* Provide a output path for saving the output processed data 
 
 **Options**
-- **-c C4**
 - **-s PhaseEncode** please provide the number of phase encoding images in following order {PA, AP, LR, RL}
 
 **Reference**
@@ -129,7 +128,8 @@ implement the 4D signal denoise, gibbs ringing correction, and drifting correcti
 ```
 
 **Options**
-- **-p OutputDir** the OutputDir has to include the 1_DWIprep folder (includes the converted files) [default = pwd directory]
+- **-p OutputDir** The OutputDir has to include the 1_DWIprep folder (includes the converted files) [default = pwd directory]
+- **-t  B0thr** Input Bzero threshold; [default = 10]; 
 
 ### 3_EddyCo.sh
 **Synopsis**
@@ -182,156 +182,177 @@ implement the distortion and eddy correction. Preprocessed_data folder will be g
 **Options**
 - **-p OutputDir** the OutputDir has to include the 1_DWIprep and 2_BiasCo folder (includes the converted files). [default = pwd directory]
 - **-c** using CUDA to accelerate the correction process. Both CUDA v9.1 and v8.0 is available. [default = none]
-* **-m** with -c, -m is applicable for slice-to-volume motion correction.
+- **-m** with -c, -m is applicable for slice-to-volume motion correction. [default = none]
+- **-r size**  Resize dwi image to input value isotropic size [default = 2mm isotropic voxel, 0 = do not resize].
+- **-t B0thr** Input Bzero threshold; [default = 10];
 
-### 4_DTIFIT.sh
+### 4_T1preproc.sh
+**Synopsis**
+T1 preprocessing: Creating brain mask, registration of T1w and Diff images. Negative values on preprocessed image wil be reported
+```
+└── OutputDir     
+    ├── 4_T1preproc
+    │   ├── 5tt.nii.gz
+    │   ├── 5tt2dwispace.nii.gz
+    │   ├── Average_b0-brain.nii.gz
+    │   ├── Reg_matrix
+    │   │   ├── epi2str.mat
+    │   │   ├── epi2str_init.mat
+    │   │   ├── str2epi.mat
+    │   │   └── str2epi.txt
+    │   ├── T1maskindwispace.nii.gz
+    │   ├── T1w-deGibbs-BiasCo-Brain.nii.gz
+    │   ├── T1w-deGibbs-BiasCo-Brain_pve_0.nii.gz
+    │   ├── T1w-deGibbs-BiasCo-Brain_pve_1.nii.gz
+    │   ├── T1w-deGibbs-BiasCo-Brain_pve_2.nii.gz
+    │   ├── T1w-deGibbs-BiasCo-Brain_pveseg.nii.gz
+    │   ├── T1w-deGibbs-BiasCo-Mask.nii.gz
+    │   ├── T1w-deGibbs-BiasCo-Prior0GenericAffine.mat
+    │   ├── T1w-deGibbs-BiasCo.nii.gz
+    │   ├── T1w-deGibbs.nii.gz
+    │   ├── T1w.nii.gz
+    │   ├── T1w_BiasField.nii.gz
+    │   ├── T1w_preprocessed.nii.gz
+    │   └── WMseg.nii.gz
+```
+**Usage**
+> sh 4_T1preproc.sh [ options ]
+
+**Options**
+- **-p OutputDir** the ProcPath has to include the 2_BiasCo and 3_EddyCo folder (includes the converted files). [default = pwd directory]
+- **-a AtlasDir**  the Atlas directory with MNI normalized images [default = ${HOGIO}/share/]
+
+### 5_DTIFIT.sh
 **Synopsis**
 Diffusion tensor estimation. Only low-b (b<1500 s/mm^2) images were used for further fitting.
 ```
 └── OutputDir     
-	 ├── 4_DTIFIT
-	 │   ├── sub-001-preproc-Average_b0-brain.nii.gz
-	 │   ├── sub-001-preproc-Average_b0-brain_mask.nii.gz
-	 │   ├── sub-001-preproc-Average_b0.nii.gz
-	 │   ├── sub-001-preproc-lowb-data.bval
-	 │   ├── sub-001-preproc-lowb-data.bvec
-	 │   ├── sub-001-preproc-lowb-data.nii.gz
-	 │   ├── sub-001-preproc.bval
-	 │   ├── sub-001-preproc.bvec
-	 │   ├── sub-001-preproc.nii.gz
-	 │   ├── sub-001_FA.nii.gz
-	 │   ├── sub-001_L1.nii.gz
-	 │   ├── sub-001_L2.nii.gz
-	 │   ├── sub-001_L3.nii.gz
-	 │   ├── sub-001_MD.nii.gz
-	 │   ├── sub-001_MO.nii.gz
-	 │   ├── sub-001_RD.nii.gz
-	 │   ├── sub-001_S0.nii.gz
-	 │   ├── sub-001_V1.nii.gz
-	 │   ├── sub-001_V2.nii.gz
-	 │   └── sub-001_V3.nii.gz
+    ├── 5_DTIFIT
+    │   ├── Average_b0.nii.gz
+    │   ├── Process-preproc-lowb-data.bval
+    │   ├── Process-preproc-lowb-data.bvec
+    │   ├── Process-preproc-lowb-data.nii.gz
+    │   ├── Process-preproc.bval
+    │   ├── Process-preproc.bvec
+    │   ├── Process-preproc.nii.gz
+    │   ├── Process_FA.nii.gz
+    │   ├── Process_L1.nii.gz
+    │   ├── Process_L2.nii.gz
+    │   ├── Process_L3.nii.gz
+    │   ├── Process_MD.nii.gz
+    │   ├── Process_MO.nii.gz
+    │   ├── Process_RD.nii.gz
+    │   ├── Process_S0.nii.gz
+    │   ├── Process_V1.nii.gz
+    │   ├── Process_V2.nii.gz
+    │   ├── Process_V3.nii.gz
+    │   └── T1w_mask_inDWIspace.nii.gz
 ```
 **Usage**
-> sh 4_DTIFIT.sh [ options ]
+> sh 5_DTIFIT.sh [ options ]
 
 **Options**
 - **-p OutputDir** the ProcPath has to include the 2_BiasCo and 3_EddyCo folder (includes the converted files). [default = pwd directory]
-- **-t BzeroThreshold** input the Bzero threshold. [default = 10]
+- **-t B0thr** Input Bzero threshold; [default = 10];
 
-### 5_CSDpreproc.sh 
+### 6_CSDpreproc.sh 
 **Synopsis**
 DWI preprocessing of constrained spherical deconvolution with Dhollanders algorithms
 ```
 └── OutputDir      
-	 ├── 5_CSDpreproc
-	 │   ├── S1_Response
-	 │   │   ├── odf_csf.mif
-	 │   │   ├── odf_csf_norm.mif
-	 │   │   ├── odf_gm.mif
-	 │   │   ├── odf_gm_norm.mif
-	 │   │   ├── odf_wm.mif
-	 │   │   ├── odf_wm_norm.mif
-	 │   │   ├── response_csf.txt
-	 │   │   ├── response_gm.txt
-	 │   │   └── response_wm.txt
-	 │   ├── dwi_preprocessed-mask-erode.mif
-	 │   ├── dwi_preprocessed.bval
-	 │   ├── dwi_preprocessed.bvec
-	 │   ├── dwi_preprocessed.mif
-	 │   └── dwi_preprocessed.nii.gz
+    ├── 6_CSDpreproc
+    │   ├── S1_Response
+    │   │   ├── odf_csf.mif
+    │   │   ├── odf_csf_norm.mif
+    │   │   ├── odf_gm.mif
+    │   │   ├── odf_gm_norm.mif
+    │   │   ├── odf_wm.mif
+    │   │   ├── odf_wm_norm.mif
+    │   │   ├── response_csf.txt
+    │   │   ├── response_gm.txt
+    │   │   └── response_wm.txt
+    │   ├── T1w_mask_inDWIspace.nii.gz
+    │   ├── dwi_preprocessed.bval
+    │   ├── dwi_preprocessed.bvec
+    │   ├── dwi_preprocessed.mif
+    │   └── dwi_preprocessed.nii.gz
 ```
 **Usage**
-> sh 5_CSDpreproc.sh [ options ]
+> sh 6_CSDpreproc.sh [ options ]
 
 **Options**
 - **-p OutputDir** the OutputDir has to include the 3_EddyCo and 4_DTIFIT folder (includes the converted files). [default = pwd directory]
-- **-t BzeroThreshold** input the Bzero threshold. [default = 10]
+- **-t B0thr** Input Bzero threshold; [default = 10];
 
-### 6_NetworkProc.sh
+### 7_NetworkProc.sh
 **Synopsis**
 Generate the tractogram based (anatomical constrained tractography with dynamic seeding and SIFT). Connectivity matrix with different scaled (SIFT2 weights, SIFT2 with mu and length) will be generated with four atlases (AAL3, HCPMMP w/o Subcortical regions(HCPex), and Yeo400) and save in Connectivity_Matrix folder. A
 ```
-└── OutputDir      
-	 ├── 6_Tractography
-	 │   ├── 5tt2dwispace.nii.gz
-	 │   ├── Average_b0-brain.nii.gz
-	 │   ├── Average_b0.nii.gz
-	 │   ├── S1_T1proc
-	 │   │   ├── 5tt.nii.gz
-	 │   │   ├── Reg_matrix
-	 │   │   │   ├── epi2str.mat
-	 │   │   │   ├── epi2str_init.mat
-	 │   │   │   ├── str2epi.mat
-	 │   │   │   └── str2epi.txt
-	 │   │   ├── T1-deGibbs.nii.gz
-	 │   │   ├── T12MNI_0GenericAffine.mat
-	 │   │   ├── T12MNI_1InverseWarp.nii.gz
-	 │   │   ├── T12MNI_1Warp.nii.gz
-	 │   │   ├── T12MNI_InverseWarped.nii.gz
-	 │   │   ├── T12MNI_Warped.nii.gz
-	 │   │   ├── T1w-deGibbs-BiasCo-Brain.nii.gz
-	 │   │   ├── T1w-deGibbs-BiasCo-Brain_pve_0.nii.gz
-	 │   │   ├── T1w-deGibbs-BiasCo-Brain_pve_1.nii.gz
-	 │   │   ├── T1w-deGibbs-BiasCo-Brain_pve_2.nii.gz
-	 │   │   ├── T1w-deGibbs-BiasCo-Brain_pveseg.nii.gz
-	 │   │   ├── T1w-deGibbs-BiasCo-Mask.nii.gz
-	 │   │   ├── T1w-deGibbs-BiasCo-Prior0GenericAffine.mat
-	 │   │   ├── T1w-deGibbs-BiasCo.nii.gz
-	 │   │   ├── T1w.nii.gz
-	 │   │   ├── T1w_BiasField.nii.gz
-	 │   │   └── WMseg.nii.gz
-	 │   ├── SIFT2_weights.txt
-	 │   ├── SIFT_mu.txt
-	 │   └── Track_DynamicSeed_5000.tck       
-	 ├── Connectivity_Matrix
-	 │   ├── Assignment
-	 │   │   ├── AAL3_Assignments.csv
-	 │   │   ├── HCPMMP_Assignments.csv
-	 │   │   ├── HCPex_Assignments.csv
-	 │   │   └── Yeo400_Assignments.csv
-	 │   ├── Atlas
-	 │   │   ├── AAL3_inDWI.nii.gz
-	 │   │   ├── AAL3_inT1.nii.gz
-	 │   │   ├── HCPMMP_inDWI.nii.gz
-	 │   │   ├── HCPMMP_inT1.nii.gz
-	 │   │   ├── HCPex_inDWI.nii.gz
-	 │   │   ├── HCPex_inT1.nii.gz
-	 │   │   ├── Yeo400_inDWI.nii.gz
-	 │   │   └── Yeo400_inT1.nii.gz
-	 │   ├── Mat_Length
-	 │   │   ├── AAL3_Length.csv
-	 │   │   ├── HCPMMP_Length.csv
-	 │   │   ├── HCPex_Length.csv
-	 │   │   └── Yeo400_Length.csv
-	 │   ├── Mat_SIFT2Wei
-	 │   │   ├── AAL3_SIFT2.csv
-	 │   │   ├── HCPMMP_SIFT2.csv
-	 │   │   ├── HCPex_SIFT2.csv
-	 │   │   └── Yeo400_SIFT2.csv
-	 │   └── Mat_ScaleMu
-	 │   ├── AAL3_ScaleMu.csv
-	 │   ├── HCPMMP_ScaleMu.csv
-	 │   ├── HCPex_ScaleMu.csv
-	 │   └── Yeo400_ScaleMu.csv
+└── OutputDir  
+    ├── 7_NetworkProc
+    │   ├── Reg_matrix
+    │   │   ├── T12MNI_0GenericAffine.mat
+    │   │   ├── T12MNI_1InverseWarp.nii.gz
+    │   │   ├── T12MNI_1Warp.nii.gz
+    │   │   ├── T12MNI_InverseWarped.nii.gz
+    │   │   └── T12MNI_Warped.nii.gz
+    │   ├── SIFT2_weights.txt
+    │   ├── SIFT_mu.txt
+    │   └── Track_DynamicSeed_10M.tck
+    ├── Connectivity_Matrix
+    │   ├── Assignment
+    │   │   ├── AAL3_Assignments.csv
+    │   │   ├── HCPMMP_Assignments.csv
+    │   │   ├── HCPex_Assignments.csv
+    │   │   └── Yeo400_Assignments.csv
+    │   ├── Atlas
+    │   │   ├── AAL3_inDWI.nii.gz
+    │   │   ├── AAL3_inT1.nii.gz
+    │   │   ├── HCPMMP_inDWI.nii.gz
+    │   │   ├── HCPMMP_inT1.nii.gz
+    │   │   ├── HCPex_inDWI.nii.gz
+    │   │   ├── HCPex_inT1.nii.gz
+    │   │   ├── Yeo400_inDWI.nii.gz
+    │   │   └── Yeo400_inT1.nii.gz
+    │   ├── Mat_Length
+    │   │   ├── AAL3_Length.csv
+    │   │   ├── HCPMMP_Length.csv
+    │   │   ├── HCPex_Length.csv
+    │   │   └── Yeo400_Length.csv
+    │   ├── Mat_SIFT2Wei
+    │   │   ├── AAL3_SIFT2.csv
+    │   │   ├── HCPMMP_SIFT2.csv
+    │   │   ├── HCPex_SIFT2.csv
+    │   │   └── Yeo400_SIFT2.csv
+    │   └── Mat_ScaleMu
+    │       ├── AAL3_ScaleMu.csv
+    │       ├── HCPMMP_ScaleMu.csv
+    │       ├── HCPex_ScaleMu.csv
+    │       └── Yeo400_ScaleMu.csv
 ```
 **Usage**
-> sh 6_NetworkProc.sh [ options ]
+> sh 7_NetworkProc.sh [ options ]
 
 **Options**
 - **-p OutputDir** the OutputDir has to include the 5_CSDpreproc folder (includes the converted files). [default = pwd directory]
-- **-a AtlasDir** the Atlas directory [default = ${HOGIO}/share/Atlas]
+- **-a AtlasDir** the Atlas directory [default = ${HOGIO}/share/]
+- **-n TrackNum** Select track number; [default = 10M] (Please be aware of storage apace)
 
 ###  Preprocessed_data and mainlog.txt
 For other purpose that may need preprocessed dwi and T1 image data, we save the preporcessed data in the Preprocessed_data folder. a log file with all options and information with processing time were save in the mainlog.txt in the main output dir. 
 ```
 └── OutputDir         
-	 ├── Preprocessed_data
-	 │   ├── DWI.json
-	 │   ├── T1w_preprocessed.nii.gz
-	 │   ├── dwi_preprocessed.bval
-	 │   ├── dwi_preprocessed.bvec
-	 │   └── dwi_preprocessed.nii.gz
-	 └── mainlog.txt
+    ├── Preprocessed_data
+    │   ├── DWI.json
+    │   ├── T1w_mask.nii.gz
+    │   ├── T1w_mask_inDWIspace.nii.gz
+    │   ├── T1w_preprocessed.nii.gz
+    │   ├── dwi_preprocessed-Average_b0-brain.nii.gz
+    │   ├── dwi_preprocessed-Average_b0.nii.gz
+    │   ├── dwi_preprocessed.bval
+    │   ├── dwi_preprocessed.bvec
+    │   └── dwi_preprocessed.nii.gz
+    └── mainlog.txt
 ```
 
 ## References

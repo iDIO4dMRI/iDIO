@@ -13,6 +13,7 @@
 # 20200826 - check C4 from mrconvert and add mrconvert function (use mrconvert)
 # 20201229 - bug fixed (bc)
 # 20210122 - fmap, 1 phase encoding direction
+# 20210728 - remoce C4 option on Usage
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -27,7 +28,6 @@ Usage() {
     Usage: 1_DWIprep -b <BIDSDir> -p <PreprocDir>
 
     Options:
-	-c 	C4
 	-s 	Please provide the series of phase-encoding direction {PA, AP, RL, LR}
 		Two scans for AP and PA  => 2 1 0 0
 		One scan for PA => 1 0 0 0
@@ -43,7 +43,7 @@ PreprocDir=
 C4=
 PhaseEncoding=
 
-while getopts "hb:p:c:s:v" OPTION
+while getopts "hb:p:s:v" OPTION
 do
     case $OPTION in
     h)

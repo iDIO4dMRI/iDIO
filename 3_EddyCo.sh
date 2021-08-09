@@ -10,7 +10,9 @@
 ## Edit: 2020/01/22, Tai, use eddy function for non-topup dwi
 ##						  add a zero image if number of z-dimension is odd (-zeropad)
 ##						  move biasco from step 4
-##						  created [Preprocessed_data] folder for preprocessed data
+##						  created [Preprocessed_data] folder for preprocessed data 
+## Edit:2021/07/22, Heather, move resize step in the end
+## Edit:2021/07/28, Heather, resize with vox size option (default = 2mm)
 ##########################################################################################################################
 
 
@@ -33,6 +35,8 @@ Options:
 	-p 	Input directory; [default = pwd directory]
 	-c 	Using CUDA to speed up. NVIDIA GPU with CUDA v9.1 or CUDA v8.0 is available to use this option.
 	-m 	Slice-to-vol motion correction. This option is only implemented for the CUDA version.
+	-r  Resize dwi image to input isotropic size [default = 2mm isotropic voxel, 0 = do not resize].
+	-t  Input Bzero threshold; [default = 10];
 
 EOF
 exit 1
@@ -44,6 +48,8 @@ zeropad=0
 MBF=sw
 cuda_ver=0
 mporder=0
+rsimg=0
+Bzerothr=10
 run_script=y
 
 args="$(sed -E 's/(-[A-Za-z]+ )([^-]*)( |$)/\1"\2"\3/g' <<< $@)"
@@ -53,7 +59,7 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hp:cm" optionName;
+while getopts "hp:cmr:t:" optionName;
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
@@ -70,6 +76,12 @@ do
 	m)
 		mporder=1
 		;;
+	r)
+		rsimg=$OPTARG
+		;;
+	t)
+		Bzerothr=$OPTARG
+        ;;
 	\?)
 		exit 42
 		;;
@@ -110,6 +122,11 @@ fi
 subjid=$(basename ${OriDir})
 
 # Multi-Band factor
+
+
+
+
+
 if [ -f "${OriDir}/1_DWIprep/MBF.txt" ]; then
 	MBF=both
 else
@@ -139,7 +156,6 @@ if [ $run_script != "y" ]; then
 	echo "Error: Input is not valid..."
 	exit 1
 fi
-
 
 case ${Topup} in
 	1) # Without Topup
@@ -296,6 +312,7 @@ if [ ${zeropad} == 1 ]; then # Remove padding slice
 	mrgrid ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz pad -all_axes -axis 2 0,-1 ${OriDir}/3_EddyCo/${handle_raw}-EddyCo-unbiased.nii.gz
 fi
 
+
 [ -d ${OriDir}/Preprocessed_data ] || mkdir ${OriDir}/Preprocessed_data
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bval ${OriDir}/Preprocessed_data/dwi_preprocessed.bval
@@ -305,3 +322,39 @@ json_file=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
 if [ -f ${json_file} ]; then
 	cp ${json_file} ${OriDir}/Preprocessed_data/DWI.json
 fi
+
+#Isotropic test
+g=($(fslinfo ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz | grep -i dim))	
+vox1=${g[9]}; vox2=${g[11]}; vox3=${g[13]};
+
+#Resize or not
+if [[  ${rsimg} -gt "0" ]]; then
+	if [[ ${vox1} == ${vox2} ]] && [[ ${vox1} == ${vox3} ]] && [[ `echo "${vox1} == ${rsimg}" | bc` -eq 1 ]]; then
+		echo "Image is isotropic and size is equal to the input resize value"
+		echo "Skip resize step"
+		handle=dwi_preprocessed
+	else
+		handle=dwi_preprocessed_resized
+		echo "Resizing matrix using mrgrid"
+		mrgrid ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz regrid ${OriDir}/Preprocessed_data/${handle}.nii.gz -voxel ${rsimg} -force
+		cp ${OriDir}/Preprocessed_data/dwi_preprocessed.bval ${OriDir}/Preprocessed_data/${handle}.bval
+		cp ${OriDir}/Preprocessed_data/dwi_preprocessed.bvec ${OriDir}/Preprocessed_data/${handle}.bvec
+	fi
+elif [[ ${rsimg} == "0" ]]; then
+	echo "Skip resize step"
+	handle=dwi_preprocessed
+	if [[ ${vox1} == ${vox2} ]] && [[ ${vox1} == ${vox3} ]]; then
+		:
+	else
+		echo "Warning: Image voxel is not isotropic, suggest to do resize"
+	fi
+else
+	tput setaf 1 
+	echo "Error: Resize input is not valid, use dwi_preprocessed insetead..."
+	tput sgr0
+	handle=dwi_preprocessed
+fi
+
+# Create Averaged B0 mask
+dwiextract ${OriDir}/Preprocessed_data/${handle}.nii.gz - -fslgrad ${OriDir}/Preprocessed_data/${handle}.bvec ${OriDir}/Preprocessed_data/${handle}.bval -bzero -config BZeroThreshold ${Bzerothr} -quiet| mrmath - mean -axis 3 ${OriDir}/Preprocessed_data/${handle}-Average_b0.nii.gz -quiet -force
+bet ${OriDir}/Preprocessed_data/${handle}-Average_b0.nii.gz ${OriDir}/Preprocessed_data/${handle}-Average_b0-brain -f 0.2 -m

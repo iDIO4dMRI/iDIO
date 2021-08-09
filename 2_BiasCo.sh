@@ -9,6 +9,7 @@
 ## Edit: 2020/04/20, Tsen, Options
 ## Edit: 2021/02/18, Heather, (1) python, (2) dwicat, (3) replace dwi_select_vol with mrinfo and bvalue threshold
 ## Edit: 2021/05/18, Heather, (1) bug fixed
+## Edit: 2021/07/28, Heather,  skip the denoise if the recon matrix is interpolated
 ##########################################################################################################################
 
 
@@ -28,7 +29,7 @@ Usage:	2_BiasCo -[options]
 System will automatically detect all folders in directory if no input arguments supplied
 
 Options:
-	-p 	Input directory; [default = pwd directory]
+	-p 	Input directory(and output dir); [default = pwd directory]
 	-t  Input Bzero threshold; [default = 10]; 
 EOF
 exit 1
@@ -117,6 +118,24 @@ else
 	File1=`ls *${direction[0]}.nii.gz`
 fi
 
+# Check recon matrix interpolation
+json_file=(`find ${OriDir}/0_BIDS_NIFTI -maxdepth 1 -name "*dwi*.json*"`)
+
+while read line; do
+	tmp=(${line})
+	case ${tmp[0]} in
+		'"AcquisitionMatrixPE":')
+			d=${tmp[1]}
+			AcquisitionMatrixPE=${d:0:${#d}-1}				
+		;;
+		'"ReconMatrixPE":')
+			d=${tmp[1]}
+			ReconMatrixPE=${d:0:${#d}-1}				
+		;;
+	esac
+done < $json_file
+
+
 case $Topup in
 	1 )
 		echo Input DWIs contain only one PE direction
@@ -126,9 +145,14 @@ case $Topup in
 		cp $(echo ${File1%.*.*}).bvec ${OriDir}/2_BiasCo
 
 		cd $OriDir/2_BiasCo
-
-		dwidenoise $(echo ${File1%.*.*}).nii.gz Temp-denoise.nii.gz
-		mrdegibbs Temp-denoise.nii.gz $(echo ${File1%.*.*})-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
+		if [[ "$AcquisitionMatrixPE" == "$ReconMatrixPE" ]]; then
+			dwidenoise $(echo ${File1%.*.*}).nii.gz Temp-denoise.nii.gz
+			mrdegibbs Temp-denoise.nii.gz $(echo ${File1%.*.*})-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
+			rm -f ./Temp-denoise.nii.gz
+		else
+			echo "interpolated Recon Matrix was found, skip denoise step"
+			mrdegibbs $(echo ${File1%.*.*}).nii.gz $(echo ${File1%.*.*})-deGibbs.nii.gz
+		fi
 		;;
 	3 )
 		echo Input DWIs contain more than one PE directions
@@ -145,27 +169,32 @@ case $Topup in
 		paste -d " " ${File1%.*.*}.bvec ${File2%.*.*}.bvec > $OriDir/2_BiasCo/$(echo ${File1%.*.*})${direction[1]}.bvec
 
 		cd $OriDir/2_BiasCo
-
-		dwidenoise $(echo ${File1%.*.*})${direction[1]}.nii.gz Temp-denoise.nii.gz
-		mrdegibbs Temp-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
+		if [[ "$AcquisitionMatrixPE" == "$ReconMatrixPE" ]]; then
+			dwidenoise $(echo ${File1%.*.*})${direction[1]}.nii.gz Temp-denoise.nii.gz
+			mrdegibbs Temp-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
+			rm -f ./Temp-denoise.nii.gz
+		else
+			echo "interpolated Recon Matrix was found, skip denoise step"
+			mrdegibbs $(echo ${File1%.*.*})${direction[1]}.nii.gz $(echo ${File1%.*.*})${direction[1]}-deGibbs.nii.gz
+		fi
 		;;
 esac
 
 cd ${OriDir}/2_BiasCo
-rm -f ./Temp-denoise.nii.gz
-File_denoise=$(ls *-denoise-deGibbs.nii.gz | sed 's/.nii.gz//g')
+
+File_degibbs=$(ls *-deGibbs.nii.gz | sed 's/.nii.gz//g')
 File_bval=$(ls *.bval)
 File_bvec=$(ls *.bvec)
 
 #
-B0num=$(mrinfo ${File_denoise}.nii.gz -fslgrad ${File_bvec} ${File_bval}  -shell_sizes -config BZeroThreshold ${Bzerothr}|awk '{print $1}')
+B0num=$(mrinfo ${File_degibbs}.nii.gz -fslgrad ${File_bvec} ${File_bval}  -shell_sizes -config BZeroThreshold ${Bzerothr}|awk '{print $1}')
 
-B0index=$(mrinfo ${File_denoise}.nii.gz -fslgrad ${File_bvec} ${File_bval}  -shell_indices -config BZeroThreshold ${Bzerothr}|awk {'print $1'})
+B0index=$(mrinfo ${File_degibbs}.nii.gz -fslgrad ${File_bvec} ${File_bval}  -shell_indices -config BZeroThreshold ${Bzerothr}|awk {'print $1'})
 
 #B0num > 3 -> do drift correction
 if [[ "${B0num}" -gt "3"  ]]; then
 	echo "Calling python script for Drifting Correction"
-	python3 ${HOGIO}/python/driftco.py ${OriDir}/2_BiasCo/${File_denoise}.nii.gz ${B0index} ${OriDir}/2_BiasCo/${File_denoise}-DriftCo.nii.gz
+	python3 ${HOGIO}/python/driftco.py ${OriDir}/2_BiasCo/${File_degibbs}.nii.gz ${B0index} ${OriDir}/2_BiasCo/${File_degibbs}-DriftCo.nii.gz
 else
 	echo "Not enough number of b0 (null scans), drifting correction skipped"
 fi

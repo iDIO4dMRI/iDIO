@@ -14,7 +14,7 @@
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
 Version=1.0
-VDate=2021.03.16
+VDate=2021.07.22
 
 Usage(){
     cat <<EOF
@@ -63,11 +63,17 @@ if [[ "1" -eq "${cuda}" ]]; then
     fi
 fi
 if [[ "1" -eq "${rsimg}" ]]; then
-    step4Arg="-r"; step5Arg="-r"
+    step3Arg="${step3Arg} -r"
 fi
+
 if [[ ! -z "${bzero}" ]]; then
-    step4Arg="${step4Arg} -t ${bzero}"
+    step2Arg="${step2Arg} -t ${bzero}"
+    step3Arg="${step3Arg} -t ${bzero}"
+    step5Arg="${step5Arg} -t ${bzero}"
+    step6Arg="${step6Arg} -t ${bzero}"
 fi
+
+
 if [[ ! -z "${AtlasDir}" ]]; then
     if [[ ! -d ${AtlasDir} ]]; then
         echo "Error: ${AtlasDir}"
@@ -75,11 +81,13 @@ if [[ ! -z "${AtlasDir}" ]]; then
         echo ""
         exit 1
     else
-        step6Arg="${step6Arg} -a ${AtlasDir}"
+        step4Arg="${step4Arg} -a ${AtlasDir}"
+        step7Arg="${step7Arg} -a ${AtlasDir}"
+
     fi
 fi
 if [[ ! -z "${trkNum}" ]]; then
-    step6Arg="${step6Arg} -n ${trkNum}"
+    step7Arg="${step7Arg} -n ${trkNum}"
 fi
 
 SubjectDir=
@@ -146,7 +154,7 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             # Step 2_BiasCo
             STARTTIME=$(date +"%s")
             echo "2_BiasCo at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-            sh ${HOGIO}/2_BiasCo.sh -p $SubjectDir
+            sh ${HOGIO}/2_BiasCo.sh -p $SubjectDir ${step2Arg}
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         3 )
@@ -172,27 +180,34 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         4 )
-            # Step 4_DTIFIT
+            # Step 4_T1preproc
             STARTTIME=$(date +"%s")
-            echo "4_DTIFIT at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-            # sh ${HOGIO}/4_DTIFIT.sh -p $SubjectDir -t $bzero
-            sh ${HOGIO}/4_DTIFIT.sh -p $SubjectDir ${step4Arg}
+            echo "4_T1preproc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
+            echo "sh ${HOGIO}/4_T1preproc.sh -p $SubjectDir ${step4Arg}"
+            sh ${HOGIO}/4_T1preproc.sh -p $SubjectDir ${step4Arg}
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
-        5 )
-            # Step 5_CSDpreproc
+        5)    
+            # Step 5_DTIFIT
             STARTTIME=$(date +"%s")
-            echo "5_CSDpreproc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-            # sh ${HOGIO}/5_CSDpreproc.sh -p $SubjectDir
-            sh ${HOGIO}/5_CSDpreproc.sh -p $SubjectDir ${step5Arg}
+            echo "5_DTIFIT at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
+            sh ${HOGIO}/5_DTIFIT.sh -p $SubjectDir ${step5Arg}
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         6 )
-            # Step 6_NetworkProc
+            # Step 6_CSDpreproc
             STARTTIME=$(date +"%s")
-            echo "6_NetworkProc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
+            echo "6_CSDpreproc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
+            # sh ${HOGIO}/5_CSDpreproc.sh -p $SubjectDir
+            sh ${HOGIO}/6_CSDpreproc.sh -p $SubjectDir ${step6Arg}
+            CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
+            ;;
+        7 )
+            # Step 7_NetworkProc
+            STARTTIME=$(date +"%s")
+            echo "7_NetworkProc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
             # sh ${HOGIO}/6_NetworkProc.sh -p $SubjectDir -a $AtlasDir -n $trkNum
-            sh ${HOGIO}/6_NetworkProc.sh -p $SubjectDir ${step6Arg}
+            sh ${HOGIO}/7_NetworkProc.sh -p $SubjectDir ${step7Arg}
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
     esac

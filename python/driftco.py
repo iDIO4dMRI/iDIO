@@ -40,7 +40,7 @@ def drift_brainmask(im,thr,k,er_k):
         # Build mask of cells with data not on the edge of the image
         # Use 3x3 square structuring element
         data_mask = np.isfinite(input_array)
-        el = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]]).astype(np.bool)
+        el = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]]).astype(np.bool_)
         inside_mask = sp.ndimage.binary_erosion(data_mask, structure=el)
         edge_mask = (data_mask & ~inside_mask)
 
@@ -54,9 +54,9 @@ def drift_brainmask(im,thr,k,er_k):
 
         # Cross structuring element
         if four_way:
-            el = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]]).astype(np.bool)
+            el = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]]).astype(np.bool_)
         else:
-            el = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]]).astype(np.bool)
+            el = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]]).astype(np.bool_)
 
         # Iterate until marker array doesn't change
         while not np.array_equal(output_old_array, output_array):
