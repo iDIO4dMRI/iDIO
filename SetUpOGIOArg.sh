@@ -27,7 +27,7 @@ cuda=0
 #           This option is only implemented for the CUDA version(cuda=1). [true=1 / false=0]
 stv=0
 
-# 3_EddyCo: Resize dwi image intp isotropic voxels (mm) by given value [values / false=0]
+# 3_EddyCo: Resize dwi image intp isotropic voxels (mm) by given value [true=1 / false=0]
 # apply for 3_EddyCo  [defult = 0 ]
 rsimg=0
 

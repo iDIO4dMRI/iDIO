@@ -76,12 +76,19 @@ fi
 
 mkdir -p ${PreprocDir}/0_BIDS_NIFTI
 cd ${PreprocDir}/0_BIDS_NIFTI
-/bin/cp -f ${BIDSDir}/dwi/*dwi* .
-/bin/cp -f ${BIDSDir}/dwi/*DWI* .
-/bin/cp -f ${BIDSDir}/anat/*T1* .
+
+dwifile=($(find ${BIDSDir}/dwi -maxdepth 1 -type f -name "*dwi*"))
+/bin/cp -f ${dwifile[*]} ${PreprocDir}/0_BIDS_NIFTI &>error.log
+dwifile=($(find ${BIDSDir}/dwi -maxdepth 1 -type f -name "*DWI*"))
+/bin/cp -f ${dwifile[*]} ${PreprocDir}/0_BIDS_NIFTI &>error.log
+t1file=($(find ${BIDSDir}/anat -maxdepth 1 -type f -name "*T1*"))
+/bin/cp -f ${t1file[*]} ${PreprocDir}/0_BIDS_NIFTI &>error.log
 
 # compress
-gzip *.nii
+count=$(find ${PreprocDir}/0_BIDS_NIFTI -maxdepth 1 -type f -name "*.nii"| wc -l)
+if [[ $count -gt 0 ]]; then
+	gzip *.nii
+fi
 
 # check fieldmap
 n_dwi=$(ls *dwi*.nii.gz | wc -l)
@@ -99,11 +106,12 @@ if [ ${n_dwi}==1 ] && [ -d "${BIDSDir}/fmap/" ]; then
 		/bin/cp -f ${BIDSDir}/fmap/${fmap_name} .
 		mv ${fmap_name} dwi_${fmap_name}
 	done
-
+	
+	count=$(find ${PreprocDir}/0_BIDS_NIFTI -maxdepth 1 -type f -name "*.nii"| wc -l)
+	if [[ $count -gt 0 ]]; then
+		gzip *.nii
+	fi
 fi
-
-gzip *.nii
-
 
 # check filenames
 for T1_file in *T1*.nii.gz; do
@@ -116,15 +124,15 @@ done
 
 for DWI_file in *DWI*; do
 	nname=$(echo ${DWI_file} | sed 's/DWI/dwi/g')
- 	mv ${DWI_file} $nname
+ 	mv ${DWI_file} $nname &>error.log
 done
 
-bvals_tmp=$(ls -f *.bvals 2>>error.log)
+bvals_tmp=$(ls -f *.bvals &>error.log)
 for bvals_file in ${bvals_tmp}; do
 	mv ${bvals_file} ${bvals_file:0:${#bvals_file}-1}
 done
 
-bvecs_tmp=$(ls -f *.bvecs 2>>error.log)
+bvecs_tmp=$(ls -f *.bvecs &>error.log)
 for bvecs_file in ${bvecs_tmp}; do
 	mv ${bvecs_file} ${bvecs_file:0:${#bvecs_file}-1}
 done
@@ -158,7 +166,6 @@ json_dir=$(ls -d ${PreprocDir}/0_BIDS_NIFTI/prerename_*dwi*.json)
 json_dir_tmp=(${json_dir})
 n_json_file=$(ls -d ${PreprocDir}/0_BIDS_NIFTI/prerename_*dwi*.json | wc -l)
 
-
 mkdir -p ${PreprocDir}/1_DWIprep
 cd ${PreprocDir}/1_DWIprep
 
@@ -166,16 +173,18 @@ cd ${PreprocDir}/1_DWIprep
 /bin/rm -f Acqparams_Topup.txt
 /bin/rm -f EddyIndex.txt
 
-# check if .json exist
+# check if .json not exist
 if [ "${json_dir}" == "" ] || [ "${n_json_file}" == "0" ]; then
 
 	cd ${PreprocDir}/1_DWIprep
 	n_nifti_file=$(ls -d ${PreprocDir}/0_BIDS_NIFTI/prerename_*dwi*.nii.gz | wc -l)
 
 	if [[ ${n_json_file} -eq 0 ]]; then
+	    tput setaf 1
 	    echo ""
 		echo "Error: 0_BIDS_NIFTI is empty."
 		echo "Please check BIDS files..."
+		tput sgr0
 		exit 1
 	else
 
@@ -272,7 +281,7 @@ else
 
 
 		prerename_filename=${json_file:0:${#json_file}-5}
-		echo "\\n====Check inforamtion for $(basename ${prerename_filename})====\n"
+		echo -e "\n====Check inforamtion for $(basename ${prerename_filename})===="
 		while read line; do
 
 			tmp=(${line})
