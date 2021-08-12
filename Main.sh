@@ -62,8 +62,8 @@ if [[ "1" -eq "${cuda}" ]]; then
         step3Arg="${step3Arg} -m"
     fi
 fi
-if [[ "1" -eq "${rsimg}" ]]; then
-    step3Arg="${step3Arg} -r"
+if [[ "${rsimg}" -gt "0" ]]; then
+    step3Arg="${step3Arg} -r ${rsimg}"
 fi
 
 if [[ ! -z "${bzero}" ]]; then
@@ -161,21 +161,6 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             # Step 3_EddyCo
             STARTTIME=$(date +"%s")
             echo "3_EddyCo at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-            # case ${cuda} in
-            #     0 ) # without cuda
-            #         sh ${HOGIO}/3_EddyCo.sh -p $SubjectDir
-            #     ;;
-            #     1 ) # with cuda
-            #         case ${stv} in
-            #             0 )
-            #                 sh ${HOGIO}/3_EddyCo.sh -p $SubjectDir -c
-            #                 ;;
-            #             1 ) #slice-to-vol motion correction.
-            #                 sh ${HOGIO}/3_EddyCo.sh -p $SubjectDir -c -m
-            #                 ;;
-            #         esac
-            #     ;;
-            # esac
             sh ${HOGIO}/3_EddyCo.sh -p $SubjectDir ${step3Arg}
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
@@ -183,11 +168,10 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             # Step 4_T1preproc
             STARTTIME=$(date +"%s")
             echo "4_T1preproc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-            echo "sh ${HOGIO}/4_T1preproc.sh -p $SubjectDir ${step4Arg}"
             sh ${HOGIO}/4_T1preproc.sh -p $SubjectDir ${step4Arg}
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
-        5)    
+        5)
             # Step 5_DTIFIT
             STARTTIME=$(date +"%s")
             echo "5_DTIFIT at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
@@ -198,7 +182,6 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             # Step 6_CSDpreproc
             STARTTIME=$(date +"%s")
             echo "6_CSDpreproc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-            # sh ${HOGIO}/5_CSDpreproc.sh -p $SubjectDir
             sh ${HOGIO}/6_CSDpreproc.sh -p $SubjectDir ${step6Arg}
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
@@ -206,7 +189,6 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             # Step 7_NetworkProc
             STARTTIME=$(date +"%s")
             echo "7_NetworkProc at $(date +"%Y-%m-%d %T")" >> ${SubjectDir}/mainlog.txt
-            # sh ${HOGIO}/6_NetworkProc.sh -p $SubjectDir -a $AtlasDir -n $trkNum
             sh ${HOGIO}/7_NetworkProc.sh -p $SubjectDir ${step7Arg}
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
