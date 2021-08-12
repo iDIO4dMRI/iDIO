@@ -29,7 +29,7 @@ Usage:	2_BiasCo -[options]
 System will automatically detect all folders in directory if no input arguments supplied
 
 Options:
-	-p 	Input directory; [default = pwd directory]
+	-p 	Input directory(and output dir); [default = pwd directory]
 	-t  Input Bzero threshold; [default = 10]; 
 EOF
 exit 1

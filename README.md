@@ -60,18 +60,18 @@ Performing the OGIO pipeline with predefined options. Run the Main.sh and  done 
 **Usage**
 > sh Main.sh -bids InputDir -proc OutputDir
 
-- -bids* InputDir*: datapath that including two directories - anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwi.bval, dwi.bvec, dwi.json) (As shown in the **Data Data preparing** section above )
+- -bids* InputDir*: datapath that including two directories - anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwi.bval, dwi.bvec, dwi.json) (As shown in the **Data preparing** section above )
 - -proc *OutputDir* Provide a output path for saving the output processed data
 
 **Options**
 All options need to be predefined are list in the ** SetUpOGIOArg.sh** file. OGIO pipeline include six steps in the following order, (1) data preprocessing, (2) bias correction, (3) eddy correction, (4) diffusion tensor fitting, (5) constrained spherical deconvolution, (6) network construction. 
-- **Step**: Set the wanted processing steps to perform [default=1.2.3.4.5.6.]
-- **cuda**: If the processing server has discrete GPU and support cuda >9.1, cuda version of eddy could be applied to speed up the processing procedure [default=0]
-- **stv**: If cuda version of eddy is applied, the function also support to perform the slice-to-volume correction [default=0]
-- **rsimg**: We noticed that some image may be  resampled during output from the MRI machine, if rsimg is set as 1, dwi image will be resized before step (4) diffusion tensor fitting and step (5) constrained spherical deconvolution. [default=0]
-- **bzero**: Values to determine the null image with certain b-value threshold [defult = 0]
-- **AtlasDir**: Default needed files were save in ${HOGIO}/share with several folders, we recommend not to change this path, but save Atlas you need  in ${HOGIO}/share/Atlas instead. [default = ${HOGIO}/share]
-- **trkNum**: Set the desired number of streamlines to be selected when generating the tractogram [default = 10M]
+- **Step**: Set the wanted processing steps to perform [default=1.2.3.4.5.6.7.]
+- **cuda**: If the processing server has discrete GPU and support cuda >9.1, cuda version of eddy could be applied to speed up the processing procedure [default=0] (True = 1/ False = 0)
+- **stv**: If cuda version of eddy is applied, the function also support to perform the slice-to-volume correction [default=0] (True = 1/ False = 0)
+- **rsimg**: resize the dwi image into isotropic voxels with given size value. DWI image will be resized after eddy correction. rsimg = 0 will skip the resize steps.  [default=0]
+- **bzero**: Values to determine the null image with certain b-value threshold [defult = 10]
+- **AtlasDir**: Default needed files were save in ${HOGIO}/share with several folders. We recommend not to change this path, but save Atlas you need in ${HOGIO}/share/Atlas instead. [default = ${HOGIO}/share]
+- **trkNum**: Set the desired number of streamlines to be selected when generating the tractogram [default = 10M].
 
 Details for each step are shown as follows: 
 ### Step 1: 1_DWIprep.sh
@@ -104,7 +104,6 @@ DWI data preparation (identify phase encoding of DWI image and generate needed d
 - -p *OutputDir* Provide a output path for saving the output processed data 
 
 **Options**
-- **-c C4**
 - **-s PhaseEncode** please provide the number of phase encoding images in following order {PA, AP, LR, RL}
 
 **Reference**
@@ -129,7 +128,8 @@ implement the 4D signal denoise, gibbs ringing correction, and drifting correcti
 ```
 
 **Options**
-- **-p OutputDir** the OutputDir has to include the 1_DWIprep folder (includes the converted files) [default = pwd directory]
+- **-p OutputDir** The OutputDir has to include the 1_DWIprep folder (includes the converted files) [default = pwd directory]
+- **-t  B0thr** Input Bzero threshold; [default = 10]; 
 
 ### 3_EddyCo.sh
 **Synopsis**
@@ -182,7 +182,9 @@ implement the distortion and eddy correction. Preprocessed_data folder will be g
 **Options**
 - **-p OutputDir** the OutputDir has to include the 1_DWIprep and 2_BiasCo folder (includes the converted files). [default = pwd directory]
 - **-c** using CUDA to accelerate the correction process. Both CUDA v9.1 and v8.0 is available. [default = none]
-* **-m** with -c, -m is applicable for slice-to-volume motion correction.
+- **-m** with -c, -m is applicable for slice-to-volume motion correction. [default = none]
+- **-r size**  Resize dwi image to input value isotropic size [default = 2mm isotropic voxel, 0 = do not resize].
+- **-t B0thr** Input Bzero threshold; [default = 10];
 
 ### 4_T1preproc.sh
 **Synopsis**
@@ -251,7 +253,7 @@ Diffusion tensor estimation. Only low-b (b<1500 s/mm^2) images were used for fur
 
 **Options**
 - **-p OutputDir** the ProcPath has to include the 2_BiasCo and 3_EddyCo folder (includes the converted files). [default = pwd directory]
-- **-t BzeroThreshold** input the Bzero threshold. [default = 10]
+- **-t B0thr** Input Bzero threshold; [default = 10];
 
 ### 6_CSDpreproc.sh 
 **Synopsis**
@@ -280,7 +282,7 @@ DWI preprocessing of constrained spherical deconvolution with Dhollanders algori
 
 **Options**
 - **-p OutputDir** the OutputDir has to include the 3_EddyCo and 4_DTIFIT folder (includes the converted files). [default = pwd directory]
-- **-t BzeroThreshold** input the Bzero threshold. [default = 10]
+- **-t B0thr** Input Bzero threshold; [default = 10];
 
 ### 7_NetworkProc.sh
 **Synopsis**
@@ -296,7 +298,7 @@ Generate the tractogram based (anatomical constrained tractography with dynamic 
     │   │   └── T12MNI_Warped.nii.gz
     │   ├── SIFT2_weights.txt
     │   ├── SIFT_mu.txt
-    │   └── Track_DynamicSeed_1000.tck
+    │   └── Track_DynamicSeed_10M.tck
     ├── Connectivity_Matrix
     │   ├── Assignment
     │   │   ├── AAL3_Assignments.csv
@@ -334,6 +336,7 @@ Generate the tractogram based (anatomical constrained tractography with dynamic 
 **Options**
 - **-p OutputDir** the OutputDir has to include the 5_CSDpreproc folder (includes the converted files). [default = pwd directory]
 - **-a AtlasDir** the Atlas directory [default = ${HOGIO}/share/]
+- **-n TrackNum** Select track number; [default = 10M] (Please be aware of storage apace)
 
 ###  Preprocessed_data and mainlog.txt
 For other purpose that may need preprocessed dwi and T1 image data, we save the preporcessed data in the Preprocessed_data folder. a log file with all options and information with processing time were save in the mainlog.txt in the main output dir. 

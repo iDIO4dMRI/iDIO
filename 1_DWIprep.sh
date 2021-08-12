@@ -13,6 +13,7 @@
 # 20200826 - check C4 from mrconvert and add mrconvert function (use mrconvert)
 # 20201229 - bug fixed (bc)
 # 20210122 - fmap, 1 phase encoding direction
+# 20210728 - remoce C4 option on Usage
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -27,7 +28,6 @@ Usage() {
     Usage: 1_DWIprep -b <BIDSDir> -p <PreprocDir>
 
     Options:
-	-c 	C4
 	-s 	Please provide the series of phase-encoding direction {PA, AP, RL, LR}
 		Two scans for AP and PA  => 2 1 0 0
 		One scan for PA => 1 0 0 0
@@ -43,7 +43,7 @@ PreprocDir=
 C4=
 PhaseEncoding=
 
-while getopts "hb:p:c:s:v" OPTION
+while getopts "hb:p:s:v" OPTION
 do
     case $OPTION in
     h)
@@ -54,6 +54,9 @@ do
         ;;
     p)
         PreprocDir=$OPTARG
+        ;;
+    c)
+        C4=$OPTARG
         ;;
     s)
         PhaseEncoding=$OPTARG
@@ -383,29 +386,31 @@ else
 		fi
 
 		# C4: total readout time
-		if [ "$EPIfactor" != 0 ] && [ "$EffectiveEchoSpacing" != 0 ]; then
-			C4=$(echo "${EffectiveEchoSpacing}*(${EPIfactor}-1)" | bc)
-			echo "<method 1> C4: ${C4}"
-		elif [ "$DwellTime" != 0 ] && [ "$PhaseEncodingSteps" != 0 ]; then
-			C4=$(echo "${DwellTime}*(${PhaseEncodingSteps}-1)" | bc)
-			echo "C4: ${C4}"
-		elif [ "$BandwidthPerPixelPhaseEncode" != 0 ]; then
-			C4=$(echo "scale=4; 1/${BandwidthPerPixelPhaseEncode}" | bc)
-			echo "<method 2> C4: ${C4}"
-		else
-			mrconvert ${prerename_filename}.nii.gz -json_import ${json_file} - | mrinfo - -export_pe_eddy Acqparams_Topup_mrconvert.txt indices.txt
-			tmp=($(cat Acqparams_Topup_mrconvert.txt))
-			echo "<method 3> C4: ${tmp[3]}"
-		fi
-
-
 		if [ -n "${C4}" ]; then
-			echo "${Acqparams_Topup_tmp} ${C4}" >> Acqparams_Topup.txt
-		elif [ -f "Acqparams_Topup_mrconvert.txt" ]; then
-			cat Acqparams_Topup_mrconvert.txt >> Acqparams_Topup.txt
-			rm -f Acqparams_Topup_mrconvert.txt indices.txt
+			echo "<method 1> C4=input: ${C4}"
+			echo "${Acqparams_Topup_tmp} ${C4}" >> Acqparams_Topup.txt	
 		else
-			echo "${Acqparams_Topup_tmp} ${TE}" >> Acqparams_Topup.txt
+			if [ "$EPIfactor" != 0 ] && [ "$EffectiveEchoSpacing" != 0 ]; then
+				C4=$(echo "${EffectiveEchoSpacing}*(${EPIfactor}-1)" | bc)
+				echo "<method 2> C4: ${C4}"
+			elif [ "$DwellTime" != 0 ] && [ "$PhaseEncodingSteps" != 0 ]; then
+				C4=$(echo "${DwellTime}*(${PhaseEncodingSteps}-1)" | bc)
+			elif [ "$BandwidthPerPixelPhaseEncode" != 0 ]; then
+				C4=$(echo "scale=4; 1/${BandwidthPerPixelPhaseEncode}" | bc)
+				echo "<method 3> C4: ${C4}"
+			else
+				mrconvert ${prerename_filename}.nii.gz -json_import ${json_file} - | mrinfo - -export_pe_eddy Acqparams_Topup_mrconvert.txt indices.txt
+				tmp=($(cat Acqparams_Topup_mrconvert.txt))
+				echo "<method 4> C4: ${tmp[3]}"
+			fi
+
+			if [ -f "Acqparams_Topup_mrconvert.txt" ]; then
+				cat Acqparams_Topup_mrconvert.txt >> Acqparams_Topup.txt
+				rm -f Acqparams_Topup_mrconvert.txt indices.txt
+			else
+				echo "<method 5> C4=TE: ${TE}"
+				echo "${Acqparams_Topup_tmp} ${TE}" >> Acqparams_Topup.txt
+			fi
 		fi
 
 		## read .bval file
@@ -421,15 +426,15 @@ else
 		# 	mv ${prerename_filename}.nii.gz ${PreprocDir}/0_BIDS_NIFTI/Preresize
 		# 	cd ${PreprocDir}/0_BIDS_NIFTI/Preresize
 		# 	fslinfo ${resizefile} > fslinfo.txt
-    #
+    	#
 		# 	g=($(grep -i dim3 fslinfo.txt))
 		# 	dim3=${g[1]}
-    #
+    	#
 		# 	cd ${PreprocDir}/0_BIDS_NIFTI
 		# 	echo dim1,2: ${AcquisitionMatrixPE}
 		# 	echo dim3: ${dim3}
 		# 	mrgrid ./Preresize/${resizefile} regrid ./${resizefile} -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}
-    #
+    	#
 		# 	cd ${PreprocDir}/0_BIDS_NIFTI/Preresize
 		# 	mv ${resizefile} dwi_${PED}.nii.gz
 		# fi
