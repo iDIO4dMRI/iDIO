@@ -96,12 +96,12 @@ if [[ ! -z ${argFile} ]]; then
         echoC 2 "${argFile}"
         echoC 2 "       does not exist. Loading defaults setup ..."
         argFile=${HOGIO}/SetUpOGIOArg.sh
-        source source ${argFile}
+        source ${argFile}
     fi
 else    
     echoC 2 "No configuration file apply."
     argFile=${HOGIO}/SetUpOGIOArg.sh
-    source source ${argFile}
+    source ${argFile}
 fi
 
 aStep=(${Step//./ })
