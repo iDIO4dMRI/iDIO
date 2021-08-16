@@ -7,7 +7,7 @@ OGIO is a software toolkit for processing diffusion-weighted MRI data. It integr
 ## Installation Guide
 ---
 
-OGIO can be run in Linux and macOS environment (Most recommend: Linux) . Its major functionalities come from ***Mrtrix3***,  ***FSL***,  ***ANTS***, and therefore these software tools and their relevant dependencies need to be installed before using OGIO. Please check the links below for the installation of them: 
+OGIO can be run in Linux and macOS environment (Most recommend: Linux) . Its major functionalities come from ***Mrtrix3***,  ***FSL***,  ***ANTS***, and therefore these software tools and their relevant dependencies need to be installed before using OGIO. Please check the links below for the installation of them:
 
 * *FSL v6.0.3*: <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki>
 * *MRtrix3*: <https://www.mrtrix.org/>
@@ -22,8 +22,8 @@ $ pip install argparse numpy pandas scipy nibabel scikit-image matplotlib
 ```
 
 ### Setting
-before started, it is necessary to export the home directory of OGIO as HOGIO. 
-```	
+before started, it is necessary to export the home directory of OGIO as HOGIO.
+```
 $ export HOGIO = OGIO pipeline location
 ```
 
@@ -35,7 +35,7 @@ $ export HOGIO = OGIO pipeline location
 ### Data preparing
 The OGIO pipeline require DWI data and T1 data to be stored in Brain Imaging Data Structure (BIDS) format. JSON file for each sequence is necessary for OGIO preprocess.
 
-an example is as follows: 
+an example is as follows:
 
 ```          
 sub-001
@@ -55,16 +55,17 @@ sub-001
 
 ### Step 0: SetUpOGIOArg.sh and run Main.sh
 **Synopsis**
-Performing the OGIO pipeline with predefined options. Run the Main.sh and  done all the process! 
+Performing the OGIO pipeline with predefined options. Run the Main.sh and  done all the process!
 
 **Usage**
-> sh Main.sh -bids InputDir -proc OutputDir
+> sh Main.sh -bids InputDir -proc OutputDir -arg  configurefile
 
 - -bids* InputDir*: datapath that including two directories - anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwi.bval, dwi.bvec, dwi.json) (As shown in the **Data preparing** section above )
 - -proc *OutputDir* Provide a output path for saving the output processed data
+- -arg  *configurefile* configuration file
 
 **Options**
-All options need to be predefined are list in the ** SetUpOGIOArg.sh** file. OGIO pipeline include six steps in the following order, (1) data preprocessing, (2) bias correction, (3) eddy correction, (4) diffusion tensor fitting, (5) constrained spherical deconvolution, (6) network construction. 
+All options need to be predefined are list in the ** SetUpOGIOArg.sh** file. OGIO pipeline include six steps in the following order, (1) data preprocessing, (2) bias correction, (3) eddy correction, (4) diffusion tensor fitting, (5) constrained spherical deconvolution, (6) network construction.
 - **Step**: Set the wanted processing steps to perform [default=1.2.3.4.5.6.7.]
 - **cuda**: If the processing server has discrete GPU and support cuda >9.1, cuda version of eddy could be applied to speed up the processing procedure [default=0] (True = 1/ False = 0)
 - **stv**: If cuda version of eddy is applied, the function also support to perform the slice-to-volume correction [default=0] (True = 1/ False = 0)
@@ -73,7 +74,7 @@ All options need to be predefined are list in the ** SetUpOGIOArg.sh** file. OGI
 - **AtlasDir**: Default needed files were save in ${HOGIO}/share with several folders. We recommend not to change this path, but save Atlas you need in ${HOGIO}/share/Atlas instead. [default = ${HOGIO}/share]
 - **trkNum**: Set the desired number of streamlines to be selected when generating the tractogram [default = 10M].
 
-Details for each step are shown as follows: 
+Details for each step are shown as follows:
 ### Step 1: 1_DWIprep.sh
 **Synopsis**
 DWI data preparation (identify phase encoding of DWI image and generate needed description files in 0_BIDS_NIFTI and 1_DWIprep folders)
@@ -101,16 +102,16 @@ DWI data preparation (identify phase encoding of DWI image and generate needed d
 > sh 1_DWIprep.sh -b InputDir -p OutputDir [ options ]
 
 - -b *InputDir* datapath that including two directory- anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwi.bval, dwi.bvec, dwi.json)
-- -p *OutputDir* Provide a output path for saving the output processed data 
+- -p *OutputDir* Provide a output path for saving the output processed data
 
 **Options**
 - **-s PhaseEncode** please provide the number of phase encoding images in following order {PA, AP, LR, RL}
 
 **Reference**
-	
+
 ### 2_BiasCo.sh
 **Synopsis**
-implement the 4D signal denoise, gibbs ringing correction, and drifting correction 
+implement the 4D signal denoise, gibbs ringing correction, and drifting correction
 
 **Usage**
 > sh 2_BiasCo.sh  [ options ]
@@ -129,7 +130,7 @@ implement the 4D signal denoise, gibbs ringing correction, and drifting correcti
 
 **Options**
 - **-p OutputDir** The OutputDir has to include the 1_DWIprep folder (includes the converted files) [default = pwd directory]
-- **-t  B0thr** Input Bzero threshold; [default = 10]; 
+- **-t  B0thr** Input Bzero threshold; [default = 10];
 
 ### 3_EddyCo.sh
 **Synopsis**
@@ -255,7 +256,7 @@ Diffusion tensor estimation. Only low-b (b<1500 s/mm^2) images were used for fur
 - **-p OutputDir** the ProcPath has to include the 2_BiasCo and 3_EddyCo folder (includes the converted files). [default = pwd directory]
 - **-t B0thr** Input Bzero threshold; [default = 10];
 
-### 6_CSDpreproc.sh 
+### 6_CSDpreproc.sh
 **Synopsis**
 DWI preprocessing of constrained spherical deconvolution with Dhollanders algorithms
 ```
@@ -339,7 +340,7 @@ Generate the tractogram based (anatomical constrained tractography with dynamic 
 - **-n TrackNum** Select track number; [default = 10M] (Please be aware of storage apace)
 
 ###  Preprocessed_data and mainlog.txt
-For other purpose that may need preprocessed dwi and T1 image data, we save the preporcessed data in the Preprocessed_data folder. a log file with all options and information with processing time were save in the mainlog.txt in the main output dir. 
+For other purpose that may need preprocessed dwi and T1 image data, we save the preporcessed data in the Preprocessed_data folder. a log file with all options and information with processing time were save in the mainlog.txt in the main output dir.
 ```
 └── OutputDir         
     ├── Preprocessed_data
@@ -368,7 +369,7 @@ Please cite the following articles if *OGIO* is utilized in your research public
 7.  Smith, S. M. Fast robust automated brain extraction. Human Brain Mapping, 2002, 17, 143-155
 8.  Graham M. S., Drobnjak I., Jenkinson M., Zhang H. Quantitative assessment of the susceptibility artefact and its interaction with motion in diffusion MRI. PLOS ONE, 2017, 12(10), e0185647.
 
-### ***MRtrix3***	
+### ***MRtrix3***
 1. Tournier, J.-D.; Smith, R. E.; Raffelt, D.; Tabbara, R.; Dhollander, T.; Pietsch, M.; Christiaens, D.; Jeurissen, B.; Yeh, C.-H. & Connelly, A. MRtrix3: A fast, flexible and open software framework for medical image processing and visualisation. NeuroImage, 2019, 202, 116137
 2. Zhang, Y.; Brady, M. & Smith, S. Segmentation of brain MR images through a hidden Markov random field model and the expectation-maximization algorithm. IEEE Transactions on Medical Imaging, 2001, 20, 45-57
 3. Smith, S. M.; Jenkinson, M.; Woolrich, M. W.; Beckmann, C. F.; Behrens, T. E.; Johansen-Berg, H.; Bannister, P. R.; De Luca, M.; Drobnjak, I.; Flitney, D. E.; Niazy, R. K.; Saunders, J.; Vickers, J.; Zhang, Y.; De Stefano, N.; Brady, J. M. & Matthews, P. M. Advances in functional and structural MR image analysis and implementation as FSL. NeuroImage, 2004, 23, S208-S219
@@ -383,11 +384,11 @@ Please cite the following articles if *OGIO* is utilized in your research public
 
 ### ***ANTs***
 1. Tustison, N. J.; Avants, B. B.; Cook, P. A.; Zheng, Y.; Egan, A.; Yushkevich, P. A. Gee, J. C. N4ITK: Improved N3 Bias Correction. IEEE Transactions on Medical Imaging, 2010, 29(6), 1310-1320
-2. Tustison, N.J.; Cook, P.A.; Klein A.; Song, G.; Das, S.R.; Duda, J.T.; Kandel, B.M.; van Strien, N.; Stone, J.R.; Gee, J.C.; Avants, B.B. Large-scale evaluation of ANTs and FreeSurfer cortical thickness measurements. Neuroimag, 2014, 99, 166-79. 
-3. Avants, B.B.; Tustison, N.J.; Wu, J.; Cook, P.A.; Gee, J.C. An open source multivariate framework for n-tissue segmentation with evaluation on public data. Neuroinformatics. 2011, 9(4), 381-400. 
-4. Wang, H.; Das, S.R.; Suh, J.W.; Altinay, M.; Pluta, J.; Craige, C.; Avants, B.; Yushkevich, P.A. A learning-based wrapper method to correct systematic errors in automatic image segmentation: consistently improved performance in hippocampus, cortex and brain segmentation. Neuroimage, 2011 ,55(3), 968-85. 
+2. Tustison, N.J.; Cook, P.A.; Klein A.; Song, G.; Das, S.R.; Duda, J.T.; Kandel, B.M.; van Strien, N.; Stone, J.R.; Gee, J.C.; Avants, B.B. Large-scale evaluation of ANTs and FreeSurfer cortical thickness measurements. Neuroimag, 2014, 99, 166-79.
+3. Avants, B.B.; Tustison, N.J.; Wu, J.; Cook, P.A.; Gee, J.C. An open source multivariate framework for n-tissue segmentation with evaluation on public data. Neuroinformatics. 2011, 9(4), 381-400.
+4. Wang, H.; Das, S.R.; Suh, J.W.; Altinay, M.; Pluta, J.; Craige, C.; Avants, B.; Yushkevich, P.A. A learning-based wrapper method to correct systematic errors in automatic image segmentation: consistently improved performance in hippocampus, cortex and brain segmentation. Neuroimage, 2011 ,55(3), 968-85.
 
 ### ***Others***
-1. Gorgolewski, K., Auer, T., Calhoun, V. D.,  Craddock, R. C., Das, S., Duff, E. P., Flandin, G., Ghosh, S. S.,  Glatard, T., Halchenko, Y.O., Handwerker, D. A., Hanke, M., Keator, D., Li, X., Michael, Z., Maumet, C., Nichols, B. N., Nichols, T. E., Pellman, J., Poline, J-B., Rokem, A., Schaefer, G., Sochat, V., Triplett, W., Turner, J. A., Varoquaux, G., Poldrack, R. A. The brain imaging data structure, a format for organizing and describing outputs of neuroimaging experiments. Scientific Data, 2016,  3, 160044. 
+1. Gorgolewski, K., Auer, T., Calhoun, V. D.,  Craddock, R. C., Das, S., Duff, E. P., Flandin, G., Ghosh, S. S.,  Glatard, T., Halchenko, Y.O., Handwerker, D. A., Hanke, M., Keator, D., Li, X., Michael, Z., Maumet, C., Nichols, B. N., Nichols, T. E., Pellman, J., Poline, J-B., Rokem, A., Schaefer, G., Sochat, V., Triplett, W., Turner, J. A., Varoquaux, G., Poldrack, R. A. The brain imaging data structure, a format for organizing and describing outputs of neuroimaging experiments. Scientific Data, 2016,  3, 160044.
 2.  Vos S.B.; Tax C.M.; Luijten P.R.; Ourselin S.; Leemans A.; Froeling M. The importance of correcting for signal drift in diffusion MRI. Magn Reson Med. 2017, 77(1), 285-299.
 3. Basser, P.J.; Mattiello, J; LeBihan, D; Estimation of the effective self-diffusion tensor from the NMR spin echo. Journal of Magnetic Resonance, Series B, 1994, 103(3), 247-254
