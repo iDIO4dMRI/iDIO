@@ -71,7 +71,7 @@ do
 		;;
 	c)
 		#cuda_ver=$(nvcc --version | grep release | cut -d ' ' -f 5 | sed 's/,//g')
-		cuda_ver=9.1
+		cuda_ver=$OPTARG
 		;;
 	m)
 		mporder=1
@@ -202,6 +202,17 @@ case ${Topup} in
 					fi
 				fi
 				;;
+			10.2) # cuda10.2
+				if [ ${j} == 0 ]; then # without .json file
+					eddy_cuda10.2 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --verbose --cnr_maps
+				elif [ ${j} == 1 ]; then
+					if [ ${mporder} == 0 ]; then
+						eddy_cuda10.2 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --ol_type=$MBF --cnr_maps
+					else # with --mporder 8
+						eddy_cuda10.2 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --ol_type=$MBF --mporder=8 --cnr_maps
+					fi
+				fi
+				;;
 			8.0) # cuda8.0
 				if [ ${j} == 0 ]; then # without .json file
 					eddy_cuda8.0 --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --verbose --cnr_maps
@@ -291,6 +302,17 @@ case ${Topup} in
 						eddy_cuda9.1 --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --json=DWI.json --verbose --ol_type=$MBF --cnr_maps
 					else # with --mporder 8
 						eddy_cuda9.1 --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --json=DWI.json --verbose --ol_type=$MBF --mporder=8 --cnr_maps
+					fi
+				fi
+				;;
+			10.2) # cuda10.2
+				if [ ${j} == 0 ]; then # without .json file
+					eddy_cuda10.2 --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --verbose --cnr_maps
+				elif [ ${j} == 1 ]; then
+					if [ ${mporder} == 0 ]; then
+						eddy_cuda10.2 --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --json=DWI.json --verbose --ol_type=$MBF --cnr_maps
+					else # with --mporder 8
+						eddy_cuda10.2 --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --json=DWI.json --verbose --ol_type=$MBF --mporder=8 --cnr_maps
 					fi
 				fi
 				;;

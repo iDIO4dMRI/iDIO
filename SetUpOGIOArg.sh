@@ -12,7 +12,7 @@
 # The defaults should work with most installations.
 
 # Set the process you need. [default=1.2.3.4.5.6.7]
-Step=1.2.3.4.5.6.7
+Step=1.2.3.4.5.6.
 # 1: 1_DWIprep
 # 2: 2_BiasCo
 # 3: 3_EddyCo
@@ -21,8 +21,10 @@ Step=1.2.3.4.5.6.7
 # 6: 6_CSDpreproc
 # 7: 7_NetworkProc
 
-# 3_EddyCo: Using CUDA to speed up. NVIDIA GPU with CUDA v9.1 is available to use this option. [true=1 / false=0]
+# 3_EddyCo: Using CUDA to speed up. NVIDIA GPU with CUDA version (8.0/9.1/10.2) is available to use this option. [values / false=0]
+# cuda_ver=$(nvcc --version | grep release | cut -d ' ' -f 5 | sed 's/,//g') for CUDA version check
 cuda=0
+
 # 3_EddyCo: Slice-to-vol motion correction.
 #           This option is only implemented for the CUDA version(cuda=1). [true=1 / false=0]
 stv=0
