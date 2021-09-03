@@ -146,9 +146,9 @@ case $Topup in
 
 		cd $OriDir/2_BiasCo
 		if [[ "$AcquisitionMatrixPE" == "$ReconMatrixPE" ]]; then
-			dwidenoise $(echo ${File1%.*.*}).nii.gz Temp-denoise.nii.gz
-			mrdegibbs Temp-denoise.nii.gz $(echo ${File1%.*.*})-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
-			rm -f ./Temp-denoise.nii.gz
+			dwidenoise $(echo ${File1%.*.*}).nii.gz $(echo ${File1%.*.*})-denoise.nii.gz
+			mrdegibbs $(echo ${File1%.*.*})-denoise.nii.gz $(echo ${File1%.*.*})-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
+			# rm -f ./Temp-denoise.nii.gz
 		else
 			echo "interpolated Recon Matrix was found, skip denoise step"
 			mrdegibbs $(echo ${File1%.*.*}).nii.gz $(echo ${File1%.*.*})-deGibbs.nii.gz
@@ -170,9 +170,9 @@ case $Topup in
 
 		cd $OriDir/2_BiasCo
 		if [[ "$AcquisitionMatrixPE" == "$ReconMatrixPE" ]]; then
-			dwidenoise $(echo ${File1%.*.*})${direction[1]}.nii.gz Temp-denoise.nii.gz
-			mrdegibbs Temp-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
-			rm -f ./Temp-denoise.nii.gz
+			dwidenoise $(echo ${File1%.*.*})${direction[1]}.nii.gz $(echo ${File1%.*.*})-denoise.nii.gz
+			mrdegibbs $(echo ${File1%.*.*})-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
+			# rm -f ./Temp-denoise.nii.gz
 		else
 			echo "interpolated Recon Matrix was found, skip denoise step"
 			mrdegibbs $(echo ${File1%.*.*})${direction[1]}.nii.gz $(echo ${File1%.*.*})${direction[1]}-deGibbs.nii.gz
