@@ -213,7 +213,7 @@ if [[ ${shell_num_all} -ge 2 ]]; then
 		# multi-tissue informed log-domain intensity normalisation
 		mtnormalise ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_gm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_gm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf_norm.mif -mask ${handleMask} -quiet
 	fi
-	fod2dec ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/wm_norm_dec.mif
+	# fod2dec ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/wm_norm_dec.mif
 else
 	echo "Error: Input is not valid..."
 	exit 1

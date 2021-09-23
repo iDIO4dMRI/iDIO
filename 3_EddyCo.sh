@@ -339,7 +339,7 @@ case ${Topup} in
 esac
 
 # Bias correct
-dwibiascorrect ants ${OriDir}/3_EddyCo/${handle}-EddyCo.nii.gz ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz -fslgrad ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/3_EddyCo/${handle}-EddyCo.bval -force
+dwibiascorrect ants ${OriDir}/3_EddyCo/${handle}-EddyCo.nii.gz ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz -fslgrad ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/3_EddyCo/${handle}-EddyCo.bval -force -bias ${OriDir}/3_EddyCo/${handle}-EddyCo-BiasField.nii.gz
 
 if [ ${zeropad} == 1 ]; then # Remove padding slice
 	echo "remove padding slice..."
