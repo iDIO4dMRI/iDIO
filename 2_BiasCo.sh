@@ -10,6 +10,7 @@
 ## Edit: 2021/02/18, Heather, (1) python, (2) dwicat, (3) replace dwi_select_vol with mrinfo and bvalue threshold
 ## Edit: 2021/05/18, Heather, (1) bug fixed
 ## Edit: 2021/07/28, Heather,  skip the denoise if the recon matrix is interpolated
+## Edit: 2021/09/23, Heather, output with noise map -> for QC purpose
 ##########################################################################################################################
 
 

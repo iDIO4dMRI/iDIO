@@ -13,6 +13,7 @@
 ##						  created [Preprocessed_data] folder for preprocessed data
 ## Edit:2021/07/22, Heather, move resize step in the end
 ## Edit:2021/07/28, Heather, resize with vox size option (default = 2mm)
+## Edit: 2021/09/23, Heather, output with bias map -> for QC purpose
 ##########################################################################################################################
 
 
