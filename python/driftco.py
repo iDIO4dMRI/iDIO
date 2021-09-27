@@ -1,5 +1,7 @@
 #!/usr/bin/python
-# version 2021/02/17
+# version 2021/09/23
+# Edit: conditional expression in mask generation
+
 import argparse, os, scipy.ndimage
 from skimage import measure
 import numpy as np
@@ -109,21 +111,22 @@ def drift_brainmask(im,thr,k,er_k):
     se_2 = erode_kernel(k)
     mask_fill = scipy.ndimage.binary_erosion(mask_fill, se_2)
 
-    #Get largest connected component again
+    #Get largest connected component again (if image only one component, pass this part)
     [L,NUM] = measure.label(mask_fill, connectivity=1,return_num=True)
-    SL = L[L!=0];
-    [sd, binedge] = np.histogram(SL, bins=np.max(SL)-1)
-    [I] = np.where(sd==np.max(sd));
-    mask_fill=mask_fill*(L==binedge[I[0]])*1
-    mask_fill = scipy.ndimage.binary_dilation(mask_fill, se_2) #dilate with same kernel
+    if np.max(L) != 1:
+        SL = L[L!=0];
+        [sd, binedge] = np.histogram(SL, bins=np.max(SL)-1)
+        [I] = np.where(sd==np.max(sd));
+        mask_fill=mask_fill*(L==binedge[I[0]])*1
+        mask_fill = scipy.ndimage.binary_dilation(mask_fill, se_2) #dilate with same kernel
 
-    #fill all in-plan holes in the mask
-    for x in range(0, mask_fill.shape[2]):
-        mask_fill[:,:,x] = flood_fill(mask_fill[:,:,x],four_way=True)
+        #fill all in-plan holes in the mask
+        for x in range(0, mask_fill.shape[2]):
+            mask_fill[:,:,x] = flood_fill(mask_fill[:,:,x],four_way=True)
 
-    # create gaussian kernal first for last erosion
-    se = erode_kernel(er_k)
-    mask_fill = scipy.ndimage.binary_erosion(mask_fill, se)
+        # create gaussian kernal first for last erosion
+        se = erode_kernel(er_k)
+        mask_fill = scipy.ndimage.binary_erosion(mask_fill, se)
 
     return mask_fill
 

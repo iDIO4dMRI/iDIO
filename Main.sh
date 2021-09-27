@@ -11,7 +11,7 @@
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
 Version=1.0
-VDate=2021.08.11
+VDate=2021.09.03
 
 Usage(){
     cat <<EOF
@@ -39,7 +39,7 @@ function CalElapsedTime(){ #STARTTIME #mainlog.txt
 }
 function echoC(){ #color #string #mainlog.txt
     tput setaf $1
-    echo -e "$2"  | tee -a $3 
+    echo -e "$2"  | tee -a $3
     tput sgr0
 }
 
@@ -79,26 +79,26 @@ done
 if  [ "${BIDSDir}" == "" ] || [ "${SubjectDir}" == "" ]; then
     Usage;
 fi
-if [[ ! -d ${SubjectDir} ]]; then    
+if [[ ! -d ${SubjectDir} ]]; then
     echoC 2 "${SubjectDir} does not exist ... creating"
-    mkdir -p ${SubjectDir}        
+    mkdir -p ${SubjectDir}
 fi
-if [[ ! -d ${BIDSDir} ]]; then    
+if [[ ! -d ${BIDSDir} ]]; then
     echoC 1 "Error: ${BIDSDir}"
     echoC 1 "       does not exist. Check that this value is correct."
-    echoC 1 ""    
+    echoC 1 ""
     exit 1
 fi
-if [[ ! -z ${argFile} ]]; then    
+if [[ ! -z ${argFile} ]]; then
     if [[ -f ${argFile} ]]; then
         source ${argFile}
-    else        
+    else
         echoC 2 "${argFile}"
         echoC 2 "       does not exist. Loading defaults setup ..."
         argFile=${HOGIO}/SetUpOGIOArg.sh
         source ${argFile}
     fi
-else    
+else
     echoC 2 "No configuration file apply."
     argFile=${HOGIO}/SetUpOGIOArg.sh
     source ${argFile}
@@ -107,14 +107,14 @@ fi
 aStep=(${Step//./ })
 runStep=($(echo "${aStep[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
 
-if [[ "1" -eq "${cuda}" ]]; then
-    step3Arg="-c"
+if [[ "${cuda}" -gt "0" ]]; then
+    step3Arg="-c ${cuda}"
     if [[ "1" -eq "${stv}" ]]; then
         step3Arg="${step3Arg} -m"
     fi
 fi
-if [[ "1" -eq "${rsimg}" ]]; then
-    step3Arg="${step3Arg} -r"
+if [[ "${rsimg}" -gt "0" ]]; then
+    step3Arg="${step3Arg} -r ${rsimg}"
 fi
 
 if [[ ! -z "${bzero}" ]]; then
@@ -181,11 +181,11 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
         4 )
             # Step 4_T1preproc
             STARTTIME=$(date +"%s")
-            echoC 2 "4_T1preproc at $(date +"%Y-%m-%d %T")" ${SubjectDir}/mainlog.txt            
+            echoC 2 "4_T1preproc at $(date +"%Y-%m-%d %T")" ${SubjectDir}/mainlog.txt
             bash ${HOGIO}/4_T1preproc.sh -p $SubjectDir ${step4Arg} | tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
-        5)    
+        5)
             # Step 5_DTIFIT
             STARTTIME=$(date +"%s")
             echoC 2 "5_DTIFIT at $(date +"%Y-%m-%d %T")" ${SubjectDir}/mainlog.txt
@@ -195,14 +195,14 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
         6 )
             # Step 6_CSDpreproc
             STARTTIME=$(date +"%s")
-            echoC 2 "6_CSDpreproc at $(date +"%Y-%m-%d %T")" ${SubjectDir}/mainlog.txt            
+            echoC 2 "6_CSDpreproc at $(date +"%Y-%m-%d %T")" ${SubjectDir}/mainlog.txt
             bash ${HOGIO}/6_CSDpreproc.sh -p $SubjectDir ${step6Arg} | tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         7 )
             # Step 7_NetworkProc
             STARTTIME=$(date +"%s")
-            echoC 2 "7_NetworkProc at $(date +"%Y-%m-%d %T")"  ${SubjectDir}/mainlog.txt            
+            echoC 2 "7_NetworkProc at $(date +"%Y-%m-%d %T")"  ${SubjectDir}/mainlog.txt
             bash ${HOGIO}/7_NetworkProc.sh -p $SubjectDir ${step7Arg} | tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;

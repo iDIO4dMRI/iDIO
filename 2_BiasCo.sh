@@ -10,6 +10,7 @@
 ## Edit: 2021/02/18, Heather, (1) python, (2) dwicat, (3) replace dwi_select_vol with mrinfo and bvalue threshold
 ## Edit: 2021/05/18, Heather, (1) bug fixed
 ## Edit: 2021/07/28, Heather,  skip the denoise if the recon matrix is interpolated
+## Edit: 2021/09/23, Heather, output with noise map -> for QC purpose
 ##########################################################################################################################
 
 
@@ -146,9 +147,9 @@ case $Topup in
 
 		cd $OriDir/2_BiasCo
 		if [[ "$AcquisitionMatrixPE" == "$ReconMatrixPE" ]]; then
-			dwidenoise $(echo ${File1%.*.*}).nii.gz Temp-denoise.nii.gz
-			mrdegibbs Temp-denoise.nii.gz $(echo ${File1%.*.*})-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
-			rm -f ./Temp-denoise.nii.gz
+			dwidenoise $(echo ${File1%.*.*}).nii.gz $(echo ${File1%.*.*})-denoise.nii.gz -noise $(echo ${File1%.*.*})-noise.nii.gz
+			mrdegibbs $(echo ${File1%.*.*})-denoise.nii.gz $(echo ${File1%.*.*})-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
+			# rm -f ./Temp-denoise.nii.gz
 		else
 			echo "interpolated Recon Matrix was found, skip denoise step"
 			mrdegibbs $(echo ${File1%.*.*}).nii.gz $(echo ${File1%.*.*})-deGibbs.nii.gz
@@ -170,9 +171,9 @@ case $Topup in
 
 		cd $OriDir/2_BiasCo
 		if [[ "$AcquisitionMatrixPE" == "$ReconMatrixPE" ]]; then
-			dwidenoise $(echo ${File1%.*.*})${direction[1]}.nii.gz Temp-denoise.nii.gz
-			mrdegibbs Temp-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
-			rm -f ./Temp-denoise.nii.gz
+			dwidenoise $(echo ${File1%.*.*})${direction[1]}.nii.gz $(echo ${File1%.*.*})-denoise.nii.gz -noise $(echo ${File1%.*.*})-noise.nii.gz
+			mrdegibbs $(echo ${File1%.*.*})-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
+			# rm -f ./Temp-denoise.nii.gz
 		else
 			echo "interpolated Recon Matrix was found, skip denoise step"
 			mrdegibbs $(echo ${File1%.*.*})${direction[1]}.nii.gz $(echo ${File1%.*.*})${direction[1]}-deGibbs.nii.gz

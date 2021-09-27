@@ -17,6 +17,7 @@
 # 20210121 - moved biasco to step 3
 #          - copy files from Preprocessed_data folder
 # 20210203 - skip dtifit if no low-b image
+# 20210915 - copy files from Preprocessed_data folder and delete the redundant part 
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -76,14 +77,6 @@ do
 done
 
 # Check if previous step was done
-if [ ! -d "${OriDir}/4_T1preproc" ]; then
-    echo ""
-    echo "Error: 4_T1preproc is not detected."
-    echo "Please process previous step..."
-    exit 1
-fi
-
-# Check if previous step was done
 if [ ! -d "${OriDir}/Preprocessed_data" ]; then
     echo ""
     echo "Error: Preprocessed_data is not detected."
@@ -125,6 +118,15 @@ else
         echo "No processed dwi image found..."
         exit 1
 fi
+
+# Check if T1 preprocessed mask exists
+if [[ ! -f ${OriDir}/Preprocessed_data/T1w_mask_inDWIspace.nii.gz ]]
+    echo ""
+    echo "No processed T1 mask was image found..."
+    exit 1
+fi
+
+
 
 
 [ -d ${OriDir}/5_DTIFIT ] || mkdir ${OriDir}/5_DTIFIT

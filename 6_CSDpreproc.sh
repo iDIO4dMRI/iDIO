@@ -4,7 +4,7 @@
 ## Diffusion data processing pipeline
 ## Written by Heather Hsu
 ## Version 1.0 /2020/02/05
-## **All shell data were calculated by dhollander algorithm** 
+## **All shell data were calculated by dhollander algorithm**
 ##########################################################################################################################
 ## 20210123 - copy files from Preprocessed_data
 ##          - dwi preprocessed only, T1 processing habe been move to step 6
@@ -20,7 +20,7 @@ Usage(){
 		       4_DTIFIT are needed before processing this script.
 		       6_CSDpreproc will be created
 
-Usage:	6_CSDpreproc -[options] 
+Usage:	6_CSDpreproc -[options]
 
 System will automatically detect all folders in directory if no input arguments supplied
 
@@ -43,10 +43,10 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hp:t:" optionName; 
+while getopts "hp:t:" optionName;
 do
 	case $optionName in
-	h)  
+	h)
 		Usage
 		;;
 	p)
@@ -55,7 +55,7 @@ do
 	t)
 		Bzerothr=$OPTARG
 		;;
-	\?) 
+	\?)
 		exit 42
 		;;
 	*)
@@ -194,24 +194,26 @@ if [[ ${shell_num_all} -ge 2 ]]; then
 
 	dwi2response dhollander ${OriDir}/6_CSDpreproc/${handle}.mif ${OriDir}/6_CSDpreproc/S1_Response/response_wm.txt ${OriDir}/6_CSDpreproc/S1_Response/response_gm.txt ${OriDir}/6_CSDpreproc/S1_Response/response_csf.txt -config BZeroThreshold ${Bzerothr} -quiet
 
-	if [[ ${shell_num_all} -eq 2 && ${hb} -eq 0 ]]; then
-		echo "lack of high b-value (may cause poor angular resolution)"
-	
+	if [[ ${shell_num_all} -eq 2 ]]; then
+		if [[ ${hb} -eq 0 ]]; then
+			echo "lack of high b-value (may cause poor angular resolution)"
+		fi
+
 		# for single-shell, 2 tissue
 		dwi2fod msmt_csd ${OriDir}/6_CSDpreproc/${handle}.mif ${OriDir}/6_CSDpreproc/S1_Response/response_wm.txt ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/6_CSDpreproc/S1_Response/response_csf.txt ${OriDir}/6_CSDpreproc/S1_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr} -quiet
 
 		# multi-tissue informed log-domain intensity normalisation
 		mtnormalise ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf_norm.mif -mask ${handleMask} -quiet
 
-	else	
+	else
 		#for multi-shell
 
 		dwi2fod msmt_csd ${OriDir}/6_CSDpreproc/${handle}.mif ${OriDir}/6_CSDpreproc/S1_Response/response_wm.txt ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/6_CSDpreproc/S1_Response/response_gm.txt ${OriDir}/6_CSDpreproc/S1_Response/odf_gm.mif ${OriDir}/6_CSDpreproc/S1_Response/response_csf.txt ${OriDir}/6_CSDpreproc/S1_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr} -quiet
 
 		# multi-tissue informed log-domain intensity normalisation
 		mtnormalise ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_gm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_gm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf_norm.mif -mask ${handleMask} -quiet
-	fi 
-
+	fi
+	# fod2dec ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/wm_norm_dec.mif
 else
 	echo "Error: Input is not valid..."
 	exit 1
