@@ -12,7 +12,7 @@
 # The defaults should work with most installations.
 
 # Set the process you need. [default=1.2.3.4.5.6.7]
-Step=1.2.3.4.5.6.
+Step=1.2.3.4.5.6.7
 # 1: 1_DWIprep
 # 2: 2_BiasCo
 # 3: 3_EddyCo
