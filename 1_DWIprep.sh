@@ -13,6 +13,7 @@
 # 20200826 - check C4 from mrconvert and add mrconvert function (use mrconvert)
 # 20201229 - bug fixed (bc)
 # 20210122 - fmap, 1 phase encoding direction
+# 20210821 - total readout time
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -27,8 +28,7 @@ Usage() {
     Usage: 1_DWIprep -b <BIDSDir> -p <PreprocDir>
     
     Options:
-	-c 	C4 
-	-s 	Please provide the series of phase-encoding direction {PA, AP, LR, RL} 
+	-s 	Please provide the series of phase-encoding direction {PA, AP, RL, LR} 
 		Two scans for AP and PA  => 2 1 0 0
 		One scan for PA => 1 0 0 0
 
@@ -73,19 +73,22 @@ fi
 
 mkdir -p ${PreprocDir}/0_BIDS_NIFTI
 cd ${PreprocDir}/0_BIDS_NIFTI
+/bin/cp -f ${BIDSDir}/dwi/*b0* .
 /bin/cp -f ${BIDSDir}/dwi/*dwi* .
 /bin/cp -f ${BIDSDir}/dwi/*DWI* .
+/bin/cp -f ${BIDSDir}/anat/*t1* .
 /bin/cp -f ${BIDSDir}/anat/*T1* .
 
 # compress
 gzip *.nii
 
 # check fieldmap
+n_b0=$(ls *b0*.nii.gz | wc -l)
 n_dwi=$(ls *dwi*.nii.gz | wc -l)
 n_DWI=$(ls *DWI*.nii.gz | wc -l)
-n_dwi=$[${n_dwi}+${n_DWI}]
+n_dwi=$[${n_b0}+${n_dwi}+${n_DWI}]
 
-if [ ${n_dwi}==1 ] && [ -d "${BIDSDir}/fmap/" ]; then
+if [ ${n_dwi} -eq "1" ] && [ -d "${BIDSDir}/fmap/" ]; then
 
 	cd ${BIDSDir}/fmap/
 	fmap_name_all=$(ls *)
@@ -111,9 +114,22 @@ for T1_file in *T1*.json; do
  	mv ${T1_file} T1w.json
 done
 
+for T1_file in *t1*.nii.gz; do
+ 	mv ${T1_file} T1w.nii.gz
+done
+
+for T1_file in *t1*.json; do
+ 	mv ${T1_file} T1w.json
+done
+
 for DWI_file in *DWI*; do
 	nname=$(echo ${DWI_file} | sed 's/DWI/dwi/g')
  	mv ${DWI_file} $nname
+done
+
+for b0_file in *b0*; do
+	nname=$(echo ${b0_file} | sed 's/b0/dwi_b0/g')
+ 	mv ${b0_file} $nname
 done
 
 bvals_tmp=$(ls -f *.bvals 2>>error.log) 
@@ -125,6 +141,8 @@ bvecs_tmp=$(ls -f *.bvecs 2>>error.log)
 for bvecs_file in ${bvecs_tmp}; do
 	mv ${bvecs_file} ${bvecs_file:0:${#bvecs_file}-1}
 done
+
+/bin/rm -f error.log
 
 # prerename
 for dwi_files in *dwi*; do
@@ -264,7 +282,7 @@ else
 		EffectiveEchoSpacing=0
 		DwellTime=0
 		BandwidthPerPixelPhaseEncode=0
-
+		C4=0
 
 		prerename_filename=${json_file:0:${#json_file}-5}
 		echo "\\n====Check inforamtion for $(basename ${prerename_filename})====\n"
@@ -316,6 +334,12 @@ else
 				d=${tmp[1]}
 				EffectiveEchoSpacing=${d:0:${#d}-1}	
 				echo "EffectiveEchoSpacing: $EffectiveEchoSpacing"
+			;;
+
+			'"TotalReadoutTime":')
+				d=${tmp[1]}
+				TotalReadoutTime=${d:0:${#d}-1}
+				echo "TotalReadoutTime: $TotalReadoutTime"
 			;;
 
 			'"EchoTrainLength":')
@@ -381,28 +405,29 @@ else
 		fi
 
 		# C4: total readout time
-		if [ "$EPIfactor" != 0 ] && [ "$EffectiveEchoSpacing" != 0 ]; then
-			C4=$(echo "${EffectiveEchoSpacing}*(${EPIfactor}-1)" | bc)
+		if [ "$TotalReadoutTime" != 0 ]; then
+			C4=$(echo "${TotalReadoutTime}")
 			echo "<method 1> C4: ${C4}"
-		elif [ "$DwellTime" != 0 ] && [ "$PhaseEncodingSteps" != 0 ]; then
-			C4=$(echo "${DwellTime}*(${PhaseEncodingSteps}-1)" | bc)
-			echo "C4: ${C4}"
+		#elif [ "$EPIfactor" != 0 ] && [ "$EffectiveEchoSpacing" != 0 ]; then
+		#	C4=$(echo "${EffectiveEchoSpacing}*(${EPIfactor}-1)" | bc)
+		#elif [ "$DwellTime" != 0 ] && [ "$PhaseEncodingSteps" != 0 ]; then
+		#	C4=$(echo "${DwellTime}*(${PhaseEncodingSteps}-1)" | bc)
 		elif [ "$BandwidthPerPixelPhaseEncode" != 0 ]; then
 			C4=$(echo "scale=4; 1/${BandwidthPerPixelPhaseEncode}" | bc)
-			echo "<method 2> C4: ${C4}"
+			echo "<method 2: 1/BW> C4: ${C4}"
 		else
 			mrconvert ${prerename_filename}.nii.gz -json_import ${json_file} - | mrinfo - -export_pe_eddy Acqparams_Topup_mrconvert.txt indices.txt
 			tmp=($(cat Acqparams_Topup_mrconvert.txt))
-			echo "<method 3> C4: ${tmp[3]}"
+			echo "<method 3: mrconvet> C4: ${tmp[3]}"
 		fi
 
-
-		if [ -n "${C4}" ]; then
-			echo "${Acqparams_Topup_tmp} ${C4}" >> Acqparams_Topup.txt
-		elif [ -f "Acqparams_Topup_mrconvert.txt" ]; then
+		if [ -f "Acqparams_Topup_mrconvert.txt" ]; then
 			cat Acqparams_Topup_mrconvert.txt >> Acqparams_Topup.txt
 			rm -f Acqparams_Topup_mrconvert.txt indices.txt
+		elif [ "$C4" != 0 ]; then
+			echo "${Acqparams_Topup_tmp} ${C4}" >> Acqparams_Topup.txt
 		else
+			echo "<method 4> C4=TE: ${TE}"
 			echo "${Acqparams_Topup_tmp} ${TE}" >> Acqparams_Topup.txt
 		fi
 
@@ -412,26 +437,7 @@ else
 			echo $Rec >> Eddy_Index.txt
 		done
 
-		## resize
-		if [[ $(echo "${ReconMatrixPE}/${AcquisitionMatrixPE}" | bc) -ne 1 ]]; then
-			mkdir -p ${PreprocDir}/0_BIDS_NIFTI/Preresize
-			resizefile=$(basename ${prerename_filename}.nii.gz)
-			mv ${prerename_filename}.nii.gz ${PreprocDir}/0_BIDS_NIFTI/Preresize
-			cd ${PreprocDir}/0_BIDS_NIFTI/Preresize
-			fslinfo ${resizefile} > fslinfo.txt
-
-			g=($(grep -i dim3 fslinfo.txt))
-			dim3=${g[1]}
-
-			cd ${PreprocDir}/0_BIDS_NIFTI
-			echo dim1,2: ${AcquisitionMatrixPE}
-			echo dim3: ${dim3}
-			mrgrid ./Preresize/${resizefile} regrid ./${resizefile} -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}
-
-			cd ${PreprocDir}/0_BIDS_NIFTI/Preresize
-			mv ${resizefile} dwi_${PED}.nii.gz
-		fi
-
+		## rename
 		cd ${PreprocDir}/0_BIDS_NIFTI
 		for file_format in nii.gz json bval bvec; do
 			mv ${prerename_filename}.${file_format} dwi_${PED}.${file_format}
