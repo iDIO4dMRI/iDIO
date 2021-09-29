@@ -152,7 +152,7 @@ pinfo+="processing steps: ${Step}\n"
 pinfo+="Bzero threshold: ${bzero}\n"
 pinfo+="AtlasDir=${AtlasDir}\n"
 pinfo+="trkNum=${trkNum}\n"
-echoC 0 "$pinfo" ${SubjectDir}/mainlog.txt
+echoC 3 "$pinfo" ${SubjectDir}/mainlog.txt
 
 for (( i = 0; i < ${#runStep[@]}; i++ )); do
     #statements
