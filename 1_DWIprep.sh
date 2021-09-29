@@ -73,19 +73,22 @@ fi
 
 mkdir -p ${PreprocDir}/0_BIDS_NIFTI
 cd ${PreprocDir}/0_BIDS_NIFTI
+/bin/cp -f ${BIDSDir}/dwi/*b0* .
 /bin/cp -f ${BIDSDir}/dwi/*dwi* .
 /bin/cp -f ${BIDSDir}/dwi/*DWI* .
+/bin/cp -f ${BIDSDir}/anat/*t1* .
 /bin/cp -f ${BIDSDir}/anat/*T1* .
 
 # compress
 gzip *.nii
 
 # check fieldmap
+n_b0=$(ls *b0*.nii.gz | wc -l)
 n_dwi=$(ls *dwi*.nii.gz | wc -l)
 n_DWI=$(ls *DWI*.nii.gz | wc -l)
-n_dwi=$[${n_dwi}+${n_DWI}]
+n_dwi=$[${n_b0}+${n_dwi}+${n_DWI}]
 
-if [ ${n_dwi}==1 ] && [ -d "${BIDSDir}/fmap/" ]; then
+if [ ${n_dwi} -eq "1" ] && [ -d "${BIDSDir}/fmap/" ]; then
 
 	cd ${BIDSDir}/fmap/
 	fmap_name_all=$(ls *)
@@ -111,9 +114,22 @@ for T1_file in *T1*.json; do
  	mv ${T1_file} T1w.json
 done
 
+for T1_file in *t1*.nii.gz; do
+ 	mv ${T1_file} T1w.nii.gz
+done
+
+for T1_file in *t1*.json; do
+ 	mv ${T1_file} T1w.json
+done
+
 for DWI_file in *DWI*; do
 	nname=$(echo ${DWI_file} | sed 's/DWI/dwi/g')
  	mv ${DWI_file} $nname
+done
+
+for b0_file in *b0*; do
+	nname=$(echo ${b0_file} | sed 's/b0/dwi_b0/g')
+ 	mv ${b0_file} $nname
 done
 
 bvals_tmp=$(ls -f *.bvals 2>>error.log) 
@@ -421,26 +437,7 @@ else
 			echo $Rec >> Eddy_Index.txt
 		done
 
-		## resize
-		if [[ $(echo "${ReconMatrixPE}/${AcquisitionMatrixPE}" | bc) -ne 1 ]]; then
-			mkdir -p ${PreprocDir}/0_BIDS_NIFTI/Preresize
-			resizefile=$(basename ${prerename_filename}.nii.gz)
-			mv ${prerename_filename}.nii.gz ${PreprocDir}/0_BIDS_NIFTI/Preresize
-			cd ${PreprocDir}/0_BIDS_NIFTI/Preresize
-			fslinfo ${resizefile} > fslinfo.txt
-
-			g=($(grep -i dim3 fslinfo.txt))
-			dim3=${g[1]}
-
-			cd ${PreprocDir}/0_BIDS_NIFTI
-			echo dim1,2: ${AcquisitionMatrixPE}
-			echo dim3: ${dim3}
-			mrgrid ./Preresize/${resizefile} regrid ./${resizefile} -size ${AcquisitionMatrixPE},${AcquisitionMatrixPE},${dim3}
-
-			cd ${PreprocDir}/0_BIDS_NIFTI/Preresize
-			mv ${resizefile} dwi_${PED}.nii.gz
-		fi
-
+		## rename
 		cd ${PreprocDir}/0_BIDS_NIFTI
 		for file_format in nii.gz json bval bvec; do
 			mv ${prerename_filename}.${file_format} dwi_${PED}.${file_format}

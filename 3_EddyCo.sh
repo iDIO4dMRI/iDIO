@@ -72,7 +72,7 @@ do
 		;;
 	c)
 		#cuda_ver=$(nvcc --version | grep release | cut -d ' ' -f 5 | sed 's/,//g')
-		cuda_ver=$OPTARG
+		cuda_ver=1
 		;;
 	m)
 		mporder=1
@@ -94,10 +94,29 @@ do
 done
 
 # CUDA version
-if [ -z ${cuda_ver} ]; then
-	echo ""
-	echo "CUDA version not found..."
-	exit 1
+if [[ "1" -eq "${cuda_ver}" ]]; then
+	verlist=("8.0" "9.1" "10.2")
+	for (( i = 0; i < ${#verlist[@]}; i++ )); do
+		eddy_cuda${verlist[i]} 2>2451748213
+		if [ $? -eq 1 ]; then
+		    echo ""
+			echo "eddy_cuda${verlist[i]} function will be used by followering steps"
+			echo ""
+			#echo ${verlist[i]} OK
+			cuda_ver=${verlist[i]}
+		    break
+		else
+			#echo ${verlist[i]} FAIL
+			cuda_ver=0		    
+		fi
+	done
+	rm 2451748213
+
+	if [[ `echo ${cuda_ver}'>'0 | bc -l` -eq 0 ]]; then				
+		echo ""		
+		echo "eddy function will be used by followering steps"
+		echo ""
+	fi
 fi
 
 # Check if previous step was done

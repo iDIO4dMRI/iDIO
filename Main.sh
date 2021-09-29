@@ -107,8 +107,8 @@ fi
 aStep=(${Step//./ })
 runStep=($(echo "${aStep[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
 
-if [[ "${cuda}" -gt "0" ]]; then
-    step3Arg="-c ${cuda}"
+if [[ "1" -eq "${cuda}" ]]; then
+    step3Arg="-c"
     if [[ "1" -eq "${stv}" ]]; then
         step3Arg="${step3Arg} -m"
     fi
