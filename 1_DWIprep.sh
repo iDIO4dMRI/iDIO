@@ -9,11 +9,10 @@
 # 20200429 - fixing imaging resize floating number problem
 # 20200526 - mrgird, rename PED
 # 20200730 - no .json, fix bug of mrgird
-# 20200807 - bugdix C4=TE
 # 20200826 - check C4 from mrconvert and add mrconvert function (use mrconvert)
-# 20201229 - bug fixed (bc)
 # 20210122 - fmap, 1 phase encoding direction
 # 20210821 - total readout time
+# 20210929 - TE bugfix
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -26,12 +25,6 @@ Usage() {
     1_DWIprep - DWI data preperation for the following processing
 
     Usage: 1_DWIprep -b <BIDSDir> -p <PreprocDir>
-    
-    Options:
-	-s 	Please provide the series of phase-encoding direction {PA, AP, RL, LR} 
-		Two scans for AP and PA  => 2 1 0 0
-		One scan for PA => 1 0 0 0
-
 
 EOF
     exit
@@ -43,7 +36,7 @@ PreprocDir=
 C4=
 PhaseEncoding=
 
-while getopts "hb:p:c:s:v" OPTION
+while getopts "hb:p:c:v" OPTION
 do
     case $OPTION in
     h)  
@@ -54,9 +47,6 @@ do
         ;;
     p)
         PreprocDir=$OPTARG
-        ;;
-    s)
-        PhaseEncoding=$OPTARG
         ;;
     v)
         verbose=1
@@ -73,14 +63,14 @@ fi
 
 mkdir -p ${PreprocDir}/0_BIDS_NIFTI
 cd ${PreprocDir}/0_BIDS_NIFTI
-/bin/cp -f ${BIDSDir}/dwi/*b0* .
-/bin/cp -f ${BIDSDir}/dwi/*dwi* .
-/bin/cp -f ${BIDSDir}/dwi/*DWI* .
-/bin/cp -f ${BIDSDir}/anat/*t1* .
-/bin/cp -f ${BIDSDir}/anat/*T1* .
+/bin/cp -f ${BIDSDir}/dwi/*b0* . 2>>error.log
+/bin/cp -f ${BIDSDir}/dwi/*dwi* . 2>>error.log
+/bin/cp -f ${BIDSDir}/dwi/*DWI* . 2>>error.log
+/bin/cp -f ${BIDSDir}/anat/*t1* . 2>>error.log
+/bin/cp -f ${BIDSDir}/anat/*T1* . 2>>error.log
 
 # compress
-gzip *.nii
+gzip *.nii 2>>error.log
 
 # check fieldmap
 n_b0=$(ls *b0*.nii.gz | wc -l)
@@ -102,8 +92,7 @@ if [ ${n_dwi} -eq "1" ] && [ -d "${BIDSDir}/fmap/" ]; then
 
 fi
 
-gzip *.nii
-
+gzip *.nii 2>>error.log
 
 # check filenames
 for T1_file in *T1*.nii.gz; do
@@ -185,7 +174,7 @@ if [ "${json_dir}" == "" ] || [ "${n_json_file}" == "0" ]; then
 	cd ${PreprocDir}/1_DWIprep
 	n_nifti_file=$(ls -d ${PreprocDir}/0_BIDS_NIFTI/prerename_*dwi*.nii.gz | wc -l)
 
-	if [[ ${n_json_file} -eq 0 ]]; then
+	if [[ ${n_json_file} -eq "0" ]]; then
 	    echo ""
 		echo "Error: 0_BIDS_NIFTI is empty."
 		echo "Please check BIDS files..."
@@ -424,7 +413,7 @@ else
 		if [ -f "Acqparams_Topup_mrconvert.txt" ]; then
 			cat Acqparams_Topup_mrconvert.txt >> Acqparams_Topup.txt
 			rm -f Acqparams_Topup_mrconvert.txt indices.txt
-		elif [ "$C4" != 0 ]; then
+		elif [ "$C4" -ne "0" ]; then
 			echo "${Acqparams_Topup_tmp} ${C4}" >> Acqparams_Topup.txt
 		else
 			echo "<method 4> C4=TE: ${TE}"
