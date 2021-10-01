@@ -121,7 +121,7 @@ else
 fi
 
 # Check if T1 preprocessed mask exists
-if [[ ! -f ${OriDir}/Preprocessed_data/T1w_mask_inDWIspace.nii.gz ]]
+if [[ ! -f ${OriDir}/Preprocessed_data/T1w_mask_inDWIspace.nii.gz ]]; then
     echo ""
     echo "No processed T1 mask was image found..."
     exit 1
