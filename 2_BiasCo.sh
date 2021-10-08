@@ -188,9 +188,9 @@ File_bval=$(ls *.bval)
 File_bvec=$(ls *.bvec)
 
 #
-B0num=$(mrinfo ${File_degibbs}.nii.gz -fslgrad ${File_bvec} ${File_bval}  -shell_sizes -config BZeroThreshold ${Bzerothr}|awk '{print $1}')
+B0num=$(mrinfo ${File_degibbs}.nii.gz -fslgrad ${File_bvec} ${File_bval} -shell_sizes -config BZeroThreshold ${Bzerothr}|awk '{print $1}')
 
-B0index=$(mrinfo ${File_degibbs}.nii.gz -fslgrad ${File_bvec} ${File_bval}  -shell_indices -config BZeroThreshold ${Bzerothr}|awk {'print $1'})
+B0index=$(mrinfo ${File_degibbs}.nii.gz -fslgrad ${File_bvec} ${File_bval} -shell_indices -config BZeroThreshold ${Bzerothr}|awk {'print $1'})
 
 #B0num > 3 -> do drift correction
 if [[ "${B0num}" -gt "3"  ]]; then

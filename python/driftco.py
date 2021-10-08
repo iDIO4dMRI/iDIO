@@ -210,13 +210,17 @@ if __name__ == '__main__':
     plt.plot(corr_l,'b',label='Linear fit')
     #add dashed line at 100%
     plt.plot([0, nr_ims],[norm_val, norm_val],'k--', label='baseline')
-    plt.legend(loc='lower left', fontsize='large')
+    plt.legend(loc='best', fontsize='large')
     plt.xlim([-2, nr_ims+2])
     plt.ylabel('Signal intensity')
     plt.xlabel('DWI volume')
     plt.title("An estimated " + str(round(decr_prc,2)) +"% signal loss from first to last image")
     # plt.show()
     plt.savefig(Savepath[0]+'/Drifting_Correction_B0only.png')
+
+    with open(Savepath[0]+'/Drifting_val.csv', 'w') as str_fobj:
+        str_fobj.write(str(round(decr_prc,4)))
+
 
     # show corrected intensities of all images
     f=plt.figure(figsize=(10,8))
@@ -229,6 +233,6 @@ if __name__ == '__main__':
     plt.ylabel('Signal intensity')
     plt.xlabel('DWI volume')
     plt.title("Drifting_Corrected_Data")
-    plt.legend(loc='center', fontsize='large')
+    plt.legend(loc='best', fontsize='large')
     # plt.show()
     plt.savefig(Savepath[0]+'/Drifting_Correction_allData.png')
