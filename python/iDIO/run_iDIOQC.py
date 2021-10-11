@@ -343,12 +343,12 @@ def iDIO_QC(subj_dir, template_dir, project_name):
 
     # Combine component PDFs
     vis_files = []
-
     vis_files.append(title_vis_file)
-    vis_files.append(Ref_vis_file)
+    for ref_vis in Ref_vis_file:
+        vis_files.append(ref_vis)
     vis_files.append(pedir_vis_file)
-    for res_vis in res_vis_file:
-        vis_files.append(res_vis)
+    for ref_vis in Ref_vis_file:
+        vis_files.append(ref_vis)
     vis_files.append(degibbs_vis_file)
     vis_files.append(drift_vis_file)
     vis_files.append(stats_vis_file)

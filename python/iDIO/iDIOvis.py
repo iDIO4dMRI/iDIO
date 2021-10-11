@@ -14,6 +14,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.cm as mcm
 import matplotlib.image as mpimg
+import matplotlib.text as mtext
+from matplotlib.transforms import Affine2D
+
 # import mpl_toolkits.axisartist as axisartist
 from skimage import measure
 
@@ -1107,28 +1110,30 @@ def vis_title(iDIO_Output, vis_dir):
     
     # Denoise
     if iDIO_Output['Denoise']:
-        method_str.append('Image underwent signal denoising using MRtrix3 dwidenoise command, which based on random matrix with patch-level Marchenko-Pastur PCA method [{}, {}, {}].'.format(c, c+1,c +2))
-        Reference_str.append('[{}] Veraart, J., Novikov, D. S., Christiaens, D., Ades-aron, B., Sijbers, J.,  Fieremans, E. Denoising of diffusion MRI using random matrix theory. NeuroImage, 2016, 142:394-406'.format(c))
+        method_str.append('Image underwent signal denoising using MRtrix3 dwidenoise command based on random matrix with patch-level Marchenko-Pastur PCA method [{}, {}, {}].'.format(c, c+1,c +2))
+        Reference_str.append('[{}] Veraart, J., Novikov, D. S., Christiaens, D., Ades-aron, B., Sijbers, J., Fieremans, E. Denoising of diffusion MRI using random matrix theory. NeuroImage, 2016, 142:394-406'.format(c))
         Reference_str.append('[{}] Veraart, J., Fieremans, E., Novikov, D. S. Diffusion MRI noise mapping using random matrix theory. Magn Reson Med, 2016, 76(5):1582-1593'.format(c+1))
         Reference_str.append('[{}] Cordero-Grande, L., Christiaens, D., Hutter, J., Price, A.N., Hajnal, J.V. Complex diffusion-weighted image estimation via matrix recovery under general noise models. NeuroImage, 2019, 200:391-404'.format(c+2))
         c += 3
     else:
-        warning_str.append('Images interpolation was detected (may due to the MR machine output options). Denoise step was skipped due to the noise characteristics may violate the Marchenko-Pastur PCA assumption.')
+        warning_str.append(r"$\bf{\times\ Images\ (dicom\ image)\ interpolation\ detected}$")
+        warning_str.append(r"$\bf{\times\ Denoise\ step\ was\ skipped:}$" + ' due image interpolation violates Marchenko-Pastur PCA assumption')
+
 
     # Degibbs
     method_str.append('Gibbs ringing removal was performed using MRtrix mrdegibbs command with the method of local subvoxel-shifts [{}].'.format(c))
     Reference_str.append('[{}] Kellner, E, Dhital, B, Kiselev, V. G, Reisert, M. Gibbs-ringing artifact removal based on local subvoxel-shifts. Magn Reson Med, 2016, 76:1574–1581'.format(c))
-    warning_str.append('Gibbs ringing removal method was designed for images acquire with full k-space coverage. Partial fourier acquisition was common in diffusion acquisition protocol, iDIO applys Gibbs ringing removal for all kinds of image. However, partial Fourier acquisition may also lead to suboptimal results, please check corrected output images with caution.')
+    warning_str.append(r"$\bf{\times\ Caution\ for\ Gibbs\ ringing\ removel:}$" + ' partial Fourier acquisition may lead to suboptimal results, please check corrected output images and use it with caution.')
     c += 1
     gibbsc = c
 
     # Drift
     if iDIO_Output['Drift']:
-        method_str.append('Signal drift were performed with linear correction based on the release code by Vos S.B [{}].'.format(c))
+        method_str.append('Signal drift were performed with linear correction adapted from the released script by Vos S.B [{}].'.format(c))
         Reference_str.append('[{}] Vos S. B.; Tax C. M.; Luijten P. R.; Ourselin S.; Leemans A.; Froeling M. The importance of correcting for signal drift in diffusion MRI. Magn Reson Med, 2017, 77(1):285-299'.format(c))
         c += 1
     else:
-        warning_str.append('There was no sufficiant b0 Images (less than three) in the acquired image, Drift correction was skipped. We recommand to acquired diffusion weighted images with multiple b0 interleave images (1 b0 per 8-10 volumes)')
+        warning_str.append(r"$\bf{\times\ Drifting\ correction\ was\ skipped:}$" +' no sufficient b0 Images (less than three) in the acquired image, three or more b0 images interleaved across the dwi acquisition suggested (e.g. 1 b0 per 8-10 volumes)')
 
     # PEdir
     if iDIO_Output['RPEcor']:
@@ -1136,35 +1141,35 @@ def vis_title(iDIO_Output, vis_dir):
         Reference_str.append('[{}] Andersson J. L. R., Skare S., Ashburner J. How to correct susceptibility distortions in spin-echo echo-planar images: application to diffusion tensor imaging. NeuroImage, 2003, 20(2):870-888'.format(c))
         Reference_str.append('[{}] Smith S. M., Jenkinson M., Woolrich M. W., Beckmann C. F., Behrens T. E. J., Johansen-Berg H., Bannister P. R., De Luca M., Drobnjak I., Flitney D. E., Niazy R., Saunders J., Vickers J., Zhang Y., De Stefano N.,Brady J. M., Matthews P. M. Advances in functional and structural MR image analysis and implementation as FSL. NeuroImage, 2004, 23(S1):208-219'.format(c))
         Reference_str.append('[{}] Andersson J. L. R. and Sotiropoulos S. N. An integrated approach to correction for off-resonance effects and subject movement in diffusion MR imaging. NeuroImage, 2016, 125:1063-1078'.format(c+1))
-
         c += 3
     else:
         method_str.append('FSL eddy command were performed to correct for image distortion induced by fast-switching gradient, and head motion [{}].'.format(c))
         Reference_str.append('[{}] Andersson J. L. R. and Sotiropoulos S. N. An integrated approach to correction for off-resonance effects and subject movement in diffusion MR imaging. NeuroImage, 2016, 125:1063-1078'.format(c))
-        warning_str.append('Only one phase encoding was acquired. Images with two different phase encoding images could alleviate the susceptibility distortion by post-processing using FSL topup.')
+        warning_str.append(r"$\bf{\times\ Susceptibility\ distortion\ correction\ skipped:}$" + ' single phase encoding dwi was detected, two opposite phase encoding dwi are needed')
         c += 1 
     
     # slice to volume correction
     if iDIO_Output['S2V']:
-        method_str.append('Furthermore, the motion correction also considered the within-volum (slice-to-volume) movement [{}].'.format(c))
+        method_str.append('Furthermore, the motion correction also considered the within-volume (slice-to-volume) movement [{}].'.format(c))
         Reference_str.append('[{}] Andersson J. L. R., Graham M. S., Drobnjak I., Zhang H., Filippini N. Bastiani M. Towards a comprehensive framework for movement and distortion correction of diffusion MR images: Within volume movement. NeuroImage, 2017, 152:450-466.'.format(c))
         c += 1
     # BiasCorrection
-    method_str.append('B1 field inhomogeneity correction was performed using MRtrix dwibiascoorect command with ants option [{}].'.format(c))
+    method_str.append('B1 field inhomogeneity correction was performed using MRtrix dwibiascorrect command with ants option [{}].'.format(c))
     Reference_str.append('[{}] Tustison, N., Avants, B., Cook, P., Zheng, Y., Egan, A., Yushkevich, P., Gee, J. N4ITK: Improved N3 Bias Correction. IEEE Trans Med Imaging, 2010, 29:1310-1320'.format(c))
+
     antsc = c
     c += 1
 
     # Resize
     if iDIO_Output['Resize']:
-        method_str.append('Last, images were regrid into {} isotropic voxels.'.format(iDIO_Output['ResizeVoxelSize']))
+        method_str.append('Last, images were resized into {} isotropic voxels.'.format(iDIO_Output['ResizeVoxelSize']))
 
     if iDIO_Output['ResizeWarning']:
-        warning_str.append('Diffusion images were not in isotropic voxels, we suggest to do the resize in the preprocessing step.')
+        warning_str.append(r"$\bf{\times\ Suggest\ to\ do\ the\ resize\ step\ (native\ dwi\ voxel\ size\ was\ not\ isotropic)}$")
 
     # for t1 preprocessing:
     if iDIO_Output['CSDproc'] or iDIO_Output['Tracking'] or iDIO_Output['DTIFIT']:
-        method_str.append('After the B1 field inhomogeneity correction. iDIO use T1 structural image to generate a brain mask and tissue segmentation for further diffusion post-processing. T1 image were first preprocessed with Gibbs ringing removal and also B1 field inhomogeneity correction [{}, {}]. Brain extraction were performed by antsBrainExtraction script [{}]. MRtrix 5ttgen with fsl option was utilized to generate a five-tissue-type (5TT) segmented tissue image (including cortical gray matter, subcortical gray matter, white matter, cerebraospinal fluild and pathological tissue). T1 image was co-registered with b0 image using boundary-based registration with the segmented white matter (BBR command in FSL) to generate the transformation matrix from Diffusion-space to T1-space [{}, {}].'.format(gibbsc, antsc, c, c+1, c+2))
+        method_str.append('After the B1 field inhomogeneity correction. iDIO use T1 structural image to generate a brain mask and tissue segmentation for further diffusion post-processing. T1 image were first preprocessed with Gibbs ringing removal and also B1 field inhomogeneity correction [{}, {}]. Brain extraction were performed by antsBrainExtraction script [{}]. MRtrix 5ttgen with fsl option was utilized to generate a five-tissue-type (5TT) segmented tissue image (including cortical gray matter, subcortical gray matter, white matter, cerebrospinal fluild and pathological tissue). T1 image was co-registered with b0 image using boundary-based registration with the segmented white matter (BBR command in FSL) to generate the transformation matrix from Diffusion-space to T1-space [{}, {}].'.format(gibbsc, antsc, c, c+1, c+2))
         Reference_str.append('[{}] Avants B. B, Yushkevich P., Pluta J., Minkoff D., Korczykowski M., Detre J., Gee J. C. The optimal template effect in hippocampus studies of diseased populations. NeuroImage, 2010, 49(3):2457-66'.format(c))
         Reference_str.append('[{}] Jenkinson, M., Bannister, P., Brady, J. M. and Smith, S. M. Improved Optimisation for the Robust and Accurate Linear Registration and Motion Correction of Brain Images. NeuroImage, 2002, 17(2):825-841'.format(c+1))
         Reference_str.append('[{}] Greve, D. N. and Fischl, B. Accurate and robust brain image alignment using boundary-based registration. NeuroImage, 2009, 48(1):63-72'.format(c+2))
@@ -1182,7 +1187,7 @@ def vis_title(iDIO_Output, vis_dir):
         c += 3
 
     if iDIO_Output['Tracking']:
-        method_str.append('White matter tractography were performed based on the voxel-wise fiber orientation distribution using anatomically constrained tractography with dynamic seeding iFOD2 algorithm and the spherical-deconvolution informed weighted of tractogram were applied. These could be achieved by using the tckgen and tcksift2 command in the MRtrix [{}, {}]. Next, AAL3 [{}], HCPMMP [{}], HCPex [{}], Yeo 400 [{}] atlases were utilized to generate the connectivity matrices. To transform the atlases from MRI standard space to the individual native space, T1 image was spatially normalized to the nonlinear ICBM152 template via antsRegistrationSyNQuick in ANTs [{}]. By combing the two transformatio matrics (Diffusion-space to T1-space and T1-space to MNI-space), we then could apply the inverse transformation matrices to obtain the atlas in native diffusion space.'.format(c, c+1, c+2, c+3, c+4, c+5, c+6))
+        method_str.append('White matter tractography were performed based on the voxel-wise fiber orientation distribution using anatomically constrained tractography with dynamic seeding iFOD2 algorithm and the spherical-deconvolution informed weighted of tractogram were applied. These could be achieved by using the tckgen and tcksift2 command in the MRtrix [{}, {}]. Next, AAL3 [{}], HCPMMP [{}], HCPex [{}], Yeo 400 [{}] atlases were utilized to generate the connectivity matrices. To transform the atlases from MRI standard space to the individual native space, T1 image was spatially normalized to the nonlinear ICBM152 template via antsRegistrationSyNQuick in ANTs [{}]. By combing the two transformation matrics (Diffusion-space to T1-space and T1-space to MNI-space), we then could apply the inverse transformation matrices to obtain the atlas in native diffusion space.'.format(c, c+1, c+2, c+3, c+4, c+5, c+6))
         Reference_str.append('[{}] Tournier, J. D., Calamante, F., Connelly, A. Improved probabilistic streamlines tractography by 2nd order integration over fibre orientation distributions. In Proc. ISMRM, 2010, 1670'.format(c))
         Reference_str.append('[{}] Smith, R. E., Tournier, J. D., Calamante, F., Connelly, A. SIFT2: Enabling dense quantitative assessment of brain white matter connectivity using streamlines tractography. NeuroImage, 2015, 119:338-351'.format(c+1))
         Reference_str.append('[{}] Rolls E. T., Huang C. C., Lin C. P., Feng J., Joliot M. Automated anatomical labelling atlas 3. Neuroimage. 2020, 206:116189'. format(c+2))
@@ -1193,43 +1198,86 @@ def vis_title(iDIO_Output, vis_dir):
         c += 7
 
     if iDIO_Output['LowBonly']:
-        warning_str.append('The data is lack of high b value (b > 1500 s/' + r'$mm^{2}$' + ') volumes, which may lead to a poor estimation of constrained sphereical deconvolution.')
+        warning_str.append(r"$\bf{\times\ Caution\ for\ poor\ constrained\ spherical\ deconvolution\ (CSD)\ estimation:}$" + ' dwi acquisition scheme lack of high b value (b > 1500 s/' + r'$mm^{2}$' + ') volumes')
 
     if iDIO_Output['HighBonly']:
-        warning_str.append('There was no b value less than 1500 s/' + r'$mm^{2}$' + ' in this data, thus diffusion tensor fitting was skipped.')
+        warning_str.append(r"$\bf{\times\ Diffusion\ tensor\ fitting\ (DTI)\ skipped:}$" +' no b value less than 1500 s/' + r'$mm^{2}$' + ' in this data')
     
-    mergeMethod_str = r'$\bf{Warning:}$' +'\n{}\n'.format(' '.join(warning_str))
-
-    mergeMethod_str = mergeMethod_str +'\n' + r'$\bf{Methods}$' + ' ' + r'$\bf{Summary:}$' + '\n{}'.format(' '.join(method_str))
-
-    mergeRef_str = r'$\bf{Reference:}$' + '\n{}\n'.format('\n'.join(Reference_str))
+    mergeMethod_str = r'$\bf{Warning:}$' +'\n\n{}\n'.format('\n'.join(warning_str))
+    mergeMethod_str = mergeMethod_str +'\n' + r'$\bf{Methods\ Summary:}$' + '\n\n{}'.format(' '.join(method_str))
 
     title_vis_file = os.path.join(vis_dir, 'Title.pdf')
-    plt.figure(0, figsize=SHARED_VARS.PAGESIZE)
-    plt.axis([0, 1, 0, 1])
-    plt.tight_layout()
-    
-    plt.text(-0.025, 1, title_str, ha='left', va='center', wrap=True, fontsize=10)
-    plt.text(-0.025, 0.95, mergeMethod_str, ha='left', va='top', wrap=True, fontsize=10)
-    
+    fig = plt.figure(0, figsize=SHARED_VARS.PAGESIZE)
+    plt.axis([0, 1, 0, 1])  
+    ax = plt.gca()
+    ax.set_xticks([])
+    ax.set_yticks([])
+    plt.subplots_adjust(left=0.025, bottom=0.025, right=0.975, top=0.975, wspace=0, hspace=0)
+    plt.text(0, 0.99, title_str, ha='left', va='center', wrap=True, fontsize=10, transform=ax.transAxes)
+
+    t = ax.add_artist(WrapText(0, 0.97, mergeMethod_str, va='top', width=0.72, widthcoords=ax.transAxes))
+    t.set_fontfamily('monospace')
+    t.set_fontsize(10)
     plt.axis('off')
     plt.savefig(title_vis_file)
     plt.close()
 
-    # Output Reference page
-    Ref_vis_file = os.path.join(vis_dir, 'Reference.pdf')
-    plt.figure(0, figsize=SHARED_VARS.PAGESIZE)
-    plt.axis([0, 1, 0, 1])
-    plt.tight_layout()
-    
-    plt.text(-0.025, 1, title_str, ha='left', va='center', wrap=True, fontsize=9)
-    plt.text(-0.025, 0.96, mergeRef_str, ha='left', va='top', wrap=True, fontsize=9)
+    # # Output Reference page
+    if len(Reference_str) > 21:
+        # p1
+        # sort_ref = sorted(Reference_str)
+        mergeRef_str = r'$\bf{Reference:}$' + '\n{}\n'.format('\n'.join(Reference_str[0:20]))
+        Ref_vis_files = [os.path.join(vis_dir, 'Reference_1.pdf')]
+        plt.figure(0, figsize=SHARED_VARS.PAGESIZE)
+        plt.axis([0, 1, 0, 1])
+        ax = plt.gca()
+        ax.set_xticks([])
+        ax.set_yticks([])
+        plt.subplots_adjust(left=0.025, bottom=0.025, right=0.975, top=0.975, wspace=0, hspace=0)
+        plt.text(0, 0.99, title_str, ha='left', va='center', wrap=True, fontsize=10)
+        # plt.text(-0.025, 0.95, mergeRef_str, ha='left', va='top', wrap=True, fontsize=9)
+        t = ax.add_artist(WrapText(0, 0.97, mergeRef_str, ha = 'left', va= 'top', width=0.72, widthcoords=ax.transAxes))
+        t.set_fontfamily('monospace')
+        t.set_fontsize(9)
+        plt.axis('off')
+        plt.savefig(Ref_vis_files[0])
+        plt.close()
+        # p2 
+        mergeRef_str = r'$\bf{Reference:}$' + '\n{}\n'.format('\n'.join(Reference_str[21:len(Reference_str)]))
+        Ref_vis_files.append(os.path.join(vis_dir, 'Reference_2.pdf'))
+        plt.figure(0, figsize=SHARED_VARS.PAGESIZE)
+        plt.axis([0, 1, 0, 1])
+        ax = plt.gca()
+        ax.set_xticks([])
+        ax.set_yticks([])
+        plt.subplots_adjust(left=0.025, bottom=0.025, right=0.975, top=0.975, wspace=0, hspace=0)
+        plt.text(0, 0.99, title_str, ha='left', va='center', wrap=True, fontsize=10)
+        # plt.text(-0.025, 0.95, mergeRef_str, ha='left', va='top', wrap=True, fontsize=9)
+        t = ax.add_artist(WrapText(0, 0.97, mergeRef_str, ha = 'left', va= 'top', width=0.72, widthcoords=ax.transAxes))
+        t.set_fontfamily('monospace')
+        t.set_fontsize(9)
+        plt.axis('off')
+        plt.savefig(Ref_vis_files[1])
+        plt.close()
+    else:
+        mergeRef_str = r'$\bf{Reference:}$' + '\n{}\n'.format('\n'.join((Reference_str)))
+        Ref_vis_files = [os.path.join(vis_dir, 'Reference.pdf')]
+        plt.figure(0, figsize=SHARED_VARS.PAGESIZE)
+        plt.axis([0, 1, 0, 1])
+        ax = plt.gca()
+        ax.set_xticks([])
+        ax.set_yticks([])
+        plt.subplots_adjust(left=0.025, bottom=0.025, right=0.975, top=0.975, wspace=0, hspace=0)
+        plt.text(0, 0.99, title_str, ha='left', va='center', wrap=True, fontsize=10)
+        # plt.text(-0.025, 0.95, mergeRef_str, ha='left', va='top', wrap=True, fontsize=9)
+        t = ax.add_artist(WrapText(0, 0.97, mergeRef_str, ha = 'left', va= 'top', width=0.72, widthcoords=ax.transAxes))
+        t.set_fontfamily('monospace')
+        t.set_fontsize(9)
+        plt.axis('off')
+        plt.savefig(Ref_vis_files[0])
+        plt.close()
 
-    plt.axis('off')
-    plt.savefig(Ref_vis_file)
-    plt.close()
-
-    return title_vis_file, Ref_vis_file
+    return title_vis_file, Ref_vis_files
 
 # Private function
 def _get_eddy_num_std_map(path):
@@ -1266,3 +1314,65 @@ def _str2list(string):
         if (not np.mod(i,2)):
             row.append(int(string[i]))
     return row
+
+class WrapText(mtext.Text):
+    """
+    WrapText(x, y, s, width, widthcoords, **kwargs)
+    x, y       : position (default transData)
+    text       : string
+    width      : box width
+    widthcoords: coordinate system (default screen pixels)
+    **kwargs   : sent to matplotlib.text.Text
+    Return     : matplotlib.text.Text artist
+    """
+    def __init__(self, x=0, y=0, text='', width=0, widthcoords=None, **kwargs):
+        mtext.Text.__init__(self, x=x, y=y, text=text, wrap=True, clip_on=False, **kwargs)
+        if not widthcoords:
+            self.width = width
+        else:
+            a = widthcoords.transform_point([(0,0),(width,0)])
+            self.width = a[1][0]-a[0][0]
+
+    def _get_wrap_line_width(self):
+        return self.width
+
+def rainbow_text(x, y, strings, colors, orientation='horizontal',
+                 ax=None, **kwargs):
+    """
+    Take a list of *strings* and *colors* and place them next to each
+    other, with text strings[i] being shown in colors[i].
+
+    Parameters
+    ----------
+    x, y : float
+        Text position in data coordinates.
+    strings : list of str
+        The strings to draw.
+    colors : list of color
+        The colors to use.
+    orientation : {'horizontal', 'vertical'}
+    ax : Axes, optional
+        The Axes to draw into. If None, the current axes will be used.
+    **kwargs
+        All other keyword arguments are passed to plt.text(), so you can
+        set the font size, family, etc.
+    """
+    if ax is None:
+        ax = plt.gca()
+    t = ax.transData
+    canvas = ax.figure.canvas
+
+    assert orientation in ['horizontal', 'vertical']
+    if orientation == 'vertical':
+        kwargs.update(rotation=90, verticalalignment='bottom')
+
+    for s, c in zip(strings, colors):
+        text = ax.text(x, y, s + " ", color=c, transform=t, **kwargs)
+
+        # Need to draw to update the text position.
+        text.draw(canvas.get_renderer())
+        ex = text.get_window_extent()
+        if orientation == 'horizontal':
+            t = text.get_transform() + Affine2D().translate(ex.width, 0)
+        else:
+            t = text.get_transform() + Affine2D().translate(0, ex.height)
