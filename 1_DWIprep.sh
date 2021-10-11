@@ -13,6 +13,7 @@
 # 20210122 - fmap, 1 phase encoding direction
 # 20210821 - total readout time
 # 20210929 - TE bugfix
+# 20211011 - add 1st & 2nd scan options, fieldmap bugfix
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -24,36 +25,31 @@ Usage() {
 
     1_DWIprep - DWI data preperation for the following processing
 
-    Usage: 1_DWIprep -b <BIDSDir> -p <PreprocDir>
+    Usage: 1_DWIprep -b <BIDSDir> -p <PreprocDir> 
+
+    Options:
+    -first	<first scan filename> 	If your json file have no "SeriesNumber" tag, 
+    								please indicate the filename of the 1st scan <filename>.nii.gz e.g. dwi_PA
+    -second	<second scan filename>	2nd scan <filename>.nii.gz ex. dwi_AP
 
 EOF
     exit
 }
 
-SubjName=
 BIDSDir=
 PreprocDir=
-C4=
-PhaseEncoding=
+FirstScan=
+SecondScan=
 
-while getopts "hb:p:c:v" OPTION
-do
-    case $OPTION in
-    h)  
-        Usage
-        ;; 
-    b)
-        BIDSDir=$OPTARG
-        ;;
-    p)
-        PreprocDir=$OPTARG
-        ;;
-    v)
-        verbose=1
-        ;;
-    ?)
-        Usage
-        ;;
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+    -b)			BIDSDir="$2"; shift; shift;;
+    -p)			PreprocDir="$2"; shift; shift;;
+	-first)		FirstScan="$2"; shift; shift;;
+	-second)	SecondScan="$2"; shift; shift;;
+    -h) Usage;;
+
+    *) echo "unknown option:" "$1"; exit 1;;
     esac
 done
 
@@ -72,53 +68,61 @@ cd ${PreprocDir}/0_BIDS_NIFTI
 # compress
 gzip *.nii 2>>error.log
 
-# check fieldmap
-n_b0=$(ls *b0*.nii.gz | wc -l)
-n_dwi=$(ls *dwi*.nii.gz | wc -l)
-n_DWI=$(ls *DWI*.nii.gz | wc -l)
-n_dwi=$[${n_b0}+${n_dwi}+${n_DWI}]
+# data order
+cd ${PreprocDir}/0_BIDS_NIFTI
+if [ "${FirstScan}" != "" ] && [ "${SecondScan}" != "" ]; then 
+	
+	Scan=0
+	for dwi_files in ${FirstScan} ${SecondScan}; do
+		Scan=$[$Scan+1]
 
-if [ ${n_dwi} -eq "1" ] && [ -d "${BIDSDir}/fmap/" ]; then
-
-	cd ${BIDSDir}/fmap/
-	fmap_name_all=$(ls *)
-
-	cd ${PreprocDir}/0_BIDS_NIFTI
-
-	for fmap_name in ${fmap_name_all}; do
-		/bin/cp -f ${BIDSDir}/fmap/${fmap_name} .
-		mv ${fmap_name} dwi_${fmap_name}
+		for file_type in nii.gz json bvec bval bvecs bvals; do
+			if [ -f "${dwi_files}.${file_type}" ]; then
+				mv ${dwi_files}.${file_type} dwi${Scan}.${file_type}
+			fi
+		done
 	done
-
+	#rename s/${FirstScan}/dwi1/g *
+	#rename s/${SecondScan}/dwi2/g *
 fi
-
-gzip *.nii 2>>error.log
 
 # check filenames
 for T1_file in *T1*.nii.gz; do
- 	mv ${T1_file} T1w.nii.gz
+	if [ -f "${T1_file}" ]; then
+ 		mv ${T1_file} T1w.nii.gz
+ 	fi
 done
 
 for T1_file in *T1*.json; do
- 	mv ${T1_file} T1w.json
+	if [ -f "${T1_file}" ]; then
+		mv ${T1_file} T1w.json
+	fi
 done
 
 for T1_file in *t1*.nii.gz; do
- 	mv ${T1_file} T1w.nii.gz
+	if [ -f "${T1_file}" ]; then
+	 	mv ${T1_file} T1w.nii.gz
+ 	fi
 done
 
 for T1_file in *t1*.json; do
- 	mv ${T1_file} T1w.json
+	if [ -f "${T1_file}" ]; then
+		mv ${T1_file} T1w.json
+	fi
 done
 
 for DWI_file in *DWI*; do
 	nname=$(echo ${DWI_file} | sed 's/DWI/dwi/g')
- 	mv ${DWI_file} $nname
+	if [ -f "${DWI_file}" ]; then
+ 		mv ${DWI_file} $nname
+ 	fi
 done
 
 for b0_file in *b0*; do
 	nname=$(echo ${b0_file} | sed 's/b0/dwi_b0/g')
- 	mv ${b0_file} $nname
+	if [ -f "${b0_file}" ]; then
+ 		mv ${b0_file} $nname
+	fi
 done
 
 bvals_tmp=$(ls -f *.bvals 2>>error.log) 
@@ -131,6 +135,34 @@ for bvecs_file in ${bvecs_tmp}; do
 	mv ${bvecs_file} ${bvecs_file:0:${#bvecs_file}-1}
 done
 
+# check fieldmap
+n_b0=$(ls *b0*.nii.gz | wc -l)
+n_dwi=$(ls *dwi*.nii.gz | wc -l)
+n_dwi=$[${n_b0}+${n_dwi}]
+
+if [ ${n_dwi} -eq "1" ] && [ -d "${BIDSDir}/fmap/" ]; then
+
+	cd ${PreprocDir}/0_BIDS_NIFTI
+	dwi_file=($(ls *dwi*.nii.gz))
+	dwi_file=${dwi_file[0]}
+	dwi_dim=($(mrinfo -size ${dwi_file}))
+
+	cd ${BIDSDir}/fmap/
+	fmap_name_all=$(ls *)
+	fmap_file=($(ls *.nii*))
+	fmap_file=${fmap_file[0]}
+	fmap_dim=($(mrinfo -size ${fmap_file}))
+
+	if [ "${dwi_dim[0]}" -eq "${fmap_dim[0]}" ] && [ "${dwi_dim[2]}" -eq "${fmap_dim[2]}" ]; then
+		cd ${PreprocDir}/0_BIDS_NIFTI
+		for fmap_name in ${fmap_name_all}; do
+			/bin/cp -f ${BIDSDir}/fmap/${fmap_name} .
+			mv ${fmap_name} dwi_${fmap_name}
+		done
+	fi
+fi
+
+gzip *.nii 2>>error.log
 /bin/rm -f error.log
 
 # prerename
@@ -160,7 +192,6 @@ json_dir=$(ls -d ${PreprocDir}/0_BIDS_NIFTI/prerename_*dwi*.json)
 json_dir_tmp=(${json_dir})
 n_json_file=$(ls -d ${PreprocDir}/0_BIDS_NIFTI/prerename_*dwi*.json | wc -l)
 
-
 mkdir -p ${PreprocDir}/1_DWIprep
 cd ${PreprocDir}/1_DWIprep
 
@@ -169,7 +200,7 @@ cd ${PreprocDir}/1_DWIprep
 /bin/rm -f EddyIndex.txt
 
 # check if .json exist
-if [ "${json_dir}" == "" ] || [ "${n_json_file}" == "0" ]; then
+if [ "${json_dir}" == "" ] || [ "${n_json_file}" -eq "0" ]; then
 
 	cd ${PreprocDir}/1_DWIprep
 	n_nifti_file=$(ls -d ${PreprocDir}/0_BIDS_NIFTI/prerename_*dwi*.nii.gz | wc -l)
@@ -185,7 +216,8 @@ if [ "${json_dir}" == "" ] || [ "${n_json_file}" == "0" ]; then
 			mv ${dwi_files} ${dwi_files:10:${#dwi_files}-10}
 		done
 
-		PhaseEncodingDirectionCode=(${PhaseEncoding}})
+		# optional provided PhaseEncodingDirection (without .json), but C4 is needed
+		PhaseEncodingDirectionCode=(${PhaseEncoding})
 		Rec=0
 
 		Topup=$((${PhaseEncodingDirectionCode[0]} + ${PhaseEncodingDirectionCode[1]} + ${PhaseEncodingDirectionCode[2]} + ${PhaseEncodingDirectionCode[3]}))
@@ -238,28 +270,31 @@ else
 	PhaseEncodingDirectionCode=(0 0 0 0)
 	Rec=0
 
-	sn=(0 0)
 	if [[ ${n_json_file} -gt 1 ]]; then
 		
-		for n in {1..2}; do
-			n_tmp=$[${n}-1]
-			while read line; do
+		if [ "${FirstScan}" == "" ] && [ "${SecondScan}" == "" ]; then 
+			sn=(0 0)
+			for n in {1..2}; do
+				n_tmp=$[${n}-1]
+				while read line; do
 
-				tmp=(${line})
-				if [[ ${tmp[0]} == \"SeriesNumber\": ]]; then
-					d=${tmp[1]}
+					tmp=(${line})
+					if [[ ${tmp[0]} == \"SeriesNumber\": ]]; then
+						d=${tmp[1]}
 
-					sn_tmp=${d:0:${#d}-1}	
-					sn[${n_tmp}]=${sn_tmp}
-				fi 
-			done < ${json_dir_tmp[${n_tmp}]}
-		done
+						sn_tmp=${d:0:${#d}-1}	
+						sn[${n_tmp}]=${sn_tmp}
+					fi 
+				done < ${json_dir_tmp[${n_tmp}]}
+			done
 
-		if [[ ${sn[0]} -gt ${sn[1]} ]]; then
-			json_dir=$(echo ${json_dir_tmp[1]} ${json_dir_tmp[0]})
+			if [[ ${sn[0]} -gt ${sn[1]} ]]; then
+				json_dir=$(echo ${json_dir_tmp[1]} ${json_dir_tmp[0]})
+			fi
 		fi
 	fi
 
+	echo ${json_dir}
 	## read .json file
 	for json_file in ${json_dir}; do
 
@@ -274,7 +309,7 @@ else
 		C4=0
 
 		prerename_filename=${json_file:0:${#json_file}-5}
-		echo "\\n====Check inforamtion for $(basename ${prerename_filename})====\n"
+		echo "====Check inforamtion for $(basename ${prerename_filename})===="
 		while read line; do
 
 			tmp=(${line})
@@ -394,14 +429,14 @@ else
 		fi
 
 		# C4: total readout time
-		if [ "$TotalReadoutTime" != 0 ]; then
+		if [ `echo "${TotalReadoutTime} > 0" | bc` -eq 1 ]; then
 			C4=$(echo "${TotalReadoutTime}")
 			echo "<method 1> C4: ${C4}"
-		#elif [ "$EPIfactor" != 0 ] && [ "$EffectiveEchoSpacing" != 0 ]; then
+		#elif [ `echo "${EPIfactor} > 0" | bc` -eq 1 ] && [ `echo "${EffectiveEchoSpacing} > 0" | bc` -eq 1 ]
 		#	C4=$(echo "${EffectiveEchoSpacing}*(${EPIfactor}-1)" | bc)
-		#elif [ "$DwellTime" != 0 ] && [ "$PhaseEncodingSteps" != 0 ]; then
+		#elif [ `echo "${DwellTime} > 0" | bc` -eq 1 ] && [ `echo "${PhaseEncodingSteps} > 0" | bc` -eq 1 ]
 		#	C4=$(echo "${DwellTime}*(${PhaseEncodingSteps}-1)" | bc)
-		elif [ "$BandwidthPerPixelPhaseEncode" != 0 ]; then
+		elif [ `echo "${BandwidthPerPixelPhaseEncode} > 0" | bc` -eq 1 ]; then
 			C4=$(echo "scale=4; 1/${BandwidthPerPixelPhaseEncode}" | bc)
 			echo "<method 2: 1/BW> C4: ${C4}"
 		else
@@ -413,7 +448,7 @@ else
 		if [ -f "Acqparams_Topup_mrconvert.txt" ]; then
 			cat Acqparams_Topup_mrconvert.txt >> Acqparams_Topup.txt
 			rm -f Acqparams_Topup_mrconvert.txt indices.txt
-		elif [ "$C4" -ne "0" ]; then
+		elif [ `echo "$C4 > 0" | bc` -eq 1 ]; then
 			echo "${Acqparams_Topup_tmp} ${C4}" >> Acqparams_Topup.txt
 		else
 			echo "<method 4> C4=TE: ${TE}"
