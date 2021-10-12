@@ -77,9 +77,7 @@ if [ "${FirstScan}" != "" ] && [ "${SecondScan}" != "" ]; then
 		Scan=$[$Scan+1]
 
 		for file_type in nii.gz json bvec bval bvecs bvals; do
-			if [ -f "${dwi_files}.${file_type}" ]; then
-				mv ${dwi_files}.${file_type} dwi${Scan}.${file_type}
-			fi
+			[ ! -f "${dwi_files}.${file_type}" ] || mv ${dwi_files}.${file_type} dwi${Scan}.${file_type}
 		done
 	done
 	#rename s/${FirstScan}/dwi1/g *
@@ -88,41 +86,29 @@ fi
 
 # check filenames
 for T1_file in *T1*.nii.gz; do
-	if [ -f "${T1_file}" ]; then
- 		mv ${T1_file} T1w.nii.gz
- 	fi
+	[ ! -f "${T1_file}" ] || mv ${T1_file} T1w.nii.gz
 done
 
 for T1_file in *T1*.json; do
-	if [ -f "${T1_file}" ]; then
-		mv ${T1_file} T1w.json
-	fi
+	[ ! -f "${T1_file}" ] || mv ${T1_file} T1w.json
 done
 
 for T1_file in *t1*.nii.gz; do
-	if [ -f "${T1_file}" ]; then
-	 	mv ${T1_file} T1w.nii.gz
- 	fi
+	[ ! -f "${T1_file}" ] || mv ${T1_file} T1w.nii.gz
 done
 
 for T1_file in *t1*.json; do
-	if [ -f "${T1_file}" ]; then
-		mv ${T1_file} T1w.json
-	fi
+	[ ! -f "${T1_file}" ] || mv ${T1_file} T1w.json
 done
 
 for DWI_file in *DWI*; do
 	nname=$(echo ${DWI_file} | sed 's/DWI/dwi/g')
-	if [ -f "${DWI_file}" ]; then
- 		mv ${DWI_file} $nname
- 	fi
+	[ ! -f "${DWI_file}" ] || mv ${DWI_file} $nname
 done
 
 for b0_file in *b0*; do
 	nname=$(echo ${b0_file} | sed 's/b0/dwi_b0/g')
-	if [ -f "${b0_file}" ]; then
- 		mv ${b0_file} $nname
-	fi
+	[ ! -f "${b0_file}" ] || mv ${b0_file} $nname
 done
 
 bvals_tmp=$(ls -f *.bvals 2>>error.log) 
@@ -291,10 +277,13 @@ else
 			if [[ ${sn[0]} -gt ${sn[1]} ]]; then
 				json_dir=$(echo ${json_dir_tmp[1]} ${json_dir_tmp[0]})
 			fi
+
+			if [[ ${sn[0]} -eq "0" ]]; then
+				echo "Suggest to use 1_DWIprep with -first -second options"
+			fi
 		fi
 	fi
 
-	echo ${json_dir}
 	## read .json file
 	for json_file in ${json_dir}; do
 
