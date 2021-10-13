@@ -174,22 +174,15 @@ if [ "${Rec}" -ge "2" ] && [ "${DirectionCheck}" -eq "0" ]; then
 	case "${Manufacturer}" in
 		Siemens) echo "Error: Two dwi data with same phase encoding direction."
             ;;
-        GE) echo "Error: Two dwi data with same phase encoding direction."
+        GE) 
+			echo "Warning: Two dwi data"
+			echo "(1) with the same PhaseEncodingDirection"
+			echo "(2) if not, needed to edit the info of PhaseEncodingDirection in json file j/j- (PA:j, AP:j-)"
             ;;
-        Philips) 
-			echo "Warning: Two dwi data:"
-			echo "(1) with the same phase encoding direction"
-			echo "(2) if not, needed to edit the info of PhaseEncodingAxis in json file (PA:j, AP:j-)"
-            ;;
-        UIH) 
-			echo "Warning: Two dwi data:"
-			echo "(1) with the same phase encoding direction"
-			echo "(2) if not, needed to edit the info of PhaseEncodingAxis in json file (PA:j, AP:j-)"
-            ;;
-        UI) 
-			echo "Warning: Two dwi data:"
-			echo "(1) with the same phase encoding direction"
-			echo "(2) if not, needed to edit the info of PhaseEncodingAxis in json file (PA:j, AP:j-)"
+        Philips | UIH | UI) 
+			echo "Warning: Two dwi data"
+			echo "(1) with the same PhaseEncodingAxis"
+			echo "(2) if not, needed to edit the info of PhaseEncodingAxis in json file j/j- (PA:j, AP:j-)"
             ;;
     esac
 fi

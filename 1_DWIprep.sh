@@ -196,59 +196,6 @@ if [ "${json_dir}" == "" ] || [ "${n_json_file}" -eq "0" ]; then
 		echo "Error: 0_BIDS_NIFTI is empty."
 		echo "Please check BIDS files..."
 		exit 1
-	else
-
-		for dwi_files in *dwi*; do
-			mv ${dwi_files} ${dwi_files:10:${#dwi_files}-10}
-		done
-
-		# optional provided PhaseEncodingDirection (without .json), but C4 is needed
-		PhaseEncodingDirectionCode=(${PhaseEncoding})
-		Rec=0
-
-		Topup=$((${PhaseEncodingDirectionCode[0]} + ${PhaseEncodingDirectionCode[1]} + ${PhaseEncodingDirectionCode[2]} + ${PhaseEncodingDirectionCode[3]}))
-
-		if [ $Topup -gt 1 ]; then
-			PE=($(echo PA AP RL LR))
-			for Order in {0..3}; do
-				if [ ${PhaseEncodingDirectionCode[${Order}]} == "1" ]; then
-		   			direction[0]=${PE[${Order}]}
-				fi
-
-				if [ ${PhaseEncodingDirectionCode[${Order}]} == "2" ]; then
-		    		direction[1]=${PE[${Order}]}
-				fi
-			done
-
-			for d in ${direction}; do
-				Rec=$[$Rec+1]
-				for bval_files in *${d}.bval; do
-					nn=$(cat ${bval_files})
-					for n in ${nn}; do
-						echo $Rec >> Eddy_Index.txt
-					done
-				done
-
-				case "$d" in			
-				"PA")
-					Acqparams_Topup_tmp="0 1 0" 
-					;;
-				"AP") 
-					Acqparams_Topup_tmp="0 -1 0"
-					;;
-				"RL") 
-					Acqparams_Topup_tmp="1 0 0"
-					;;
-				"LR") 
-					Acqparams_Topup_tmp="-1 0 0" 
-					;;
-				esac
-
-				echo "${Acqparams_Topup_tmp} ${C4}" >> Acqparams_Topup.txt
-			done
-		fi
-
-		echo "${PhaseEncodingDirectionCode[0]} ${PhaseEncodingDirectionCode[1]} ${PhaseEncodingDirectionCode[2]} ${PhaseEncodingDirectionCode[3]}" > Index_PE.txt
 	fi
 else
 	
