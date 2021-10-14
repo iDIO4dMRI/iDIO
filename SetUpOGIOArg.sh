@@ -21,6 +21,11 @@ Step=1.2.3.4.5.6.7
 # 6: 6_CSDpreproc
 # 7: 7_NetworkProc
 
+# 1_DWIprep:If your json file have no "SeriesNumber" tag, 
+#		 	indicate the scan order first=<first scan filename>.nii.gz, second=<second scan filename>.nii.gz
+first=
+second=
+
 # 3_EddyCo: Using CUDA to speed up. NVIDIA GPU with CUDA version (8.0/9.1/10.2) is available to use this option. [true=1 / false=0]
 # cuda_ver=$(nvcc --version | grep release | cut -d ' ' -f 5 | sed 's/,//g') for CUDA version check
 cuda=1
@@ -29,7 +34,7 @@ cuda=1
 #           This option is only implemented for the CUDA version(cuda=1). [true=1 / false=0]
 stv=0
 
-# 3_EddyCo: Resize dwi image intp isotropic voxels (mm) by given value [true=1 / false=0]
+# 3_EddyCo: Resize dwi image intp isotropic voxels (mm) by given value [values / false=0]
 # apply for 3_EddyCo  [defult = 0 ]
 rsimg=0
 
