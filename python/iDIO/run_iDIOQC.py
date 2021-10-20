@@ -11,7 +11,6 @@ import argparse
 import numpy as np
 
 # iDIO combined PreQual libraries
-import preproc
 import stats
 import utils
 import iDIOvis
