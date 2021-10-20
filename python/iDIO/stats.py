@@ -46,50 +46,6 @@ def BPV_mask(mask_file, subj_dir, temp_dir):
 
     return BPV_mask_file
 
-def chisq(dwi_file, dwi_recon_file, chisq_mask_file, stats_dir):
-
-    print('PERFORMING CHI-SQUARED ANALYSIS ON TENSOR-RECONSTRUCTED SIGNAL')
-
-    # Load data and prep outputs
-
-    dwi_img, _, _ = utils.load_nii(dwi_file, ndim=4)
-    dwi_recon_img, _, _ = utils.load_nii(dwi_recon_file, ndim=4)
-    chisq_mask_img, _, _ = utils.load_nii(chisq_mask_file, dtype='bool', ndim=3)
-
-    num_slices = dwi_img.shape[2]
-    num_vols = dwi_img.shape[3]
-
-    chisq_matrix = np.zeros((num_slices, num_vols))
-
-    # Perform slice-modified pixel chisquared analysis
-
-    for i in range(num_slices):
-
-        for j in range(num_vols):
-
-            dwi_slice = dwi_img[:, :, i, j]
-            dwi_slice[np.logical_not(chisq_mask_img[:, :, i])] = 0
-
-            fit_slice = dwi_recon_img[:, :, i, j]
-            fit_slice[np.logical_not(chisq_mask_img[:, :, i])] = 0
-
-            ss_error = np.nansum(np.square(dwi_slice - fit_slice)) # sum squared error
-            ss_slice = np.nansum(np.square(dwi_slice)) # sum squared slice
-
-            if ss_slice == 0: # all NaN slice
-                chisq = np.nan
-            else:
-                chisq = ss_error / ss_slice # because reported as a ratio, should be larger for larger bvals (b/c they have lower image intensities so ss_slice will be smaller)
-
-            chisq_matrix[i, j] = chisq
-
-    # Save values
-
-    chisq_matrix_file = os.path.join(stats_dir, 'chisq_matrix.txt')
-    utils.save_txt(chisq_matrix, chisq_matrix_file)
-
-    return chisq_matrix_file
-
 def motion(eddy_dir, stats_dir):
 
     # Load motion data
@@ -176,11 +132,9 @@ def eddy_current(eddy_dir, stats_dir):
     return EC_dict, stats_out_list
 
 
-
 def cnr(bvals_file, mask_file, eddy_dir, stats_dir, shells=[]):
 
     # Load CNR data
-
     bvals = utils.load_txt(bvals_file, txt_type='bvals')
     bvals_unique = np.sort(np.unique(bvals))
     eddy_cnr_file = glob.glob(eddy_dir + '/*.eddy_cnr_maps.nii.gz')
@@ -188,11 +142,8 @@ def cnr(bvals_file, mask_file, eddy_dir, stats_dir, shells=[]):
     mask_img, _, _ = utils.load_nii(mask_file, dtype='bool', ndim=3)
 
     # Check that the number of shells in eddy CNR output and bvals are the same
-
-    cnr_warning_str = ''
-
     if not len(bvals_unique) == eddy_cnr_img.shape[3]:
-        print('NUMBER OF UNIQUE B-VALUES AFTER PREPROCESSING IS NOT EQUAL TO THE NUMBER OF SHELLS DETERMINED BY EDDY. {} FOR SHELL-WISE SNR/CNR ANALYSIS.'.format('ATTEMPTING TO ROUND B-VALUES TO NEAREST 100' if len(shells) == 0 else 'MATCHING B-VALUES TO NEAREST SUPPLIED SHELL'))
+
         bvals_rounded = []
         for bval in bvals:
             if len(shells) > 0:
@@ -200,14 +151,14 @@ def cnr(bvals_file, mask_file, eddy_dir, stats_dir, shells=[]):
             else:
                 bvals_rounded.append(utils.round(bval, 100))
         bvals_unique = np.sort(np.unique(bvals_rounded))
-        bvals = bvals_rounded # will need to return bvals "shelled" for visualization of the volumes to match the SNR/CNR shells
-        cnr_warning_str = 'For SNR/CNR analysis, the number of unique b-values after preprocessing was not equal to the number of shells determined by eddy. B-values were {} for analysis in an attempt to match eddy.'.format('rounded to the nearest 100' if len(shells) == 0 else 'matched to nearest supplied shell')
-    
-    # if not len(bvals_unique) == eddy_cnr_img.shape[3]:
-    #     raise utils.DTIQAError('NUMBER OF UNIQUE B-VALUES AFTER PREPROCESSING AND ROUNDING TO NEAREST 100 IS NOT EQUAL TO THE NUMBER OF SHELLS DETERMINED BY EDDY. PLEASE ENSURE YOUR DATA IS PROPERLY SHELLED. EXITING.')
+        bvals = bvals_rounded 
 
-    # Calculate SNR/CNR
+    if not len(bvals_unique) == eddy_cnr_img.shape[3]:
+        cnr_warning = True
+    else:
+        cnr_warning = False
 
+    # Calculate CNR
     cnr_dict = {}
     cnrs = []
     for i in range(len(bvals_unique)):
@@ -220,17 +171,11 @@ def cnr(bvals_file, mask_file, eddy_dir, stats_dir, shells=[]):
         cnrs.append([bvals_unique[i], cnr])
     cnrs = np.array(cnrs)
 
-    # Save to file
-    # cnr_file = os.path.join(stats_dir, 'eddy_median_cnr.txt')
-    # utils.save_txt(cnrs, cnr_file)
-
-    # Format for consolidated dictionary (XNAT)
-
     stats_out_list = []
     for i in range(0, len(bvals_unique)):
         stats_out_list.append('b{}_median_{},{}'.format(bvals_unique[i], 'snr' if bvals_unique[i] == 0 else 'cnr', cnrs[i][1]))
 
-    return cnr_dict, bvals, stats_out_list, cnr_warning_str
+    return cnr_dict, bvals, stats_out_list, cnr_warning
 
 def stats_out(drift_stats_out, motion_stats_out_list, EC_stats_out_list, cnr_stats_out_list, outlier_percentage, percent_improbable, stats_dir):
     

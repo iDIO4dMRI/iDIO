@@ -27,7 +27,7 @@ from vars import SHARED_VARS
 
 # Define Visualization Functions
 
-def vis_pedir(dwi_files, bvals_files, pe_axis, pe_dirs, vis_dir):
+def vis_pedir(dwi_files, bvecs_files, bvals_files, pe_axis, pe_dirs, vis_dir, B0thr):
 
     temp_dir = utils.make_dir(vis_dir, 'TMP')
 
@@ -48,8 +48,11 @@ def vis_pedir(dwi_files, bvals_files, pe_axis, pe_dirs, vis_dir):
 
         dwi_file = dwi_files[i]
         bvals_file = bvals_files[i]
+        bvecs_file = bvecs_files[i]
 
-        b0_file, _, _ = utils.dwi_extract_iDIO(dwi_file, bvals_file, temp_dir, target_bval=0, first_only=True)
+        bvals, _, _ = utils.shell_bvals(dwi_files[i], bvecs_files[i], bvals_files[i], B0thr)
+
+        b0_file, _, _ = utils.dwi_extract_iDIO(dwi_file, bvals, temp_dir, target_bval=0, first_only=True)
         b0_img, b0_aff, _ = utils.load_nii(b0_file)
         b0_slices, b0_vox_dim, b0_min, b0_max = utils.slice_nii(b0_file, min_intensity=0, max_percentile=SHARED_VARS.VIS_PERCENTILE_MAX)
         
@@ -66,7 +69,9 @@ def vis_pedir(dwi_files, bvals_files, pe_axis, pe_dirs, vis_dir):
                 ax[j, i].set_yticks([])
                 if j == 0:
                     ax[j, i].set_xlabel('P | A', fontsize=SHARED_VARS.LABEL_FONTSIZE)
-                    ax[j, i].set_title('{}) {} ({})'.format(i+1, dwi_prefixes[i], dwi_pe_strs[i]), fontsize=SHARED_VARS.LABEL_FONTSIZE)
+                    # ax[j, i].set_title('{}) {} ({})'.format(i+1, dwi_prefixes[i], dwi_pe_strs[i]), fontsize=SHARED_VARS.LABEL_FONTSIZE)
+                    ax[j, i].set_title('{}) {}'.format(i+1, dwi_prefixes[i]), fontsize=SHARED_VARS.LABEL_FONTSIZE)
+
                     if i == 0:
                         ax[j, i].set_ylabel('Sagittal', fontsize=SHARED_VARS.LABEL_FONTSIZE)
                 elif j== 1:
@@ -84,7 +89,8 @@ def vis_pedir(dwi_files, bvals_files, pe_axis, pe_dirs, vis_dir):
                 ax[j].set_yticks([])
                 if j == 0:
                     ax[j].set_xlabel('P | A', fontsize=SHARED_VARS.LABEL_FONTSIZE)
-                    ax[j].set_title('{}) {} ({})'.format(i+1, dwi_prefixes[i], dwi_pe_strs[i]), fontsize=SHARED_VARS.LABEL_FONTSIZE)
+                    # ax[j].set_title('{}) {} ({})'.format(i+1, dwi_prefixes[i], dwi_pe_strs[i]), fontsize=SHARED_VARS.LABEL_FONTSIZE)
+                    ax[j].set_title('{}) {}'.format(i+1, dwi_prefixes[i]), fontsize=SHARED_VARS.LABEL_FONTSIZE)
                     ax[j].set_ylabel('Sagittal', fontsize=SHARED_VARS.LABEL_FONTSIZE)
                 elif j== 1:
                     ax[j].set_xlabel('R | L', fontsize=SHARED_VARS.LABEL_FONTSIZE)
@@ -109,7 +115,7 @@ def vis_pedir(dwi_files, bvals_files, pe_axis, pe_dirs, vis_dir):
 
     return pedir_vis_file
 
-def vis_degibbs(dwi_files, bvals_files, dwi_degibbs_files, gains, vis_dir):
+def vis_degibbs(dwi_files, bvals, dwi_degibbs_files, gains, vis_dir):
 
     temp_dir = utils.make_dir(vis_dir, 'TMP')
 
@@ -125,6 +131,7 @@ def vis_degibbs(dwi_files, bvals_files, dwi_degibbs_files, gains, vis_dir):
         dwi_scaled_file = os.path.join(temp_dir, '{}_scaled.nii.gz'.format(dwi_prefix))
         utils.save_nii(dwi_scaled_img, dwi_aff, dwi_scaled_file)
         dwi_scaled_files.append(dwi_scaled_file)
+        
         # Postgibbs
         dwi_degibbs_prefix = utils.get_prefix(dwi_degibbs_files[i], file_ext='nii')
         dwi_degibbs_img, dwi_degibbs_aff, _ = utils.load_nii(dwi_degibbs_files[i])
@@ -134,34 +141,38 @@ def vis_degibbs(dwi_files, bvals_files, dwi_degibbs_files, gains, vis_dir):
         dwi_degibbs_scaled_files.append(dwi_degibbs_scaled_file)
 
     # Load common bvals
-
-    gibbs_bval_file = utils.bvals_merge(bvals_files, 'gibbs', temp_dir)
+    # gibbs_bval_file = utils.bvals_merge(bvals_files, 'gibbs', temp_dir)
 
     # Load pregibbs b0s, scaled by prenorm gains
 
     pregibbs_prefix = 'pregibbs_scaled'
     pregibbs_dwi_file = utils.dwi_merge(dwi_scaled_files, pregibbs_prefix, temp_dir)
-    pregibbs_b0s_file, _, _ = utils.dwi_extract_iDIO(pregibbs_dwi_file, gibbs_bval_file, temp_dir, target_bval=0, first_only=False)
+    pregibbs_b0s_file, _, _ = utils.dwi_extract_iDIO(pregibbs_dwi_file, bvals, temp_dir, target_bval=0, first_only=False)
     pregibbs_b0s_img, gibbs_b0s_aff, _ = utils.load_nii(pregibbs_b0s_file, ndim=4)
 
     # Load postgibbs b0s, scaled by prenorm gains
 
     postgibbs_prefix = 'postgibbs_scaled'
     postgibbs_dwi_file = utils.dwi_merge(dwi_degibbs_scaled_files, postgibbs_prefix, temp_dir)
-    postgibbs_b0s_file, _, _ = utils.dwi_extract_iDIO(postgibbs_dwi_file, gibbs_bval_file, temp_dir, target_bval=0, first_only=False)
+    postgibbs_b0s_file, _, _ = utils.dwi_extract_iDIO(postgibbs_dwi_file, bvals, temp_dir, target_bval=0, first_only=False)
     postgibbs_b0s_img, _, _ = utils.load_nii(postgibbs_b0s_file, ndim=4)
 
     # Calculate average absolute residuals
 
-    res_img = np.nanmean(np.abs(postgibbs_b0s_img - pregibbs_b0s_img), axis=3)
+    # res_img = np.nanmean(np.abs(postgibbs_b0s_img - pregibbs_b0s_img), axis=3)
+    res_img = np.nanmean(postgibbs_b0s_img - pregibbs_b0s_img, axis=3)
+
     res_aff = gibbs_b0s_aff
     res_file = os.path.join(temp_dir, 'gibbs_residuals.nii.gz')
     utils.save_nii(res_img, res_aff, res_file, ndim=3)
 
     # Plot 5 central triplanar views
 
-    res_slices, res_vox_dim, res_min, res_max = utils.slice_nii(res_file, offsets=[-10, -5, 0, 5, 10], min_intensity=0, max_percentile=99)
-    temp_vis_file = vis_vol(res_slices, res_vox_dim, res_min, res_max, temp_dir, name='Gibbs_Deringing,_Averaged_Residuals_of_b_=_0_Volumes', comment='Residuals should be larger at high-contrast interfaces', colorbar=False)
+    # res_slices, res_vox_dim, res_min, res_max = utils.slice_nii(res_file, offsets=[-10, -5, 0, 5, 10], min_intensity=0, max_percentile=99)
+    # temp_vis_file = vis_vol(res_slices, res_vox_dim, res_min, res_max, temp_dir, name='Gibbs_Deringing,_Averaged_Residuals_of_b_=_0_Volumes', comment='Residuals should be larger at high-contrast interfaces', colorbar=False)
+    res_slices, res_vox_dim, res_min, res_max = utils.slice_nii(res_file, offsets=[-10, -5, 0, 5, 10], min_percentile=2, max_percentile=98)
+    temp_vis_file = vis_vol(res_slices, res_vox_dim, res_min, res_max, temp_dir, name='Gibbs_Deringing,_Averaged_Residuals_of_b_=_0_Volumes', colorbar=True, cmap='jet')
+
     degibbs_vis_file = utils.rename_file(temp_vis_file, os.path.join(vis_dir, 'degibbs.pdf'))
 
     # Finish Up
@@ -170,7 +181,7 @@ def vis_degibbs(dwi_files, bvals_files, dwi_degibbs_files, gains, vis_dir):
 
     return degibbs_vis_file
 
-def vis_vol(slices, vox_dim, min, max, vis_dir, name='?', comment='', colorbar=False):
+def vis_vol(slices, vox_dim, min, max, vis_dir, name='?', comment='', colorbar=False, cmap='gray'):
 
     title = name.replace('_', ' ')
     if not comment == '':
@@ -183,34 +194,34 @@ def vis_vol(slices, vox_dim, min, max, vis_dir, name='?', comment='', colorbar=F
     for i in range(0, 5):
 
         plt.subplot(3, 5, i+1)
-        utils.plot_slice(slices=slices, img_dim=0, offset_index=i, vox_dim=vox_dim, img_min=min, img_max=max)
+        utils.plot_slice(slices=slices, img_dim=0, offset_index=i, vox_dim=vox_dim, img_min=min, img_max=max, cmap=cmap)
         if i == 0:
-            plt.xlabel('Right-most Slice', fontsize=SHARED_VARS.LABEL_FONTSIZE)
+            plt.xlabel('Right Slice', fontsize=SHARED_VARS.LABEL_FONTSIZE)
         if i == 2:
             plt.title('Sagittal', fontsize=SHARED_VARS.LABEL_FONTSIZE)
             plt.xlabel('P | A', fontsize=SHARED_VARS.LABEL_FONTSIZE)
         if i == 4:
-            plt.xlabel('Left-most Slice', fontsize=SHARED_VARS.LABEL_FONTSIZE)
+            plt.xlabel('Left Slice', fontsize=SHARED_VARS.LABEL_FONTSIZE)
 
         plt.subplot(3, 5, i+1 + 5)
-        utils.plot_slice(slices=slices, img_dim=1, offset_index=i, vox_dim=vox_dim, img_min=min, img_max=max)
+        utils.plot_slice(slices=slices, img_dim=1, offset_index=i, vox_dim=vox_dim, img_min=min, img_max=max, cmap=cmap)
         if i == 0:
-            plt.xlabel('Posterior-most Slice', fontsize=SHARED_VARS.LABEL_FONTSIZE)
+            plt.xlabel('Posterior Slice', fontsize=SHARED_VARS.LABEL_FONTSIZE)
         if i == 2:
             plt.title('Coronal', fontsize=SHARED_VARS.LABEL_FONTSIZE)
             plt.xlabel('R | L', fontsize=SHARED_VARS.LABEL_FONTSIZE)
         if i == 4:
-            plt.xlabel('Anterior-most Slice', fontsize=SHARED_VARS.LABEL_FONTSIZE)
+            plt.xlabel('Anterior Slice', fontsize=SHARED_VARS.LABEL_FONTSIZE)
 
         plt.subplot(3, 5, i+1 + 10)
-        im = utils.plot_slice(slices=slices, img_dim=2, offset_index=i, vox_dim=vox_dim, img_min=min, img_max=max)
+        im = utils.plot_slice(slices=slices, img_dim=2, offset_index=i, vox_dim=vox_dim, img_min=min, img_max=max, cmap=cmap)
         if i == 0:
-            plt.xlabel('Inferior-most Slice', fontsize=SHARED_VARS.LABEL_FONTSIZE)
+            plt.xlabel('Inferior Slice', fontsize=SHARED_VARS.LABEL_FONTSIZE)
         if i == 2:
             plt.title('Axial', fontsize=SHARED_VARS.LABEL_FONTSIZE)
             plt.xlabel('R | L', fontsize=SHARED_VARS.LABEL_FONTSIZE)
         if i == 4:
-            plt.xlabel('Superior-most Slice', fontsize=SHARED_VARS.LABEL_FONTSIZE)
+            plt.xlabel('Superior Slice', fontsize=SHARED_VARS.LABEL_FONTSIZE)
 
     plt.tight_layout()
 
@@ -218,9 +229,9 @@ def vis_vol(slices, vox_dim, min, max, vis_dir, name='?', comment='', colorbar=F
     plt.suptitle('{}'.format(title), fontsize=SHARED_VARS.TITLE_FONTSIZE, fontweight='bold')
 
     if colorbar:
-        plt.subplots_adjust(right=0.85)
-        cbar_ax = fig.add_axes([0.875, 0.1, 0.025, 0.8])
-        plt.colorbar(im, cax=cbar_ax)
+        # plt.subplots_adjust(right=0.85)
+        cbar_ax = fig.add_axes([0.25, 0.9, 0.5, 0.025])
+        plt.colorbar(im, cax=cbar_ax, orientation='horizontal')
 
     vis_file = os.path.join(vis_dir, '{}.pdf'.format(name))
     plt.savefig(vis_file, dpi=SHARED_VARS.PDF_DPI)
@@ -228,7 +239,7 @@ def vis_vol(slices, vox_dim, min, max, vis_dir, name='?', comment='', colorbar=F
 
     return vis_file
 
-def vis_preproc_mask(dwi_files, bvals_files, dwi_preproc_file, bvals_preproc_file, eddy_mask_file, mask_file, percent_improbable, stats_mask_file, pe_axis, pe_dirs, vis_dir):
+def vis_preproc_mask(dwi_files, bvecs_files, bvals_files, dwi_preproc_file, bvals_preproc_shelled, eddy_mask_file, mask_file, percent_improbable, stats_mask_file, pe_axis, pe_dirs, vis_dir, B0thr):
 
     temp_dir = utils.make_dir(vis_dir, 'TMP')
 
@@ -251,8 +262,11 @@ def vis_preproc_mask(dwi_files, bvals_files, dwi_preproc_file, bvals_preproc_fil
 
         dwi_file = dwi_files[i]
         bvals_file = bvals_files[i]
+        bvecs_file = bvecs_files[i]
 
-        b0_file, _, _ = utils.dwi_extract_iDIO(dwi_file, bvals_file, temp_dir, target_bval=0, first_only=True)
+        bvals, _, _ = utils.shell_bvals(dwi_file, bvecs_file, bvals_file, B0thr)
+
+        b0_file, _, _ = utils.dwi_extract_iDIO(dwi_file, bvals, temp_dir, target_bval=0, first_only=True)
         b0_img, b0_aff, _ = utils.load_nii(b0_file)
 
         b0_slices, b0_vox_dim, b0_min, b0_max = utils.slice_nii(b0_file, min_intensity=0, max_percentile=SHARED_VARS.VIS_PERCENTILE_MAX)
@@ -268,7 +282,8 @@ def vis_preproc_mask(dwi_files, bvals_files, dwi_preproc_file, bvals_preproc_fil
                 ax[j, i].plot(slice_contour[1][:,1], slice_contour[1][:,0], linewidth=0.8, color='r')
             #different label
             if j == 0:
-                ax[j, i].set_title('{}) {} ({})'.format(i+1, dwi_prefixes[i], dwi_pe_strs[i]), fontsize=SHARED_VARS.LABEL_FONTSIZE)
+                # ax[j, i].set_title('{}) {} ({})'.format(i+1, dwi_prefixes[i], dwi_pe_strs[i]), fontsize=SHARED_VARS.LABEL_FONTSIZE)
+                ax[j, i].set_title('{}) {}'.format(i+1, dwi_prefixes[i]), fontsize=SHARED_VARS.LABEL_FONTSIZE)
                 if i == 0:
                     ax[j, i].set_ylabel('Sagittal', fontsize=SHARED_VARS.LABEL_FONTSIZE)
             elif j == 1:
@@ -282,7 +297,7 @@ def vis_preproc_mask(dwi_files, bvals_files, dwi_preproc_file, bvals_preproc_fil
             ax[j, i].set_yticks([])
 
 
-    b0_preproc_file, _, _ = utils.dwi_extract_iDIO(dwi_preproc_file, bvals_preproc_file, temp_dir, target_bval=0, first_only=True)
+    b0_preproc_file, _, _ = utils.dwi_extract_iDIO(dwi_preproc_file, bvals_preproc_shelled, temp_dir, target_bval=0, first_only=True)
     b0_preproc_slices, b0_preproc_vox_dim, b0_preproc_min, b0_preproc_max = utils.slice_nii(b0_preproc_file, min_intensity=0, max_percentile=SHARED_VARS.VIS_PERCENTILE_MAX)
 
     mask_slices, _, _, _ = utils.slice_nii(mask_file)
@@ -427,10 +442,8 @@ def vis_dwi(dwi_file, bvals_shelled, cnr_mask, cnr_dict, vis_dir):
 
     for i in range(len(bvals)):
 
-        bvals_shelled_file = StringIO(' '.join([str(bval) for bval in bvals_shelled]))
-
         bX = bvals[i]
-        bXs_file, num_bXs, _ = utils.dwi_extract_iDIO(dwi_file, bvals_shelled_file, temp_dir, target_bval=bX, first_only=False)
+        bXs_file, num_bXs, _ = utils.dwi_extract_iDIO(dwi_file, bvals_shelled, temp_dir, target_bval=bX, first_only=False)
         bXs_avg_file = utils.dwi_avg(bXs_file, temp_dir)
         bXs_avg_slices, bXs_avg_vox_dim, bXs_avg_min, bXs_avg_max = utils.slice_nii(bXs_avg_file, offsets=[-10, -5, 0, 5, 10], min_intensity=0, max_percentile=SHARED_VARS.VIS_PERCENTILE_MAX)
         
@@ -440,13 +453,12 @@ def vis_dwi(dwi_file, bvals_shelled, cnr_mask, cnr_dict, vis_dir):
         if bX != 0:
             bXs_vis_file = vis_vol(bXs_avg_slices, bXs_avg_vox_dim, bXs_avg_min, bXs_avg_max, vis_dir, name='Preprocessed_b_=_{},_{}_scan_average,_{}_=_{}'.format(bX, num_bXs, cnr_label, cnr), colorbar=False)
             dwi_vis_files.append(bXs_vis_file)
-            bvals_shelled_file.close()
 
             stats_out_list.append('b{}_median_{},{}'.format(bX, 'cnr', cnr_dict[bX]))
 
         else:
             if num_bXs == 1:
-                stats_out_list.append('b{}_median_{},{}'.format(bX, 'snr' , 'only one b0 image were acquired'))
+                stats_out_list.append('b{}_median_{},{}'.format(int(bX), 'snr' , 'only one b0 image were acquired'))
             else:
                 std_cmd = 'fslmaths {} -Tstd {}'.format(bXs_file, temp_dir + '/b0std.nii.gz')
                 utils.run_cmd(std_cmd)
@@ -456,9 +468,8 @@ def vis_dwi(dwi_file, bvals_shelled, cnr_mask, cnr_dict, vis_dir):
                 mask_img, _, _ = utils.load_nii(cnr_mask, dtype='bool', ndim=3)
                 snr = np.nanmedian(snr_img[mask_img])
                 # plot
-                bXs_vis_file = vis_vol(bXs_avg_slices, bXs_avg_vox_dim, bXs_avg_min, bXs_avg_max, vis_dir, name='Preprocessed_b_=_{},_{}_scan_average,_{}_=_{:.3f}'.format(bX, num_bXs, cnr_label, snr), colorbar=False)
+                bXs_vis_file = vis_vol(bXs_avg_slices, bXs_avg_vox_dim, bXs_avg_min, bXs_avg_max, vis_dir, name='Preprocessed_b_=_{},_{}_scan_average,_{}_=_{:.3f}'.format(int(bX), num_bXs, cnr_label, snr), colorbar=False)
                 dwi_vis_files.append(bXs_vis_file)
-                bvals_shelled_file.close()
 
                 stats_out_list.append('b{}_median_{},{}'.format(bX, 'snr' , snr))
 
@@ -466,13 +477,13 @@ def vis_dwi(dwi_file, bvals_shelled, cnr_mask, cnr_dict, vis_dir):
     # utils.remove_dir(temp_dir)
     return dwi_vis_files, stats_out_list
 
-def vis_stats(dwi_file, bvals_file, mask_file, motion_dict, EC_dict, eddy_dir, vis_dir):
+def vis_stats(dwi_file, bvals_file, motion_dict, EC_dict, eddy_dir, vis_dir):
 
     # Load data
     eddy_outlier_map_file = glob.glob(eddy_dir + '/*.eddy_outlier_map')[0]
     eddy_num_std_file = glob.glob(eddy_dir + '/*.eddy_outlier_n_stdev_map')[0]        
 
-    bvals = bvals_file
+    bvals = np.array(bvals_file)
     # Configure figure
     fig = plt.figure(0, figsize=SHARED_VARS.PAGESIZE)
 
@@ -503,8 +514,6 @@ def vis_stats(dwi_file, bvals_file, mask_file, motion_dict, EC_dict, eddy_dir, v
     plt.title('Subject Motion', fontsize=SHARED_VARS.TITLE_FONTSIZE)
     ax.get_yaxis().set_label_coords(-0.18,0.5)
 
-    # ax.axis["left"].major_ticklabels.set_ha("left")
-
     # Visualize translations
 
     translations = motion_dict['translations']
@@ -521,8 +530,6 @@ def vis_stats(dwi_file, bvals_file, mask_file, motion_dict, EC_dict, eddy_dir, v
     plt.grid()
     plt.legend(fontsize=2*SHARED_VARS.LABEL_FONTSIZE/3, loc='upper left', framealpha=0.6, handlelength=1)
     ax.get_yaxis().set_label_coords(-0.18,0.5)
-
-    # ax.axis["left"].major_ticklabels.set_ha("left")
 
     # Visualize RMS Displacement
 
@@ -560,8 +567,6 @@ def vis_stats(dwi_file, bvals_file, mask_file, motion_dict, EC_dict, eddy_dir, v
     plt.title('EC-induced linear terms', fontsize=SHARED_VARS.TITLE_FONTSIZE)
     ax.get_yaxis().set_label_coords(-0.18,0.5)
 
-    # ax.axis["left"].major_ticklabels.set_ha("left")
-
     # ax = plt.subplot(6, 3, 13)
     ax = fig.add_axes([ax0.x0, ax1.y0+box_height*1, box_width, box_height])
     plt.plot(range(0, linear_y.shape[0]), linear_y[:], color='tab:green', label='SD y. ({:.2f})'.format(np.std(linear_y)))
@@ -573,8 +578,6 @@ def vis_stats(dwi_file, bvals_file, mask_file, motion_dict, EC_dict, eddy_dir, v
     plt.legend(fontsize=2*SHARED_VARS.LABEL_FONTSIZE/3, loc='upper left', framealpha=0.6, handlelength=1)
     ax.get_yaxis().set_label_coords(-0.18,0.5)
 
-    # ax.axis["left"].major_ticklabels.set_ha("left")
-
     # ax = plt.subplot(6, 3, 16)
     ax = fig.add_axes([ax0.x0, ax1.y0+box_height*0, box_width, box_height])
     plt.plot(range(0, linear_z.shape[0]), linear_z[:], color='tab:blue', label='SD z. ({:.2f})'.format(np.std(linear_z)))
@@ -585,15 +588,15 @@ def vis_stats(dwi_file, bvals_file, mask_file, motion_dict, EC_dict, eddy_dir, v
     plt.legend(fontsize=2*SHARED_VARS.LABEL_FONTSIZE/3, loc='upper left', framealpha=0.6, handlelength=1)
     ax.set_xlabel('Diffusion Volume', fontsize=SHARED_VARS.LABEL_FONTSIZE)
     
-
-    # ax.axis["left"].major_ticklabels.set_ha("left")
-
     # Visualize outlier map
-
+    Outlier_warning=[]
     raw_outlier_map = _get_outlier_map(eddy_outlier_map_file)
     outlier_map = np.transpose(raw_outlier_map)
-
     outlier_percentage = len(np.where(raw_outlier_map[bvals!=0,:]==1)[0])/outlier_map.shape[0]/len(np.where(bvals!=0)[0])
+
+    for vol in range(outlier_map.shape[1]):
+        if sum(outlier_map)[vol]/outlier_map.shape[0] > 0.05:
+            Outlier_warning.append('    {} out of {} slices shown as outliers in volume {}'.format(sum(outlier_map)[vol], outlier_map.shape[1], vol))
 
     ax = plt.subplot(4, 2, 2)
     ax.matshow(outlier_map, aspect='auto', origin='lower')#, cmap = )
@@ -617,7 +620,6 @@ def vis_stats(dwi_file, bvals_file, mask_file, motion_dict, EC_dict, eddy_dir, v
     ax = plt.subplot(12, 2, 12)
     ax.plot(list(range(0, len(matrix_vols))), matrix_vols)
     plt.xlim(-0.5, len(matrix_vols)-0.5)
-    # ax.yaxis.set_ticks_position('right')
     ax.tick_params(axis='y', labelsize=SHARED_VARS.LABEL_FONTSIZE*0.8)
     ax.grid()
     ax.set_title('No. of std. off Mean Difference', fontsize=SHARED_VARS.TITLE_FONTSIZE)
@@ -637,7 +639,6 @@ def vis_stats(dwi_file, bvals_file, mask_file, motion_dict, EC_dict, eddy_dir, v
     im = ax.imshow(num_std_matrix, aspect='auto', origin='lower', interpolation='nearest', vmin=-4, vmax=4, cmap='RdBu_r')
     ax.set_xlabel('Diffusion Volume', fontsize=SHARED_VARS.LABEL_FONTSIZE)
     ax.xaxis.set_ticks_position('bottom')
-    # ax.set_xticks(range(0, outlier_map.shape[1],10))
     ax.yaxis.set_ticks_position('right')
     ax.yaxis.set_label_position('right')
     plt.xlim(-0.5, num_std_matrix.shape[1]-0.5)
@@ -660,7 +661,7 @@ def vis_stats(dwi_file, bvals_file, mask_file, motion_dict, EC_dict, eddy_dir, v
     plt.savefig(stats_vis_file, dpi=SHARED_VARS.PDF_DPI)
     plt.close()
 
-    return stats_vis_file, outlier_percentage
+    return stats_vis_file, outlier_percentage, Outlier_warning
 
 def vis_drift(png_path, vis_dir):
     driftb0 = os.path.join(png_path, 'Drifting_Correction_B0only.png')
@@ -928,29 +929,18 @@ def vis_overlap_slice(input_file, mask_file, vis_dir, percent_improbable):
 
     return vis_file
 
-def vis_noise_comp(raw_file, res_file, denoise_file, bvals_file, vis_dir, shells=[]):
+def vis_noise_comp(raw_file, res_file, denoise_file, bvals, vis_dir, shells=[]):
 
     temp_dir = utils.make_dir(vis_dir, 'TMP')
 
-    # identify shells, if b value is not stable, please input the shell number - need to check
-    bvals = utils.load_txt(bvals_file, txt_type='bvals')
-    bvals_rounded = []
-    if len(shells) > 0:
-        for bval in bvals:
-            bvals_rounded.append(utils.nearest(bval, shells))
-    else:
-        for bval in bvals:
-            bvals_rounded.append(utils.round(bval, 100))
-
-    bvals_unique = np.sort(np.unique(bvals_rounded))
-    bvals = bvals_rounded
+    bvals_unique = np.sort(np.unique(bvals))
 
     # extract b image
     noise_vis_file = []
     for i in range(len(bvals_unique)):
-        b0_file, _, _ = utils.dwi_extract_iDIO(raw_file, bvals_file, temp_dir, target_bval=bvals_unique[i], first_only=True)
-        b0_denoise_file, _, _ = utils.dwi_extract_iDIO(denoise_file, bvals_file, temp_dir, target_bval=bvals_unique[i], first_only=True)
-        res_file_shell, _, _ = utils.dwi_extract_iDIO(res_file, bvals_file, temp_dir, target_bval=bvals_unique[i])
+        b0_file, _, _ = utils.dwi_extract_iDIO(raw_file, bvals, temp_dir, target_bval=bvals_unique[i], first_only=True)
+        b0_denoise_file, _, _ = utils.dwi_extract_iDIO(denoise_file, bvals, temp_dir, target_bval=bvals_unique[i], first_only=True)
+        res_file_shell, _, _ = utils.dwi_extract_iDIO(res_file, bvals, temp_dir, target_bval=bvals_unique[i])
         # average shell res image
         mean_res_file = utils.dwi_avg(res_file_shell,temp_dir)
 
@@ -1022,12 +1012,12 @@ def vis_noise_comp(raw_file, res_file, denoise_file, bvals_file, vis_dir, shells
 
     return noise_vis_file
 
-def vis_bias(raw_file, biasField, unbiased_file, bvals_file, vis_dir):
+def vis_bias(raw_file, biasField, unbiased_file, bvals, vis_dir):
 
     temp_dir = utils.make_dir(vis_dir, 'TMP')
 
-    b0_file, _, _ = utils.dwi_extract_iDIO(raw_file, bvals_file, temp_dir, target_bval=0, first_only=True)
-    b0_unbiased_file, _, _ = utils.dwi_extract_iDIO(unbiased_file, bvals_file, temp_dir, target_bval=0, first_only=True)
+    b0_file, _, _ = utils.dwi_extract_iDIO(raw_file, bvals, temp_dir, target_bval=0, first_only=True)
+    b0_unbiased_file, _, _ = utils.dwi_extract_iDIO(unbiased_file, bvals, temp_dir, target_bval=0, first_only=True)
 
     b0_slices, b0_vox_dim, b0_min, b0_max = utils.slice_nii(b0_file, min_intensity=0, max_percentile=SHARED_VARS.VIS_PERCENTILE_MAX)
     bias_field_slices, bias_field_vox_dim, bias_field_min, bias_field_max = utils.slice_nii(biasField)
@@ -1092,7 +1082,7 @@ def vis_bias(raw_file, biasField, unbiased_file, bvals_file, vis_dir):
 
     return bias_vis_file
 
-def vis_title(iDIO_Output, vis_dir):
+def vis_title(iDIO_Output, outlier_warning, vis_dir):
     title_str = str('iDIO v{} QC report\n'.format(SHARED_VARS.VERSION))
     c = 1
     warning_str =[]
@@ -1100,7 +1090,7 @@ def vis_title(iDIO_Output, vis_dir):
     Reference_str=[]
 
     # overall
-    method_str.append('The diffusion data were processed with iDIO toolbox, its major functionalities come from MRtrix (https://www.mrtrix.org/) [{}], FSL (https://fsl.fmrib.ox.ac.uk/) [{}], ANTs (http://stnava.github.io/ANTs/)[{}], and PreQual (https://github.com/MASILab/PreQual) [{}] software packages.'.format(c, c+1, c+2, c+3))
+    method_str.append(r"$\bf{\blacktriangleright\ The\ diffusion\ data\ were\ processed\ with\ iDIO\ toolbox:}$" + ' its functionalities come from MRtrix3 (https://www.mrtrix.org/), FSL (https://fsl.fmrib.ox.ac.uk/), ANTs (http://stnava.github.io/ANTs/), and PreQual (https://github.com/MASILab/PreQual)  software packages [{}, {}, {}, {}].'.format(c, c+1, c+2, c+3))
     Reference_str.append('[{}] Tournier, J. D.; Smith, R. E.; Raffelt, D., Tabbara, R., Dhollander, T., Pietsch, M., Christiaens, D., Jeurissen, B., Yeh, C.-H. & Connelly, A. MRtrix3: A fast, flexible and open software framework for medical image processing and visualisation. NeuroImage, 2019, 202:116137'.format(c))
     Reference_str.append('[{}] Jenkinson, M., Beckmann, C. F., Behrens, T. E., Woolrich, M.W., Smith. S.M., FSL. NeuroImage, 2012, 62:782-90'.format(c+1))
     Reference_str.append('[{}] Avants B. B., Tustison N. J., Song G, Cook P. A, Klein A, Gee J. C. A reproducible evaluation of ANTs similarity metric performance in brain image registration. NeuroImage, 2011, 54(3):2033-44'.format(c+2))
@@ -1110,18 +1100,18 @@ def vis_title(iDIO_Output, vis_dir):
     
     # Denoise
     if iDIO_Output['Denoise']:
-        method_str.append('Image underwent signal denoising using MRtrix3 dwidenoise command based on random matrix with patch-level Marchenko-Pastur PCA method [{}, {}, {}].'.format(c, c+1,c +2))
+        method_str.append(r"$\bf{\blacktriangleright\ Signal\ denoising:}$" + ' using ' + r"$\it{dwidenoise}$" + ' (MRtrix3 command) based on random matrix with patch-level Marchenko-Pastur PCA method [{}, {}, {}].'.format(c, c+1,c +2))
         Reference_str.append('[{}] Veraart, J., Novikov, D. S., Christiaens, D., Ades-aron, B., Sijbers, J., Fieremans, E. Denoising of diffusion MRI using random matrix theory. NeuroImage, 2016, 142:394-406'.format(c))
         Reference_str.append('[{}] Veraart, J., Fieremans, E., Novikov, D. S. Diffusion MRI noise mapping using random matrix theory. Magn Reson Med, 2016, 76(5):1582-1593'.format(c+1))
         Reference_str.append('[{}] Cordero-Grande, L., Christiaens, D., Hutter, J., Price, A.N., Hajnal, J.V. Complex diffusion-weighted image estimation via matrix recovery under general noise models. NeuroImage, 2019, 200:391-404'.format(c+2))
         c += 3
     else:
         warning_str.append(r"$\bf{\times\ Images\ (dicom\ image)\ interpolation\ detected}$")
-        warning_str.append(r"$\bf{\times\ Denoise\ step\ was\ skipped:}$" + ' due image interpolation violates Marchenko-Pastur PCA assumption')
+        warning_str.append(r"$\bf{\times\ Denoise\ step\ was\ skipped:}$" + "due image interpolation violates Marchenko-Pastur PCA assumption")
 
 
     # Degibbs
-    method_str.append('Gibbs ringing removal was performed using MRtrix mrdegibbs command with the method of local subvoxel-shifts [{}].'.format(c))
+    method_str.append(r"$\bf{\blacktriangleright\ Gibbs\ ringing\ removal:}$" + ' using ' + r"$\it{mrdegibbs}$" + ' (MRtrix3 command) with local subvoxel-shifts method [{}].'.format(c))
     Reference_str.append('[{}] Kellner, E, Dhital, B, Kiselev, V. G, Reisert, M. Gibbs-ringing artifact removal based on local subvoxel-shifts. Magn Reson Med, 2016, 76:1574–1581'.format(c))
     warning_str.append(r"$\bf{\times\ Caution\ for\ Gibbs\ ringing\ removel:}$" + ' partial Fourier acquisition may lead to suboptimal results, please check corrected output images and use it with caution.')
     c += 1
@@ -1129,7 +1119,7 @@ def vis_title(iDIO_Output, vis_dir):
 
     # Drift
     if iDIO_Output['Drift']:
-        method_str.append('Signal drift were performed with linear correction adapted from the released script by Vos S.B [{}].'.format(c))
+        method_str.append(r"$\bf{\blacktriangleright\ Signal\ drift\ correction:}$" + ' using ' + r"$\it{linear\ correction}$" + ' adapted from the released script by Vos S.B [{}].'.format(c))
         Reference_str.append('[{}] Vos S. B.; Tax C. M.; Luijten P. R.; Ourselin S.; Leemans A.; Froeling M. The importance of correcting for signal drift in diffusion MRI. Magn Reson Med, 2017, 77(1):285-299'.format(c))
         c += 1
     else:
@@ -1137,24 +1127,24 @@ def vis_title(iDIO_Output, vis_dir):
 
     # PEdir
     if iDIO_Output['RPEcor']:
-        method_str.append('FSL topup and eddy command were performed to correct for suceptibility-induced off-resonance field, image distortion induced by fast-switching gradient, and head motion [{}, {}, {}].'.format(c, c+1, c+2))
+        method_str.append(r"$\bf{\blacktriangleright\ Suceptibility-induced\ distortion,\ eddy\ current,\ and\ subject\ movement\ correction:}$" + ' using ' + r"$\it{topup}$" + ' and ' + r"$\it{eddy}$" + ' (FSL commands) [{}, {}, {}].'.format(c, c+1, c+2))
         Reference_str.append('[{}] Andersson J. L. R., Skare S., Ashburner J. How to correct susceptibility distortions in spin-echo echo-planar images: application to diffusion tensor imaging. NeuroImage, 2003, 20(2):870-888'.format(c))
         Reference_str.append('[{}] Smith S. M., Jenkinson M., Woolrich M. W., Beckmann C. F., Behrens T. E. J., Johansen-Berg H., Bannister P. R., De Luca M., Drobnjak I., Flitney D. E., Niazy R., Saunders J., Vickers J., Zhang Y., De Stefano N.,Brady J. M., Matthews P. M. Advances in functional and structural MR image analysis and implementation as FSL. NeuroImage, 2004, 23(S1):208-219'.format(c))
         Reference_str.append('[{}] Andersson J. L. R. and Sotiropoulos S. N. An integrated approach to correction for off-resonance effects and subject movement in diffusion MR imaging. NeuroImage, 2016, 125:1063-1078'.format(c+1))
         c += 3
     else:
-        method_str.append('FSL eddy command were performed to correct for image distortion induced by fast-switching gradient, and head motion [{}].'.format(c))
+        method_str.append(r"$\bf{\blacktriangleright\ Eddy\ current,\ and\ subject\ movement\ correction:}$" + ' using ' + r"$\it{eddy}$" + ' (FSL command) [{}].'.format(c))
         Reference_str.append('[{}] Andersson J. L. R. and Sotiropoulos S. N. An integrated approach to correction for off-resonance effects and subject movement in diffusion MR imaging. NeuroImage, 2016, 125:1063-1078'.format(c))
         warning_str.append(r"$\bf{\times\ Susceptibility\ distortion\ correction\ skipped:}$" + ' single phase encoding dwi was detected, two opposite phase encoding dwi are needed')
         c += 1 
     
     # slice to volume correction
     if iDIO_Output['S2V']:
-        method_str.append('Furthermore, the motion correction also considered the within-volume (slice-to-volume) movement [{}].'.format(c))
+        method_str.append(r"$\bf{\blacktriangleright\ Within-volume\ (slice-to-volume)\ movement\ were\ considered:}$" + ' using ' + r"$\it{--mporder}$" + ' (FSL eddy option) [{}].'.format(c))
         Reference_str.append('[{}] Andersson J. L. R., Graham M. S., Drobnjak I., Zhang H., Filippini N. Bastiani M. Towards a comprehensive framework for movement and distortion correction of diffusion MR images: Within volume movement. NeuroImage, 2017, 152:450-466.'.format(c))
         c += 1
     # BiasCorrection
-    method_str.append('B1 field inhomogeneity correction was performed using MRtrix dwibiascorrect command with ants option [{}].'.format(c))
+    method_str.append(r"$\bf{\blacktriangleright\ B1\ field\ inhomogeneity\ correction:}$" + ' using ' + r"$\it{dwibiascorrect}$" + ' (MRtrix3 command) with ants option [{}].'.format(c))
     Reference_str.append('[{}] Tustison, N., Avants, B., Cook, P., Zheng, Y., Egan, A., Yushkevich, P., Gee, J. N4ITK: Improved N3 Bias Correction. IEEE Trans Med Imaging, 2010, 29:1310-1320'.format(c))
 
     antsc = c
@@ -1162,14 +1152,15 @@ def vis_title(iDIO_Output, vis_dir):
 
     # Resize
     if iDIO_Output['Resize']:
-        method_str.append('Last, images were resized into {} isotropic voxels.'.format(iDIO_Output['ResizeVoxelSize']))
+        method_str.append(r"$\bf{\blacktriangleright\ Images\ resized:}$" + ' resized into {} isotropic voxels.'.format(iDIO_Output['ResizeVoxelSize']))
 
     if iDIO_Output['ResizeWarning']:
         warning_str.append(r"$\bf{\times\ Suggest\ to\ do\ the\ resize\ step\ (native\ dwi\ voxel\ size\ was\ not\ isotropic)}$")
 
     # for t1 preprocessing:
     if iDIO_Output['CSDproc'] or iDIO_Output['Tracking'] or iDIO_Output['DTIFIT']:
-        method_str.append('After the B1 field inhomogeneity correction. iDIO use T1 structural image to generate a brain mask and tissue segmentation for further diffusion post-processing. T1 image were first preprocessed with Gibbs ringing removal and also B1 field inhomogeneity correction [{}, {}]. Brain extraction were performed by antsBrainExtraction script [{}]. MRtrix 5ttgen with fsl option was utilized to generate a five-tissue-type (5TT) segmented tissue image (including cortical gray matter, subcortical gray matter, white matter, cerebrospinal fluild and pathological tissue). T1 image was co-registered with b0 image using boundary-based registration with the segmented white matter (BBR command in FSL) to generate the transformation matrix from Diffusion-space to T1-space [{}, {}].'.format(gibbsc, antsc, c, c+1, c+2))
+        method_str.append(r"$\bf{\blacktriangleright\ T1W\ image\ preprocessing:}$" + ' Gibbs ringing removal (' + r"$\it{mrdegibbs}$" + ' MRtrix3 command)'+ ', B1 field inhomogeneity correction (' + r"$\it{N4BiasFieldCorrection}$" + ' ANTs command)' + ', and five-tissue-type (5tt) segmentation (including cortical gray matter, subcortical gray matter, white matter, cerebrospinal fluild and pathological tissue, ' + r"$\it{5ttgen}$" + ' MRtrix3 command with fsl option) [{}, {}, {}].'.format(gibbsc, antsc, c))
+        method_str.append(r"$\bf{\blacktriangleright\ T1W\ image\ registratered\ with\ b0\ image:}$" + ' T1W image mask were registered to b0 as analysis mask using boundary-based registration with the segmented white matter (' + r"$\it{BBR}$" + ' FSL command) to generate the transformation matrix from Diffusion-space to T1-space [{}, {}].'.format(c+1, c+2))
         Reference_str.append('[{}] Avants B. B, Yushkevich P., Pluta J., Minkoff D., Korczykowski M., Detre J., Gee J. C. The optimal template effect in hippocampus studies of diseased populations. NeuroImage, 2010, 49(3):2457-66'.format(c))
         Reference_str.append('[{}] Jenkinson, M., Bannister, P., Brady, J. M. and Smith, S. M. Improved Optimisation for the Robust and Accurate Linear Registration and Motion Correction of Brain Images. NeuroImage, 2002, 17(2):825-841'.format(c+1))
         Reference_str.append('[{}] Greve, D. N. and Fischl, B. Accurate and robust brain image alignment using boundary-based registration. NeuroImage, 2009, 48(1):63-72'.format(c+2))
@@ -1177,17 +1168,19 @@ def vis_title(iDIO_Output, vis_dir):
         c += 3
 
     if iDIO_Output['DTIFIT']:
-        method_str.append('Diffusion Tensor image was reconstructed and the quantitative indices of fractional anisotropy, axial diffusivity, mean diffusivity and radial diffusion maps were calculated by the dtifit command in FSL.')
+        method_str.append(r"$\bf{\blacktriangleright\ Diffusion\ Tensor\ image\ estimation:}$" + ' quantitative indices of fractional anisotropy, axial diffusivity, mean diffusivity and radial diffusion maps were calculated using ' + r"$\it{dtifit}$" + ' (FSL command).')
 
     if iDIO_Output['CSDproc']:
-        method_str.append('A Multi-Shell Multi-Tissue Constrained Spherical Deconvolution model with lmax=8 and the prior co-registered 5tt image was used on the preprocessed diffusion data to obtain the fiber orientation density function. The fiber orientation density function was further underwent a multi-tissue informed log-domain intensity normalization. These two post-processing steps could be achieved by using dwi2fod and mtnormalise commands in MRtrix [{}, {}, {}].'.format(c, c+1, c+2))
+        method_str.append(r"$\bf{\blacktriangleright\ Fiber\ orientation\ density\ function\ (fODF)\ estimation:}$" + ' using a multi-shell multi-tissue constrained spherical deconvolution model with the prior co-registered 5tt image ' + '(using ' + r"$\it{dwi2fod}$"  + ' MRtrix3 commands) [{}].'.format(c))
+        method_str.append(r"$\bf{\blacktriangleright\ ODF\ with\ multi-tissue\ informed\ log-domain\ intensity\ normalization:}$" + '\nusing '+ r"$\it{mtnormalise}$" + ' (MRtrix3 commands) [{}, {}].'.format(c+1, c+2))
         Reference_str.append('[{}] Jeurissen, B, Tournier, J. D.; Dhollander, T., Connelly, A., Sijbers, J. Multi-tissue constrained spherical deconvolution for improved analysis of multi-shell diffusion MRI data. NeuroImage, 2014, 103:411-426'.format(c))
         Reference_str.append('[{}] Raffelt, D., Dhollander, T., Tournier, J. D., Tabbara, R., Smith, R. E., Pierre, E., Connelly, A. Bias Field Correction and Intensity Normalisation for Quantitative Analysis of Apparent Fibre Density. In Proc. ISMRM, 2017, 26:3541'.format(c+1))
         Reference_str.append('[{}] Dhollander, T., Tabbara, R., Rosnarho-Tornstrand, J., Tournier, J. D., Raffelt, D., Connelly, A. Multi-tissue log-domain intensity and inhomogeneity normalisation for quantitative apparent fibre density. In Proc. ISMRM, 2021, 29:2472'.format(c+2))
         c += 3
 
     if iDIO_Output['Tracking']:
-        method_str.append('White matter tractography were performed based on the voxel-wise fiber orientation distribution using anatomically constrained tractography with dynamic seeding iFOD2 algorithm and the spherical-deconvolution informed weighted of tractogram were applied. These could be achieved by using the tckgen and tcksift2 command in the MRtrix [{}, {}]. Next, AAL3 [{}], HCPMMP [{}], HCPex [{}], Yeo 400 [{}] atlases were utilized to generate the connectivity matrices. To transform the atlases from MRI standard space to the individual native space, T1 image was spatially normalized to the nonlinear ICBM152 template via antsRegistrationSyNQuick in ANTs [{}]. By combing the two transformation matrics (Diffusion-space to T1-space and T1-space to MNI-space), we then could apply the inverse transformation matrices to obtain the atlas in native diffusion space.'.format(c, c+1, c+2, c+3, c+4, c+5, c+6))
+        method_str.append(r"$\bf{\blacktriangleright\ White\ matter\ tractography:}$" + ' fiber tracking were performed based on the voxel-wise fODF using anatomically constrained tractography with dynamic seeding iFOD2 algorithm and the spherical-deconvolution informed weighted of tractogram were applied. These could be achieved by using ' + r"$\it{tckgen}$" + ' and ' + r"$\it{tckgentcksift2}$" + ' (MRtrix3 commands) [{}, {}].'.format(c, c+1)) 
+        method_str.append(r"$\bf{\blacktriangleright\ Connectivity\ matrices\ reconstruction:}$" + ' AAL3 [{}], HCPMMP [{}], HCPex [{}], Yeo 400 [{}] atlases were utilized to generate the connectivity matrices. To transform the atlases from MRI standard space to the individual native space, T1 image was spatially normalized to the nonlinear ICBM152 template using '.format(c+2, c+3, c+4, c+5)+ r"$\it{antsRegistrationSyNQuick}$" + ' (ANTs command) [{}].'.format(c+6))
         Reference_str.append('[{}] Tournier, J. D., Calamante, F., Connelly, A. Improved probabilistic streamlines tractography by 2nd order integration over fibre orientation distributions. In Proc. ISMRM, 2010, 1670'.format(c))
         Reference_str.append('[{}] Smith, R. E., Tournier, J. D., Calamante, F., Connelly, A. SIFT2: Enabling dense quantitative assessment of brain white matter connectivity using streamlines tractography. NeuroImage, 2015, 119:338-351'.format(c+1))
         Reference_str.append('[{}] Rolls E. T., Huang C. C., Lin C. P., Feng J., Joliot M. Automated anatomical labelling atlas 3. Neuroimage. 2020, 206:116189'. format(c+2))
@@ -1198,13 +1191,21 @@ def vis_title(iDIO_Output, vis_dir):
         c += 7
 
     if iDIO_Output['LowBonly']:
-        warning_str.append(r"$\bf{\times\ Caution\ for\ poor\ constrained\ spherical\ deconvolution\ (CSD)\ estimation:}$" + ' dwi acquisition scheme lack of high b value (b > 1500 s/' + r'$mm^{2}$' + ') volumes')
+        warning_str.append(r"$\bf{\times\ Caution\ for\ poor\ constrained\ spherical\ deconvolution\ (CSD)\ estimation:}$" + ' dwi acquisition scheme lack of high b-value (b > 1500 s/' + r'$mm^{2}$' + ') volumes')
 
     if iDIO_Output['HighBonly']:
-        warning_str.append(r"$\bf{\times\ Diffusion\ tensor\ fitting\ (DTI)\ skipped:}$" +' no b value less than 1500 s/' + r'$mm^{2}$' + ' in this data')
-    
-    mergeMethod_str = r'$\bf{Warning:}$' +'\n\n{}\n'.format('\n'.join(warning_str))
-    mergeMethod_str = mergeMethod_str +'\n' + r'$\bf{Methods\ Summary:}$' + '\n\n{}'.format(' '.join(method_str))
+        warning_str.append(r"$\bf{\times\ Diffusion\ tensor\ fitting\ (DTI)\ skipped:}$" +' no b-value less than 1500 s/' + r'$mm^{2}$' + ' in this data')
+
+    if iDIO_Output['CNRwarning']:
+        warning_str.append(r"$\bf{\times\ Discrepency\ of\ b\ shells:}$" + ' the number of unique b-values (with iDIO B0 threshold and shell epsilon) was not equal to the number of shells determined by FSL eddy. Please check')
+
+    if not len(outlier_warning) == 0:
+        warning_str.append(r"$\bf{\times\ Outliers\ detected:}$")
+        for ow in outlier_warning:
+            warning_str.append(ow)
+
+    mergeMethod_str = r'$\bf{Warning:}$' +'\n{}\n'.format('\n'.join(warning_str))
+    mergeMethod_str = mergeMethod_str +'\n' + r'$\bf{Methods\ Summary:}$' + '\n{}'.format('\n'.join(method_str))
 
     title_vis_file = os.path.join(vis_dir, 'Title.pdf')
     fig = plt.figure(0, figsize=SHARED_VARS.PAGESIZE)
@@ -1215,18 +1216,18 @@ def vis_title(iDIO_Output, vis_dir):
     plt.subplots_adjust(left=0.025, bottom=0.025, right=0.975, top=0.975, wspace=0, hspace=0)
     plt.text(0, 0.99, title_str, ha='left', va='center', wrap=True, fontsize=10, transform=ax.transAxes)
 
-    t = ax.add_artist(WrapText(0, 0.97, mergeMethod_str, va='top', width=0.72, widthcoords=ax.transAxes))
-    t.set_fontfamily('monospace')
-    t.set_fontsize(10)
+    t = ax.add_artist(WrapText(0, 0.97, mergeMethod_str, va='top', width=0.72, widthcoords=ax.transAxes, transform=ax.transAxes, linespacing = 1.5))
+    # t.set_fontfamily('monospace')
+    t.set_fontsize(9)
     plt.axis('off')
     plt.savefig(title_vis_file)
     plt.close()
 
     # # Output Reference page
-    if len(Reference_str) > 21:
+    if len(Reference_str) > 22:
         # p1
         # sort_ref = sorted(Reference_str)
-        mergeRef_str = r'$\bf{Reference:}$' + '\n{}\n'.format('\n'.join(Reference_str[0:20]))
+        mergeRef_str = r'$\bf{Reference:}$' + '\n{}\n'.format('\n'.join(Reference_str[0:22]))
         Ref_vis_files = [os.path.join(vis_dir, 'Reference_1.pdf')]
         plt.figure(0, figsize=SHARED_VARS.PAGESIZE)
         plt.axis([0, 1, 0, 1])
@@ -1236,14 +1237,14 @@ def vis_title(iDIO_Output, vis_dir):
         plt.subplots_adjust(left=0.025, bottom=0.025, right=0.975, top=0.975, wspace=0, hspace=0)
         plt.text(0, 0.99, title_str, ha='left', va='center', wrap=True, fontsize=10)
         # plt.text(-0.025, 0.95, mergeRef_str, ha='left', va='top', wrap=True, fontsize=9)
-        t = ax.add_artist(WrapText(0, 0.97, mergeRef_str, ha = 'left', va= 'top', width=0.72, widthcoords=ax.transAxes))
-        t.set_fontfamily('monospace')
+        t = ax.add_artist(WrapText(0, 0.97, mergeRef_str, ha = 'left', va= 'top', width=0.72, widthcoords=ax.transAxes, transform=ax.transAxes, linespacing = 1.5))
+        # t.set_fontfamily('monospace')
         t.set_fontsize(9)
         plt.axis('off')
         plt.savefig(Ref_vis_files[0])
         plt.close()
         # p2 
-        mergeRef_str = r'$\bf{Reference:}$' + '\n{}\n'.format('\n'.join(Reference_str[21:len(Reference_str)]))
+        mergeRef_str = r'$\bf{Reference:}$' + '\n{}\n'.format('\n'.join(Reference_str[22:len(Reference_str)]))
         Ref_vis_files.append(os.path.join(vis_dir, 'Reference_2.pdf'))
         plt.figure(0, figsize=SHARED_VARS.PAGESIZE)
         plt.axis([0, 1, 0, 1])
@@ -1253,8 +1254,8 @@ def vis_title(iDIO_Output, vis_dir):
         plt.subplots_adjust(left=0.025, bottom=0.025, right=0.975, top=0.975, wspace=0, hspace=0)
         plt.text(0, 0.99, title_str, ha='left', va='center', wrap=True, fontsize=10)
         # plt.text(-0.025, 0.95, mergeRef_str, ha='left', va='top', wrap=True, fontsize=9)
-        t = ax.add_artist(WrapText(0, 0.97, mergeRef_str, ha = 'left', va= 'top', width=0.72, widthcoords=ax.transAxes))
-        t.set_fontfamily('monospace')
+        t = ax.add_artist(WrapText(0, 0.97, mergeRef_str, ha = 'left', va= 'top', width=0.72, widthcoords=ax.transAxes, transform=ax.transAxes, linespacing = 1.5))
+        # t.set_fontfamily('monospace')
         t.set_fontsize(9)
         plt.axis('off')
         plt.savefig(Ref_vis_files[1])
@@ -1270,8 +1271,8 @@ def vis_title(iDIO_Output, vis_dir):
         plt.subplots_adjust(left=0.025, bottom=0.025, right=0.975, top=0.975, wspace=0, hspace=0)
         plt.text(0, 0.99, title_str, ha='left', va='center', wrap=True, fontsize=10)
         # plt.text(-0.025, 0.95, mergeRef_str, ha='left', va='top', wrap=True, fontsize=9)
-        t = ax.add_artist(WrapText(0, 0.97, mergeRef_str, ha = 'left', va= 'top', width=0.72, widthcoords=ax.transAxes))
-        t.set_fontfamily('monospace')
+        t = ax.add_artist(WrapText(0, 0.97, mergeRef_str, ha = 'left', va= 'top', width=0.72, widthcoords=ax.transAxes, transform=ax.transAxes, linespacing = 1.5))
+        # t.set_fontfamily('monospace')
         t.set_fontsize(9)
         plt.axis('off')
         plt.savefig(Ref_vis_files[0])
@@ -1335,44 +1336,3 @@ class WrapText(mtext.Text):
 
     def _get_wrap_line_width(self):
         return self.width
-
-def rainbow_text(x, y, strings, colors, orientation='horizontal',
-                 ax=None, **kwargs):
-    """
-    Take a list of *strings* and *colors* and place them next to each
-    other, with text strings[i] being shown in colors[i].
-
-    Parameters
-    ----------
-    x, y : float
-        Text position in data coordinates.
-    strings : list of str
-        The strings to draw.
-    colors : list of color
-        The colors to use.
-    orientation : {'horizontal', 'vertical'}
-    ax : Axes, optional
-        The Axes to draw into. If None, the current axes will be used.
-    **kwargs
-        All other keyword arguments are passed to plt.text(), so you can
-        set the font size, family, etc.
-    """
-    if ax is None:
-        ax = plt.gca()
-    t = ax.transData
-    canvas = ax.figure.canvas
-
-    assert orientation in ['horizontal', 'vertical']
-    if orientation == 'vertical':
-        kwargs.update(rotation=90, verticalalignment='bottom')
-
-    for s, c in zip(strings, colors):
-        text = ax.text(x, y, s + " ", color=c, transform=t, **kwargs)
-
-        # Need to draw to update the text position.
-        text.draw(canvas.get_renderer())
-        ex = text.get_window_extent()
-        if orientation == 'horizontal':
-            t = text.get_transform() + Affine2D().translate(ex.width, 0)
-        else:
-            t = text.get_transform() + Affine2D().translate(0, ex.height)

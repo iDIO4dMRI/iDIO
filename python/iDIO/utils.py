@@ -357,14 +357,17 @@ def round(num, base):
         return base*np.floor(d)
 
 # Function Definitions: DWI Manipulation
-def dwi_extract(dwi_file, bvals_file, extract_dir, target_bval=0, first_only=False):
+def dwi_extract(dwi_file, bvecs_file, bvals_file, extract_dir, target_bval=0, first_only=False):
 
     dwi_prefix = get_prefix(dwi_file)
 
-    print('EXTRACTING {} {} VOLUME(S) FROM {}'.format('FIRST' if first_only else 'ALL', 'B = {}'.format(target_bval), dwi_prefix))
+    # print('EXTRACTING {} {} VOLUME(S) FROM {}'.format('FIRST' if first_only else 'ALL', 'B = {}'.format(target_bval), dwi_prefix))
 
     dwi_img, dwi_aff, _ = load_nii(dwi_file, ndim=4)
-    bvals = load_txt(bvals_file, txt_type='bvals')
+
+    # rounded bvals
+    bvals = shell_bvals(dwi_file, bvecs_file, bvals_file)
+    # bvals = load_txt(bvals_file, txt_type='bvals')
 
     num_total_vols = dwi_img.shape[3]
     index = np.array(range(0, num_total_vols))
@@ -389,27 +392,13 @@ def dwi_extract(dwi_file, bvals_file, extract_dir, target_bval=0, first_only=Fal
 
     return dwi_extracted_file, num_extracted_vols, num_total_vols
 
-def dwi_extract_iDIO(dwi_file, bvals_file, extract_dir, target_bval=0, first_only=False, shells=[]):
+def dwi_extract_iDIO(dwi_file, bvals, extract_dir, target_bval=0, first_only=False, shells=[]):
 
     dwi_prefix = get_prefix(dwi_file)
 
-    print('EXTRACTING {} {} VOLUME(S) FROM {}'.format('FIRST' if first_only else 'ALL', 'B = {}'.format(target_bval), dwi_prefix))
+    # print('EXTRACTING {} {} VOLUME(S) FROM {}'.format('FIRST' if first_only else 'ALL', 'B = {}'.format(target_bval), dwi_prefix))
 
     dwi_img, dwi_aff, _ = load_nii(dwi_file, ndim=4)
-
-    # rounded data to feet eddy - remain to be checked
-    bvals = load_txt(bvals_file, txt_type='bvals')
-    bvals_rounded = []
-    for bval in bvals:
-        if len(shells) > 0:
-            bvals_rounded.append(nearest(bval, shells))
-        else:
-            bvals_rounded.append(round(bval, 100))
-            
-    bvals_unique = np.sort(np.unique(bvals_rounded))
-    bvals = np.array(bvals_rounded)
-
-    ##---------------------------------------------------------
 
     num_total_vols = dwi_img.shape[3]
     index = np.array(range(0, num_total_vols))
@@ -417,13 +406,13 @@ def dwi_extract_iDIO(dwi_file, bvals_file, extract_dir, target_bval=0, first_onl
 
     if first_only:
 
-        print('EXTRACTING FIRST VOLUME ONLY => 3D OUTPUT')
+        # print('EXTRACTING FIRST VOLUME ONLY => 3D OUTPUT')
         dwi_extracted_img = dwi_img[:, :, :, index[0]]
         num_extracted_vols = 1
 
     else:
 
-        print('EXTRACTING ALL VALID VOLUMES => 4D OUTPUT')
+        # print('EXTRACTING ALL VALID VOLUMES => 4D OUTPUT')
         dwi_extracted_img = dwi_img[:, :, :, index]
         num_extracted_vols = len(index)
 
@@ -504,17 +493,17 @@ def bvecs_merge(bvecs_files, merged_prefix, merge_dir):
 
     return merged_bvecs_file
 
-def dwi_improbable_mask(mask_file, dwi_file, bvals_file, mask_dir):
+def dwi_improbable_mask(mask_file, dwi_file, bvals, mask_dir):
 
     mask_prefix = get_prefix(mask_file)
 
-    print('IDENTIFYING VOXELS FOR IMPROBABLE MASK, BUILDING ON EXISTING MASK {}'.format(mask_prefix))
+    # print('IDENTIFYING VOXELS FOR IMPROBABLE MASK, BUILDING ON EXISTING MASK {}'.format(mask_prefix))
 
     # Load mask, DWI, and b-values 
 
     mask_img, mask_aff, _ = load_nii(mask_file, dtype='bool', ndim=3)
     dwi_img, _, _ = load_nii(dwi_file, ndim=4)
-    bvals = load_txt(bvals_file, txt_type='bvals')
+    # bvals = load_txt(bvals_file, txt_type='bvals')
 
     # Keep voxels where the minimum value across b0s is greater than the minimum value across dwis
     # and its in the original mask
@@ -539,7 +528,7 @@ def dwi_improbable_mask(mask_file, dwi_file, bvals_file, mask_dir):
 
     return probable_mask_file, improbable_voxels_file, percent_improbable
 
-def dwi_norm(dwi_files, bvals_files, norm_dir):
+def dwi_norm(dwi_files, bvecs_files, bvals_files, norm_dir, B0thr):
 
     temp_dir = make_dir(norm_dir, 'TEMP')
 
@@ -555,8 +544,9 @@ def dwi_norm(dwi_files, bvals_files, norm_dir):
         dwi_prefix = get_prefix(dwi_files[i])
 
         print('NORMALIZING {}...'.format(dwi_prefix))
+        bvals, _, _ = shell_bvals(dwi_files[i], bvecs_files[i], bvals_files[i], B0thr)
 
-        b0s_file, _, _ = dwi_extract(dwi_files[i], bvals_files[i], temp_dir, target_bval=0, first_only=False)
+        b0s_file, _, _ = dwi_extract_iDIO(dwi_files[i], bvals, temp_dir, target_bval=0, first_only=False)
         b0s_avg_file = dwi_avg(b0s_file, temp_dir)
         mask_file = dwi_mask(b0s_avg_file, temp_dir)
 
@@ -605,8 +595,6 @@ def dwi_norm(dwi_files, bvals_files, norm_dir):
         hist_normed, _ = np.histogram(imgs_normed[i], bins=bins)
         hists_normed.append(hist_normed)
 
-    remove_dir(temp_dir)
-
     return dwi_norm_files, gains, bins[:-1], hists, hists_normed
 
 def dwi_mask(dwi_file, mask_dir):
@@ -632,7 +620,29 @@ def dwi_mask(dwi_file, mask_dir):
 
     return mask_file
 
+# load shell numbers -> should write as util function
+def shell_bvals(img, bvecs, bvals, bthr, bepsilon=80):
+    Raw_b = load_txt(bvals, txt_type='bvals')
+    shelled_bvals = Raw_b
+    shelled_bvals[shelled_bvals<=10]=0
+    shell_indices = run_cmd_output('mrinfo {} -fslgrad {} {} -shell_indices -config BZeroThreshold {} -config BValueEpsilon {}'.format(img, bvecs, bvals, bthr, bepsilon))
+    shell_indices = shell_indices.split(' ')
+    shell_b = []
+    shell_ind = []
+    for shell_indice in shell_indices:
+        if not len(shell_indice) == 0:
+            b_to_use = []
+            for x in shell_indice.split(","):
+                b_to_use.append(int(x))
+            shell_b.append(int(np.median(Raw_b[b_to_use])))
+            shell_ind.append(np.array(b_to_use))
+            shelled_bvals[b_to_use] = int(np.median(Raw_b[b_to_use]))
+
+    
+    return shelled_bvals, np.array(shell_b), shell_ind
+
 # Function Definitions: Phase Encoding Scheme Manipulation
+# not to sure whether this is correct, not use now
 def pescheme2axis(pe_axis, pe_dir, aff):
 
     if pe_axis == 'i':

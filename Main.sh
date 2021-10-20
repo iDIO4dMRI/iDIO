@@ -11,7 +11,7 @@
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
 Version=1.0
-VDate=2021.09.03
+VDate=2021.10.20
 
 Usage(){
     cat <<EOF
@@ -107,13 +107,18 @@ fi
 aStep=(${Step//./ })
 runStep=($(echo "${aStep[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
 
+if [[ ! -z "${first}" ]] && [ ! -z "${second}" ] ; then
+    step1Arg="-first ${first} -second ${second}"
+fi
+
 if [[ "1" -eq "${cuda}" ]]; then
     step3Arg="-c"
     if [[ "1" -eq "${stv}" ]]; then
         step3Arg="${step3Arg} -m"
     fi
 fi
-if [[ "${rsimg}" -gt "0" ]]; then
+
+if [[ `echo ${rsimg}'>'0 | bc -l` -eq 1 ]]; then
     step3Arg="${step3Arg} -r ${rsimg}"
 fi
 
@@ -122,6 +127,7 @@ if [[ ! -z "${bzero}" ]]; then
     step3Arg="${step3Arg} -t ${bzero}"
     step5Arg="${step5Arg} -t ${bzero}"
     step6Arg="${step6Arg} -t ${bzero}"
+    step8Arg="${step8Arg} -t ${bzero}"
 fi
 
 
@@ -134,6 +140,7 @@ if [[ ! -z "${AtlasDir}" ]]; then
     else
         step4Arg="${step4Arg} -a ${AtlasDir}"
         step7Arg="${step7Arg} -a ${AtlasDir}"
+        step8Arg="${step8Arg} -a ${AtlasDir}"
 
     fi
 fi
@@ -141,17 +148,21 @@ if [[ ! -z "${trkNum}" ]]; then
     step7Arg="${step7Arg} -n ${trkNum}"
 fi
 
-pinfo="\n"
-pinfo+="[Diffusion data processing pipeline] v${Version} ${VDate}"
+pinfo="
+[Diffusion data processing pipeline] v${Version} ${VDate}
+Start process at $(date +"%Y-%m-%d %T")
+Subject ProcDir: ${SubjectDir}"
 echoC 2 "$pinfo" ${SubjectDir}/mainlog.txt
-pinfo="Start process at $(date +"%Y-%m-%d %T")\n"
-pinfo+="Subject ProcDir: ${SubjectDir}\n"
-pinfo+="---------------------------------------------------------\n"
-pinfo+="SetupFile: ${argFile}\n"
-pinfo+="processing steps: ${Step}\n"
-pinfo+="Bzero threshold: ${bzero}\n"
-pinfo+="AtlasDir=${AtlasDir}\n"
-pinfo+="trkNum=${trkNum}\n"
+pinfo="---------------------------------------------------------
+SetupFile:          ${argFile}
+processing steps:   ${Step}
+B-zero threshold:   ${bzero}
+AtlasDir:           ${AtlasDir}
+trkNum:             ${trkNum}"
+if [[ `echo ${rsimg}'>'0 | bc -l` -eq 1 ]]; then
+    pinfo="${pinfo}
+isotropic voxels:   ${rsimg}(mm)"
+fi
 echoC 3 "$pinfo" ${SubjectDir}/mainlog.txt
 
 for (( i = 0; i < ${#runStep[@]}; i++ )); do
@@ -161,7 +172,7 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             # Step 1_DWIprep
             STARTTIME=$(date +"%s")
             echoC 2 "1_DWIprep at $(date +"%Y-%m-%d %T")" ${SubjectDir}/mainlog.txt
-            bash ${HOGIO}/1_DWIprep.sh -b $BIDSDir -p $SubjectDir | tee -a ${SubjectDir}/mainlog.txt
+            bash ${HOGIO}/1_DWIprep.sh -b $BIDSDir -p $SubjectDir ${step1Arg}| tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         2 )
@@ -204,6 +215,12 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             STARTTIME=$(date +"%s")
             echoC 2 "7_NetworkProc at $(date +"%Y-%m-%d %T")"  ${SubjectDir}/mainlog.txt
             bash ${HOGIO}/7_NetworkProc.sh -p $SubjectDir ${step7Arg} | tee -a ${SubjectDir}/mainlog.txt
+            CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
+            ;;
+        8)
+            STARTTIME=$(date +"%s")
+            echoC 2 "8_QC at $(date +"%Y-%m-%d %T")"  ${SubjectDir}/mainlog.txt
+            python3 ${HOGIO}/python/iDIO/run_iDIOQC.py -p ${SubjectDir} ${step8Arg} | tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
     esac
