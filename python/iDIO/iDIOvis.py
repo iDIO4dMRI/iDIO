@@ -876,7 +876,7 @@ def vis_overlap_slice(input_file, mask_file, vis_dir, percent_improbable):
 
     vis_file = os.path.join(vis_dir, 'Improbable_voxels.pdf')
     
-    imageinfo='-intensity_range 0,1'
+    imageinfo='-intensity_range 0,1 -overlay.threshold_min 0.01'
 
 
     #Generate mrview command and plot light box
