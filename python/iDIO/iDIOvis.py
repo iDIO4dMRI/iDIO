@@ -1093,7 +1093,7 @@ def vis_title(iDIO_Output, outlier_warning, vis_dir):
     method_str.append(r"$\bf{\blacktriangleright\ The\ diffusion\ data\ were\ processed\ with\ iDIO\ toolbox:}$" + ' its functionalities come from MRtrix3 (https://www.mrtrix.org/), FSL (https://fsl.fmrib.ox.ac.uk/), ANTs (http://stnava.github.io/ANTs/), and PreQual (https://github.com/MASILab/PreQual)  software packages [{}, {}, {}, {}].'.format(c, c+1, c+2, c+3))
     Reference_str.append('[{}] Tournier, J. D.; Smith, R. E.; Raffelt, D., Tabbara, R., Dhollander, T., Pietsch, M., Christiaens, D., Jeurissen, B., Yeh, C.-H. & Connelly, A. MRtrix3: A fast, flexible and open software framework for medical image processing and visualisation. NeuroImage, 2019, 202:116137'.format(c))
     Reference_str.append('[{}] Jenkinson, M., Beckmann, C. F., Behrens, T. E., Woolrich, M.W., Smith. S.M., FSL. NeuroImage, 2012, 62:782-90'.format(c+1))
-    Reference_str.append('[{}] Avants B. B., Tustison N. J., Song G, Cook P. A, Klein A, Gee J. C. A reproducible evaluation of ANTs similarity metric performance in brain image registration. NeuroImage, 2011, 54(3):2033-44'.format(c+2))
+    Reference_str.append('[{}] Avants B. B., Tustison N. J., Song G. Advanced normalization tools (ANTS). Insight j, 2009, 2:1-35.'.format(c+2))
     Reference_str.append('[{}] Cai L. Y.; Yang Q.; Hansen C. B.; Nath V.; Ramadass K.; Johnson G. W.; Conrad B. N.; Boyd B. D.; Begnoche J. P.; Beason-Held L. L.; Shafer A. T.; Resnick S. M., Taylor W. D., Price G. R., Morgan V. L., Rogers B. P., Schilling K. G., Landman B. A. PreQual: An automated pipeline for integrated preprocessing and quality assurance of diffusion weighted MRI images. Magn Reson Med, 2021, 86(1):456-470'.format(c+3)) 
     c += 4
     # B0 threshold has to ckecked (in Eddy), and further QC image check (2021/10/7)
@@ -1114,8 +1114,9 @@ def vis_title(iDIO_Output, outlier_warning, vis_dir):
     method_str.append(r"$\bf{\blacktriangleright\ Gibbs\ ringing\ removal:}$" + ' using ' + r"$\it{mrdegibbs}$" + ' (MRtrix3 command) with local subvoxel-shifts method [{}].'.format(c))
     Reference_str.append('[{}] Kellner, E, Dhital, B, Kiselev, V. G, Reisert, M. Gibbs-ringing artifact removal based on local subvoxel-shifts. Magn Reson Med, 2016, 76:1574–1581'.format(c))
     warning_str.append(r"$\bf{\times\ Caution\ for\ Gibbs\ ringing\ removel:}$" + ' partial Fourier acquisition may lead to suboptimal results, please check corrected output images and use it with caution.')
-    c += 1
     gibbsc = c
+    c += 1
+    
 
     # Drift
     if iDIO_Output['Drift']:
@@ -1129,8 +1130,8 @@ def vis_title(iDIO_Output, outlier_warning, vis_dir):
     if iDIO_Output['RPEcor']:
         method_str.append(r"$\bf{\blacktriangleright\ Suceptibility-induced\ distortion,\ eddy\ current,\ and\ subject\ movement\ correction:}$" + ' using ' + r"$\it{topup}$" + ' and ' + r"$\it{eddy}$" + ' (FSL commands) [{}, {}, {}].'.format(c, c+1, c+2))
         Reference_str.append('[{}] Andersson J. L. R., Skare S., Ashburner J. How to correct susceptibility distortions in spin-echo echo-planar images: application to diffusion tensor imaging. NeuroImage, 2003, 20(2):870-888'.format(c))
-        Reference_str.append('[{}] Smith S. M., Jenkinson M., Woolrich M. W., Beckmann C. F., Behrens T. E. J., Johansen-Berg H., Bannister P. R., De Luca M., Drobnjak I., Flitney D. E., Niazy R., Saunders J., Vickers J., Zhang Y., De Stefano N.,Brady J. M., Matthews P. M. Advances in functional and structural MR image analysis and implementation as FSL. NeuroImage, 2004, 23(S1):208-219'.format(c))
-        Reference_str.append('[{}] Andersson J. L. R. and Sotiropoulos S. N. An integrated approach to correction for off-resonance effects and subject movement in diffusion MR imaging. NeuroImage, 2016, 125:1063-1078'.format(c+1))
+        Reference_str.append('[{}] Smith S. M., Jenkinson M., Woolrich M. W., Beckmann C. F., Behrens T. E. J., Johansen-Berg H., Bannister P. R., De Luca M., Drobnjak I., Flitney D. E., Niazy R., Saunders J., Vickers J., Zhang Y., De Stefano N.,Brady J. M., Matthews P. M. Advances in functional and structural MR image analysis and implementation as FSL. NeuroImage, 2004, 23(S1):208-219'.format(c+1))
+        Reference_str.append('[{}] Andersson J. L. R. and Sotiropoulos S. N. An integrated approach to correction for off-resonance effects and subject movement in diffusion MR imaging. NeuroImage, 2016, 125:1063-1078'.format(c+2))
         c += 3
     else:
         method_str.append(r"$\bf{\blacktriangleright\ Eddy\ current,\ and\ subject\ movement\ correction:}$" + ' using ' + r"$\it{eddy}$" + ' (FSL command) [{}].'.format(c))
@@ -1146,7 +1147,6 @@ def vis_title(iDIO_Output, outlier_warning, vis_dir):
     # BiasCorrection
     method_str.append(r"$\bf{\blacktriangleright\ B1\ field\ inhomogeneity\ correction:}$" + ' using ' + r"$\it{dwibiascorrect}$" + ' (MRtrix3 command) with ants option [{}].'.format(c))
     Reference_str.append('[{}] Tustison, N., Avants, B., Cook, P., Zheng, Y., Egan, A., Yushkevich, P., Gee, J. N4ITK: Improved N3 Bias Correction. IEEE Trans Med Imaging, 2010, 29:1310-1320'.format(c))
-
     antsc = c
     c += 1
 
