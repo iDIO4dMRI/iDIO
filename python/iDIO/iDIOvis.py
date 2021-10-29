@@ -596,7 +596,7 @@ def vis_stats(dwi_file, bvals_file, motion_dict, EC_dict, eddy_dir, vis_dir):
 
     for vol in range(outlier_map.shape[1]):
         if sum(outlier_map)[vol]/outlier_map.shape[0] > 0.05:
-            Outlier_warning.append('    {} out of {} slices shown as outliers in volume {}'.format(sum(outlier_map)[vol], outlier_map.shape[1], vol))
+            Outlier_warning.append('    {} out of {} slices shown as outliers in volume {}'.format(sum(outlier_map)[vol], outlier_map.shape[0], vol))
 
     ax = plt.subplot(4, 2, 2)
     ax.matshow(outlier_map, aspect='auto', origin='lower')#, cmap = )
