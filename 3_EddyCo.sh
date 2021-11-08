@@ -12,7 +12,7 @@
 ##						  move biasco from step 4
 ##						  created [Preprocessed_data] folder for preprocessed data
 ## Edit:2021/07/22, Heather, move resize step in the end
-## Edit:2021/07/28, Heather, resize with vox size option (default = 2mm)
+## Edit:2021/07/28, Heather, resize with vox size option (default = 0)
 ## Edit: 2021/09/23, Heather, output with bias map -> for QC purpose
 ##########################################################################################################################
 
@@ -36,7 +36,7 @@ Options:
 	-p 	Input directory; [default = pwd directory]
 	-c 	Using CUDA to speed up. NVIDIA GPU with CUDA v9.1 or CUDA v8.0 is available to use this option.
 	-m 	Slice-to-vol motion correction. This option is only implemented for the CUDA version.
-	-r  Resize dwi image to input isotropic size [default = 2mm isotropic voxel, 0 = do not resize].
+	-r  Resize dwi image to input isotropic size [default = 0: do not resize].
 	-t  Input Bzero threshold; [default = 10];
 
 EOF

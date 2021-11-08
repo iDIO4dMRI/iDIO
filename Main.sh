@@ -11,7 +11,7 @@
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
 Version=1.0
-VDate=2021.10.14
+VDate=2021.10.20
 
 Usage(){
     cat <<EOF
@@ -127,6 +127,7 @@ if [[ ! -z "${bzero}" ]]; then
     step3Arg="${step3Arg} -t ${bzero}"
     step5Arg="${step5Arg} -t ${bzero}"
     step6Arg="${step6Arg} -t ${bzero}"
+    step8Arg="${step8Arg} -t ${bzero}"
 fi
 
 
@@ -139,6 +140,7 @@ if [[ ! -z "${AtlasDir}" ]]; then
     else
         step4Arg="${step4Arg} -a ${AtlasDir}"
         step7Arg="${step7Arg} -a ${AtlasDir}"
+        step8Arg="${step8Arg} -a ${AtlasDir}"
 
     fi
 fi
@@ -213,6 +215,12 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             STARTTIME=$(date +"%s")
             echoC 2 "7_NetworkProc at $(date +"%Y-%m-%d %T")"  ${SubjectDir}/mainlog.txt
             bash ${HOGIO}/7_NetworkProc.sh -p $SubjectDir ${step7Arg} | tee -a ${SubjectDir}/mainlog.txt
+            CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
+            ;;
+        8)
+            STARTTIME=$(date +"%s")
+            echoC 2 "8_QC at $(date +"%Y-%m-%d %T")"  ${SubjectDir}/mainlog.txt
+            python3 ${HOGIO}/python/iDIO/run_iDIOQC.py -p ${SubjectDir} ${step8Arg} | tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
     esac
