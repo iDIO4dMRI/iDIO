@@ -58,7 +58,7 @@ sub-001
 Performing the OGIO pipeline with predefined options. Run the Main.sh and  done all the process!
 
 **Usage**
-> sh Main.sh -bids InputDir -proc OutputDir -arg  configurefile
+> sh Main.sh -bids InputDir -proc OutputDir -arg configurefile
 
 - -bids* InputDir*: datapath that including two directories - anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwi.bval, dwi.bvec, dwi.json) (As shown in the **Data preparing** section above )
 - -proc *OutputDir* Provide a output path for saving the output processed data
@@ -75,8 +75,17 @@ All options need to be predefined are list in the ** SetUpOGIOArg.sh** file. OGI
 - **trkNum**: Set the desired number of streamlines to be selected when generating the tractogram [default = 10M].
 
 Details for each step are shown as follows:
+### Step 0: CheckData.sh
+**Synopsis**    
+Initially check the data configuration
+
+**Usage**
+> sh 0_CheckData.sh -b BIDSDir
+
+
+
 ### Step 1: 1_DWIprep.sh
-**Synopsis**
+**Synopsis**    
 DWI data preparation (identify phase encoding of DWI image and generate needed description files in 0_BIDS_NIFTI and 1_DWIprep folders)
 
 ```      
@@ -105,8 +114,8 @@ DWI data preparation (identify phase encoding of DWI image and generate needed d
 - -p *OutputDir* Provide a output path for saving the output processed data
 
 **Options**
-- **-s PhaseEncode** please provide the number of phase encoding images in following order {PA, AP, LR, RL}
-
+- **-first  *1st_Filename* filename of the former acquired diffusion data, no need to specifty the filename extension (i.e. dwi1) 
+- **-second *2nd Filename* filename of the latter acquired diffusion data, no need to specifty the filename extension (i.e. dwi1) 
 **Reference**
 
 ### 2_BiasCo.sh
@@ -130,7 +139,7 @@ implement the 4D signal denoise, gibbs ringing correction, and drifting correcti
 
 **Options**
 - **-p OutputDir** The OutputDir has to include the 1_DWIprep folder (includes the converted files) [default = pwd directory]
-- **-t  B0thr** Input Bzero threshold; [default = 10];
+- **-t B0thr** Input Bzero threshold; [default = 10];
 
 ### 3_EddyCo.sh
 **Synopsis**
