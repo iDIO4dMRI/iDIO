@@ -222,7 +222,7 @@ def iDIO_QC(subj_dir, template_dir, Bzerothr):
         stats_out_list.append(cnrlish)
 
     # P.6 motion results by eddy (with preprocessed image)
-    stats_vis_file, outlier_percentage, outlier_warning = iDIOvis.vis_stats(dwi_preproc_file, bvals_preproc_shelled, motion_dict, EC_dict, eddy_dir, out_dir)
+    stats_vis_file, outlier_percentage, outlier_warning, o_n_percentage, bvol = iDIOvis.vis_stats(dwi_preproc_file, bvals_preproc_shelled, motion_dict, EC_dict, eddy_dir, out_dir)
 
     # Load S2V information 
     f = open(glob.glob(subj_dir + '/3_EddyCo/*.eddy_values_of_all_input_parameters')[0],'r')
@@ -235,7 +235,7 @@ def iDIO_QC(subj_dir, template_dir, Bzerothr):
     iDIO_Output['S2V'] = s2v>0
 
     # load drift and output stats
-    stats.stats_out(subj_dir + '/2_BiasCo/Drifting_val.csv', motion_stats_out_list, EC_stats_out_list, stats_out_list, outlier_percentage, percent_improbable, out_dir)
+    stats.stats_out(subj_dir + '/2_BiasCo/Drifting_val.csv', motion_stats_out_list, EC_stats_out_list, stats_out_list, outlier_percentage, o_n_percentage, percent_improbable, out_dir)
 
     # identify shells
     uniq_b = np.unique(bvals_preproc_shelled)
@@ -337,7 +337,7 @@ def iDIO_QC(subj_dir, template_dir, Bzerothr):
     # Output P.1 - Reference/Option summary
     # Check Preprocessed steps
     
-    title_vis_file, Ref_vis_file = iDIOvis.vis_title(iDIO_Output, outlier_warning, out_dir)
+    title_vis_file, Ref_vis_file = iDIOvis.vis_title(iDIO_Output, outlier_warning, o_n_percentage, bvol, out_dir)
 
 
     # Combine component PDFs
