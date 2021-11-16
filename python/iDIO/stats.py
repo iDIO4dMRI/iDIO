@@ -177,7 +177,7 @@ def cnr(bvals_file, mask_file, eddy_dir, stats_dir, shells=[]):
 
     return cnr_dict, bvals, stats_out_list, cnr_warning
 
-def stats_out(drift_stats_out, motion_stats_out_list, EC_stats_out_list, cnr_stats_out_list, outlier_percentage, percent_improbable, stats_dir):
+def stats_out(drift_stats_out, motion_stats_out_list, EC_stats_out_list, cnr_stats_out_list, outlier_percentage, o_n_percentage, percent_improbable, stats_dir):
     
     print('WRITING STATS TO CSV...')
     
@@ -189,6 +189,7 @@ def stats_out(drift_stats_out, motion_stats_out_list, EC_stats_out_list, cnr_sta
     stats_out_list.append('\n'.join(motion_stats_out_list))
     stats_out_list.append('\n'.join(EC_stats_out_list))
     stats_out_list.append('Outlier_percantage_total (%),{}'.format(str(outlier_percentage*100)))
+    stats_out_list.append('Outlier(>5% in slice)_percentage_volume (%),{}'.format(str(o_n_percentage*100)))
     stats_out_list.append('\n'.join(cnr_stats_out_list))
     stats_out_str = '\n'.join(stats_out_list)
 
