@@ -18,6 +18,7 @@
 #          - copy files from Preprocessed_data folder
 # 20210203 - skip dtifit if no low-b image
 # 20210915 - copy files from Preprocessed_data folder and delete the redundant part 
+# 20210929 - generate Sum of squared error and DEC map 
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -202,10 +203,11 @@ echo 0 >> b0
 paste -d ' ' b0 ${subjid}-preproc-lowb-only-data.bvec > ${subjid}-preproc-lowb-data.bvec
 
 
-dtifit -k ${subjid}-preproc-lowb-data.nii.gz -o ${subjid} -m T1w_mask_inDWIspace.nii.gz -r ${subjid}-preproc-lowb-data.bvec -b ${subjid}-preproc-lowb-data.bval
-
+dtifit -k ${subjid}-preproc-lowb-data.nii.gz -o ${subjid} -m T1w_mask_inDWIspace.nii.gz -r ${subjid}-preproc-lowb-data.bvec -b ${subjid}-preproc-lowb-data.bval --sse
 
 fslmaths ${subjid}_L2.nii.gz -add ${subjid}_L3 ${subjid}_RD_tmp.nii.gz
 fslmaths ${subjid}_RD_tmp.nii.gz -div 2 ${subjid}_RD.nii.gz
 
 rm -f b0 ${subjid}-preproc-lowb-only-data.bval ${subjid}-preproc-lowb-only-data.bvec ${subjid}-preproc-lowb-only-data.nii.gz ${subjid}_RD_tmp.nii.gz
+
+fslmaths ${subjid}_FA.nii.gz -mul ${subjid}_V1.nii.gz ${subjid}_DEC.nii.gz

@@ -11,6 +11,7 @@
 ## Edit: 2021/05/18, Heather, (1) bug fixed
 ## Edit: 2021/07/28, Heather,  skip the denoise if the recon matrix is interpolated
 ## Edit: 2021/09/23, Heather, output with noise map -> for QC purpose
+## Edit: 2021/10/13, Heather, minor correction in the naming
 ##########################################################################################################################
 
 
@@ -171,8 +172,8 @@ case $Topup in
 
 		cd $OriDir/2_BiasCo
 		if [[ "$AcquisitionMatrixPE" == "$ReconMatrixPE" ]]; then
-			dwidenoise $(echo ${File1%.*.*})${direction[1]}.nii.gz $(echo ${File1%.*.*})-denoise.nii.gz -noise $(echo ${File1%.*.*})-noise.nii.gz
-			mrdegibbs $(echo ${File1%.*.*})-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
+			dwidenoise $(echo ${File1%.*.*})${direction[1]}.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise.nii.gz -noise $(echo ${File1%.*.*})${direction[1]}-noise.nii.gz
+			mrdegibbs $(echo ${File1%.*.*})${direction[1]}-denoise.nii.gz $(echo ${File1%.*.*})${direction[1]}-denoise-deGibbs.nii.gz #Keep the data format output from mrdegibbs
 			# rm -f ./Temp-denoise.nii.gz
 		else
 			echo "interpolated Recon Matrix was found, skip denoise step"
@@ -188,9 +189,9 @@ File_bval=$(ls *.bval)
 File_bvec=$(ls *.bvec)
 
 #
-B0num=$(mrinfo ${File_degibbs}.nii.gz -fslgrad ${File_bvec} ${File_bval}  -shell_sizes -config BZeroThreshold ${Bzerothr}|awk '{print $1}')
+B0num=$(mrinfo ${File_degibbs}.nii.gz -fslgrad ${File_bvec} ${File_bval} -shell_sizes -config BZeroThreshold ${Bzerothr}|awk '{print $1}')
 
-B0index=$(mrinfo ${File_degibbs}.nii.gz -fslgrad ${File_bvec} ${File_bval}  -shell_indices -config BZeroThreshold ${Bzerothr}|awk {'print $1'})
+B0index=$(mrinfo ${File_degibbs}.nii.gz -fslgrad ${File_bvec} ${File_bval} -shell_indices -config BZeroThreshold ${Bzerothr}|awk {'print $1'})
 
 #B0num > 3 -> do drift correction
 if [[ "${B0num}" -gt "3"  ]]; then
