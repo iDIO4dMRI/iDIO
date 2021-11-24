@@ -589,7 +589,8 @@ def vis_stats(dwi_file, bvals_file, motion_dict, EC_dict, eddy_dir, vis_dir):
     ax.set_xlabel('Diffusion Volume', fontsize=SHARED_VARS.LABEL_FONTSIZE)
     
     # Visualize outlier map
-    Outlier_warning=[]
+    Outlier_warning = []
+    o_n = 0
     raw_outlier_map = _get_outlier_map(eddy_outlier_map_file)
     outlier_map = np.transpose(raw_outlier_map)
     outlier_percentage = len(np.where(raw_outlier_map[bvals!=0,:]==1)[0])/outlier_map.shape[0]/len(np.where(bvals!=0)[0])
@@ -597,6 +598,10 @@ def vis_stats(dwi_file, bvals_file, motion_dict, EC_dict, eddy_dir, vis_dir):
     for vol in range(outlier_map.shape[1]):
         if sum(outlier_map)[vol]/outlier_map.shape[0] > 0.05:
             Outlier_warning.append('    {} out of {} slices shown as outliers in volume {}'.format(sum(outlier_map)[vol], outlier_map.shape[0], vol))
+            o_n += 1
+
+    o_n_percentage = o_n/len(np.where(bvals!=0)[0])
+    bvol = len(np.where(bvals!=0)[0])
 
     ax = plt.subplot(4, 2, 2)
     ax.matshow(outlier_map, aspect='auto', origin='lower')#, cmap = )
@@ -661,7 +666,7 @@ def vis_stats(dwi_file, bvals_file, motion_dict, EC_dict, eddy_dir, vis_dir):
     plt.savefig(stats_vis_file, dpi=SHARED_VARS.PDF_DPI)
     plt.close()
 
-    return stats_vis_file, outlier_percentage, Outlier_warning
+    return stats_vis_file, outlier_percentage, Outlier_warning, o_n_percentage, bvol
 
 def vis_drift(png_path, vis_dir):
     driftb0 = os.path.join(png_path, 'Drifting_Correction_B0only.png')
@@ -876,20 +881,20 @@ def vis_overlap_slice(input_file, mask_file, vis_dir, percent_improbable):
 
     vis_file = os.path.join(vis_dir, 'Improbable_voxels.pdf')
     
-    imageinfo='-intensity_range 0,1 -overlay.threshold_min 0.01'
+    imageinfo='-intensity_range 0,1'
 
 
     #Generate mrview command and plot light box
-    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -nthreads {} -overlay.load {} -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit'.format(input_file, i0, i1, i2, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S1')
+    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -nthreads {} -overlay.load {} -overlay.threshold_min 0.01 -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit'.format(input_file, i0, i1, i2, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S1')
     utils.run_cmd(vis_cmd)
 
-    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -config MRViewShowOrientationLabel false -nthreads {} -overlay.load {} -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit '.format(input_file, i0, i1, i2_2, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S2')
+    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -config MRViewShowOrientationLabel false -nthreads {} -overlay.load {} -overlay.threshold_min 0.01 -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit '.format(input_file, i0, i1, i2_2, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S2')
     utils.run_cmd(vis_cmd)
 
-    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -config MRViewShowOrientationLabel false -nthreads {} -overlay.load {} -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit' .format(input_file, i0, i1, i2_3, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S3')
+    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -config MRViewShowOrientationLabel false -nthreads {} -overlay.load {} -overlay.threshold_min 0.01 -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit' .format(input_file, i0, i1, i2_3, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S3')
     utils.run_cmd(vis_cmd)
 
-    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -config MRViewShowOrientationLabel false -nthreads {} -overlay.load {} -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit'.format(input_file, i0, i1, i2_4, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S4')
+    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -config MRViewShowOrientationLabel false -nthreads {} -overlay.load {} -overlay.threshold_min 0.01 -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit'.format(input_file, i0, i1, i2_4, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S4')
     utils.run_cmd(vis_cmd)
 
     # Merge to PDF
@@ -1082,7 +1087,7 @@ def vis_bias(raw_file, biasField, unbiased_file, bvals, vis_dir):
 
     return bias_vis_file
 
-def vis_title(iDIO_Output, outlier_warning, vis_dir):
+def vis_title(iDIO_Output, outlier_warning, o_n_percentage, bvol, vis_dir):
     title_str = str('iDIO v{} QC report\n'.format(SHARED_VARS.VERSION))
     c = 1
     warning_str =[]
@@ -1200,7 +1205,8 @@ def vis_title(iDIO_Output, outlier_warning, vis_dir):
         warning_str.append(r"$\bf{\times\ Discrepency\ of\ b\ shells:}$" + ' the number of unique b-values (with iDIO B0 threshold and shell epsilon) was not equal to the number of shells determined by FSL eddy. Please check')
 
     if not len(outlier_warning) == 0:
-        warning_str.append(r"$\bf{\times\ Outliers\ detected:}$")
+        # tmp_txt='Outliers\ detected\ (>5%\ in\ z-axis\, {}%\ in\ {}\ non-zero\ volumes:'.format(o_n_percentage, bvol)
+        warning_str.append(r"$\bf{\times\ " + 'Outliers\ detected\ (>5\%\ in\ z-axis,\ {:.2f}\%\ in\ {}\ non-zero\ volumes:)'.format(o_n_percentage*100, bvol) + "}$")
         for ow in outlier_warning:
             warning_str.append(ow)
 
@@ -1333,6 +1339,5 @@ class WrapText(mtext.Text):
         else:
             a = widthcoords.transform_point([(0,0),(width,0)])
             self.width = a[1][0]-a[0][0]
-
     def _get_wrap_line_width(self):
         return self.width
