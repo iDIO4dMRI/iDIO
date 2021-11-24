@@ -881,20 +881,20 @@ def vis_overlap_slice(input_file, mask_file, vis_dir, percent_improbable):
 
     vis_file = os.path.join(vis_dir, 'Improbable_voxels.pdf')
     
-    imageinfo='-intensity_range 0,1 -overlay.threshold_min 0.01'
+    imageinfo='-intensity_range 0,1'
 
 
     #Generate mrview command and plot light box
-    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -nthreads {} -overlay.load {} -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit'.format(input_file, i0, i1, i2, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S1')
+    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -nthreads {} -overlay.load {} -overlay.threshold_min 0.01 -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit'.format(input_file, i0, i1, i2, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S1')
     utils.run_cmd(vis_cmd)
 
-    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -config MRViewShowOrientationLabel false -nthreads {} -overlay.load {} -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit '.format(input_file, i0, i1, i2_2, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S2')
+    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -config MRViewShowOrientationLabel false -nthreads {} -overlay.load {} -overlay.threshold_min 0.01 -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit '.format(input_file, i0, i1, i2_2, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S2')
     utils.run_cmd(vis_cmd)
 
-    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -config MRViewShowOrientationLabel false -nthreads {} -overlay.load {} -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit' .format(input_file, i0, i1, i2_3, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S3')
+    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -config MRViewShowOrientationLabel false -nthreads {} -overlay.load {} -overlay.threshold_min 0.01 -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit' .format(input_file, i0, i1, i2_3, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S3')
     utils.run_cmd(vis_cmd)
 
-    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -config MRViewShowOrientationLabel false -nthreads {} -overlay.load {} -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit'.format(input_file, i0, i1, i2_4, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S4')
+    vis_cmd = 'mrview -load {} -mode 4 -plane 2 -voxel {},{},{} {} -size 1200,1200 -config MRViewShowVoxelInformation false -config MRViewShowComments false -config MRViewShowOrientationLabel false -nthreads {} -overlay.load {} -overlay.threshold_min 0.01 -overlay.colour 1,0,0 -overlay.interpolation 0 -noannotations -colourbar 0 -focus 0 -voxelinfo 0 -capture.folder {} -capture.prefix {} -capture.grab -exit'.format(input_file, i0, i1, i2_4, imageinfo, SHARED_VARS.NUM_THREADS-1, mask_file, temp_dir, 'S4')
     utils.run_cmd(vis_cmd)
 
     # Merge to PDF
