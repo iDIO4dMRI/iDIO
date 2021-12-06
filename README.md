@@ -23,9 +23,9 @@ $ pip install argparse numpy pandas nibabel scikit-image matplotlib
 ```
 
 ### Setting
-before started, it is necessary to export the home directory of iDIO as HOGIO. 
+before started, it is necessary to export the home directory of iDIO as iDIO_HOME. 
 ```	
-$ export HOGIO = iDIO pipeline location
+$ export iDIO_HOME = iDIO pipeline location
 ```
 
 
@@ -58,21 +58,21 @@ sub-001
 Performing the iDIO pipeline with predefined options.  
 
 **Usage**
-> sh Main.sh -bids *InputDir* -proc *OutputDir* -arg *SetUpOGIOArg.sh*
+> sh Main.sh -bids *InputDir* -proc *OutputDir* -arg *SetUpiDIOArg.sh*
 
 - **-bids InputDir**: Data path that including two directories - anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwiPHASE.bval, dwiPHASE.bvec, dwiPHASE.json) (As shown in the ** Data preparing** section above )
 - **-proc OutputDir**: Provide a output path for saving the output processed data
-- **-arg SetUpOGIOArg.sh**: Provide a script that include all needed predefined options. (For more details, please see **Options** below)
+- **-arg SetUpiDIOArg.sh**: Provide a script that include all needed predefined options. (For more details, please see **Options** below)
 
 **Options**
-All options need to be predefined are list in the ** SetUpOGIOArg.sh** file. iDIO pipeline include eight steps in the following order, (1) data preprocessing, (2) bias correction, (3) eddy correction, (4) T1 preprocessing,  (5) diffusion tensor fitting, (6) constrained spherical deconvolution processing, (7)network construction and (8)quality control
+All options need to be predefined are list in the ** SetUpiDIOArg.sh** file. iDIO pipeline include eight steps in the following order, (1) data preprocessing, (2) bias correction, (3) eddy correction, (4) T1 preprocessing,  (5) diffusion tensor fitting, (6) constrained spherical deconvolution processing, (7)network construction and (8)quality control
 - **Step**: Set the wanted processing steps to perform [default=1.2.3.4.5.6.7.8]
 - **first/second**: If the series number is not recorded in the JSON file, please provide the filename by the scan order [default=None]
 - **cuda** : A boolean value to indicate whether to run the CUDA version of eddy to speed up the processing procedure. iDIO will automatically selected the supported cuda version (8.0/9.1/10.2) if the processing server has discrete GPU installed with CUDA. [default=0]
 - **stv**: A boolean value to indicate whether to perform the slice-to-volume correction. Slice-to-volume correction only implemented for CUDA version. [default=0]
 - **rsimg**: Specifies the isotropic voxel size (mm) of DWIs, which will be apply  before step (5) diffusion tensor fitting and step (6) constrained spherical deconvolution. [default=0 (no resize)]
 - **bzero**: Specifies the values to determine the null image with certain b-value threshold [default = 10]
-- **AtlasDir**: Default needed files were save in ${HOGIO}/share with several folders, we recommend not to change this path, but save Atlas you need  in ${HOGIO}/share/Atlas instead. [default = ${HOGIO}/share]
+- **AtlasDir**: Default needed files were save in ${iDIO_HOME}/share with several folders, we recommend not to change this path, but save Atlas you need  in ${iDIO_HOME}/share/Atlas instead. [default = ${iDIO_HOME}/share]
 - **trkNum**: Specifies the desired number of streamlines to be selected when generating the tractogram [default = 10M]
       
 
@@ -240,7 +240,7 @@ T1 preprocessing: Creating brain mask, registration of T1w and Diff images. Nega
 
 **Options**
 - **-p OutputDir** The ProcPath has to include the 2_BiasCo and 3_EddyCo folder (includes the converted files). [default = pwd directory]
-- **-a AtlasDir**  The Atlas directory with MNI normalized images [default = ${HOGIO}/share/]
+- **-a AtlasDir**  The Atlas directory with MNI normalized images [default = ${iDIO_HOME}/share/]
 
 #### 5_DTIFIT.sh
 **Synopsis**
@@ -357,7 +357,7 @@ Generate the tractogram based (anatomical constrained tractography with dynamic 
 
 **Options**
 - **-p OutputDir** The OutputDir has to include the 5_CSDpreproc folder (includes the converted files). [default = pwd directory]
-- **-a AtlasDir** The Atlas directory [default = ${HOGIO}/share/]
+- **-a AtlasDir** The Atlas directory [default = ${iDIO_HOME}/share/]
 - **-n TrackNum** Select track number; [default = 10M] (Please be aware of storage apace)
 #### run_IDIOQC.py
 **synopsis**
@@ -395,7 +395,7 @@ For other purpose that may need preprocessed dwi and T1 image data, we save the 
 ```
 
 ## References
-Please cite the following articles if *OGIO* is utilized in your research publications:
+Please cite the following articles if *iDIO* is utilized in your research publications:
 
 ### ***FSL***
 1. Jenkinson, M.; Beckmann, C.F.; Behrens, T.E.; Woolrich, M.W.; Smith. S.M.; FSL. NeuroImage, 2012, 62:782-90
