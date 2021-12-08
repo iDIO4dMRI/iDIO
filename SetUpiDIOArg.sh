@@ -43,7 +43,7 @@ rsimg=0
 bzero=10
 
 # 4_T1preproc, 7_NetworkProc, 8_QC: Set input Atlas directory. [default=${HOGIO}/share]
-AtlasDir=${HOGIO}/share
+AtlasDir=${iDIO_HOME}/share
 
 # 7_NetworkProc: Set track select number. [default=10M]
 trkNum=10M

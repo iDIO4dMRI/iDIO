@@ -16,7 +16,7 @@ VDate=2021.10.20
 Usage(){
     cat <<EOF
 
-OGIO - Diffusion MRI processing  v${Version}, ${VDate}
+iDIO - integrated Diffusion Image Operator  v${Version}, ${VDate}
 
 Usage: Main -[options]
 Options:
@@ -26,7 +26,7 @@ Options:
     -h                  Help
 
 * this script will automatically assign defaults setup if no specific configuration file supplied,
-* you can edit the argumets in SetUpOGIOArg.sh
+* you can edit the argumets in SetUpiDIOArg.sh
 
 EOF
 exit 1
@@ -43,19 +43,19 @@ function echoC(){ #color #string #mainlog.txt
     tput sgr0
 }
 
-# Check if HOGIO variable exists,
-HOGIO=$(echo ${HOGIO})
-if [[ -z "${HOGIO}" ]]; then
+# Check if HiDIO variable exists,
+iDIO_HOME=$(echo ${iDIO_HOME})
+if [[ -z "${iDIO_HOME}" ]]; then
     echoC 1 ""
-    echoC 1 "Error: It seems that the HOGIO environment variable is not defined.          "
-    echoC 1 "       Run the command 'export HOGIO=/usr/local/OGIO'                        "
-    echoC 1 "       changing /usr/local/OGIO to the directory path you installed OGIO to. "
+    echoC 1 "Error: It seems that the iDIO_HOME environment variable is not defined.          "
+    echoC 1 "       Run the command 'export iDIO_HOME=/usr/local/iDIO'                        "
+    echoC 1 "       changing /usr/local/iDIO to the directory path you installed iDIO to. "
     echoC 1 ""
     exit 1
 fi
-if [[ ! -d ${HOGIO} ]]; then
+if [[ ! -d ${iDIO_HOME} ]]; then
     echoC 1 ""
-    echoC 1 "Error: ${HOGIO}"
+    echoC 1 "Error: ${iDIO_HOME}"
     echoC 1 "       does not exist. Check that this value is correct."
     echoC 1 ""
     exit 1
@@ -95,12 +95,12 @@ if [[ ! -z ${argFile} ]]; then
     else
         echoC 2 "${argFile}"
         echoC 2 "       does not exist. Loading defaults setup ..."
-        argFile=${HOGIO}/SetUpOGIOArg.sh
+        argFile=${iDIO_HOME}/SetUpiDIOArg.sh
         source ${argFile}
     fi
 else
     echoC 2 "No configuration file apply."
-    argFile=${HOGIO}/SetUpOGIOArg.sh
+    argFile=${iDIO_HOME}/SetUpiDIOArg.sh
     source ${argFile}
 fi
 
@@ -172,55 +172,55 @@ for (( i = 0; i < ${#runStep[@]}; i++ )); do
             # Step 1_DWIprep
             STARTTIME=$(date +"%s")
             echoC 2 "1_DWIprep at $(date +"%Y-%m-%d %T")" ${SubjectDir}/mainlog.txt
-            bash ${HOGIO}/1_DWIprep.sh -b $BIDSDir -p $SubjectDir ${step1Arg}| tee -a ${SubjectDir}/mainlog.txt
+            bash ${iDIO_HOME}/1_DWIprep.sh -b $BIDSDir -p $SubjectDir ${step1Arg}| tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         2 )
             # Step 2_BiasCo
             STARTTIME=$(date +"%s")
             echoC 2 "2_BiasCo at $(date +"%Y-%m-%d %T")" ${SubjectDir}/mainlog.txt
-            bash ${HOGIO}/2_BiasCo.sh -p $SubjectDir ${step2Arg} | tee -a ${SubjectDir}/mainlog.txt
+            bash ${iDIO_HOME}/2_BiasCo.sh -p $SubjectDir ${step2Arg} | tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         3 )
             # Step 3_EddyCo
             STARTTIME=$(date +"%s")
             echoC 2 "3_EddyCo at $(date +"%Y-%m-%d %T")" ${SubjectDir}/mainlog.txt
-            bash ${HOGIO}/3_EddyCo.sh -p $SubjectDir ${step3Arg} | tee -a ${SubjectDir}/mainlog.txt
+            bash ${iDIO_HOME}/3_EddyCo.sh -p $SubjectDir ${step3Arg} | tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         4 )
             # Step 4_T1preproc
             STARTTIME=$(date +"%s")
             echoC 2 "4_T1preproc at $(date +"%Y-%m-%d %T")" ${SubjectDir}/mainlog.txt
-            bash ${HOGIO}/4_T1preproc.sh -p $SubjectDir ${step4Arg} | tee -a ${SubjectDir}/mainlog.txt
+            bash ${iDIO_HOME}/4_T1preproc.sh -p $SubjectDir ${step4Arg} | tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         5)
             # Step 5_DTIFIT
             STARTTIME=$(date +"%s")
             echoC 2 "5_DTIFIT at $(date +"%Y-%m-%d %T")" ${SubjectDir}/mainlog.txt
-            bash ${HOGIO}/5_DTIFIT.sh -p $SubjectDir ${step5Arg} | tee -a ${SubjectDir}/mainlog.txt
+            bash ${iDIO_HOME}/5_DTIFIT.sh -p $SubjectDir ${step5Arg} | tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         6 )
             # Step 6_CSDpreproc
             STARTTIME=$(date +"%s")
             echoC 2 "6_CSDpreproc at $(date +"%Y-%m-%d %T")" ${SubjectDir}/mainlog.txt
-            bash ${HOGIO}/6_CSDpreproc.sh -p $SubjectDir ${step6Arg} | tee -a ${SubjectDir}/mainlog.txt
+            bash ${iDIO_HOME}/6_CSDpreproc.sh -p $SubjectDir ${step6Arg} | tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         7 )
             # Step 7_NetworkProc
             STARTTIME=$(date +"%s")
             echoC 2 "7_NetworkProc at $(date +"%Y-%m-%d %T")"  ${SubjectDir}/mainlog.txt
-            bash ${HOGIO}/7_NetworkProc.sh -p $SubjectDir ${step7Arg} | tee -a ${SubjectDir}/mainlog.txt
+            bash ${iDIO_HOME}/7_NetworkProc.sh -p $SubjectDir ${step7Arg} | tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
         8)
             STARTTIME=$(date +"%s")
             echoC 2 "8_QC at $(date +"%Y-%m-%d %T")"  ${SubjectDir}/mainlog.txt
-            python3 ${HOGIO}/python/iDIO/run_iDIOQC.py -p ${SubjectDir} ${step8Arg} | tee -a ${SubjectDir}/mainlog.txt
+            python3 ${iDIO_HOME}/python/iDIO/run_iDIOQC.py -p ${SubjectDir} ${step8Arg} | tee -a ${SubjectDir}/mainlog.txt
             CalElapsedTime $STARTTIME ${SubjectDir}/mainlog.txt
             ;;
     esac

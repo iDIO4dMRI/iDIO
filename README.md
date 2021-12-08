@@ -1,41 +1,41 @@
-# OGIO
+# iDIO
 ---
 
-OGIO is a software toolkit for processing diffusion-weighted MRI data. It integrates the functionalities of modern MRI software packages to constitute a complete data processing pipeline for structural connectivity analysis of the human brain.
+iDIO is a software toolkit for processing diffusion-weighted MRI data. It integrates the functionalities of modern MRI software packages to constitute a complete data processing pipeline for structural connectivity analysis of the human brain.
 
 
 ## Installation Guide
 ---
 
-OGIO can be run in Linux and macOS environment (Most recommend: Linux) . Its major functionalities come from ***Mrtrix3***,  ***FSL***,  ***ANTS***, and therefore these software tools and their relevant dependencies need to be installed before using OGIO. Please check the links below for the installation of them:
+iDIO can be run in Linux and macOS environment (Most recommend: Linux) . Its major functionalities come from ***Mrtrix3***,  ***FSL***,  ***ANTS***, *** PreQual*** and therefore these software tools and their relevant dependencies need to be installed before using iDIO. Please check the links below for the installation of them: 
 
 * *FSL v6.0.3*: <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki>
 * *MRtrix3*: <https://www.mrtrix.org/>
 * *ANTS v2*: <http://stnava.github.io/ANTs/>
+*  *PreQual v7*: <https://github.com/MASILab/PreQual>
 
 
-Currently, OGIO also relies on ***Python3*** to perform (1) bias correction in DWI data (namely DWI signal drifting), and (2) scaling the connectivity matrix with mu.  Requires a few Python3 library: including argparse(1.4.0), numpy(1.18.1), pandas(0.24.2), scipy(1.2.1), nibabel(3.2.0), scikit-image(0.18.1) and matplotlib(3.0.3), you may install those library with pip
+Currently, iDIO also relies on ***Python3*** to perform (1) bias correction in DWI data (namely DWI signal drifting), (2) scaling the connectivity matrix with mu and (3).  Requires a few Python3 library: including argparse(1.4.0), numpy(1.18.1), pandas(0.24.2), scipy(1.2.1), nibabel(3.2.0), scikit-image(0.18.1) and matplotlib(3.0.3), you may install those library with pip
 
 you can install those library with:
 ```
-$ pip install argparse numpy pandas scipy nibabel scikit-image matplotlib
+$ pip install argparse numpy pandas nibabel scikit-image matplotlib
 ```
 
 ### Setting
-before started, it is necessary to export the home directory of OGIO as HOGIO.
+before started, it is necessary to export the home directory of iDIO as iDIO_HOME. 
+```	
+$ export iDIO_HOME = iDIO pipeline location
 ```
-$ export HOGIO = OGIO pipeline location
-```
-
 
 
 ---
 ## Complete Tutorial
 
 ### Data preparing
-The OGIO pipeline require DWI data and T1 data to be stored in Brain Imaging Data Structure (BIDS) format. JSON file for each sequence is necessary for OGIO preprocess.
+The iDIO pipeline require DWI data and T1 data to be stored in Brain Imaging Data Structure (BIDS) format, where the modality is indicated in the suffix of each image file. JSON file for each sequence is necessary for iDIO preprocess. iDIO also support DWIs with only one phase encoding. 
 
-an example is as follows:
+an example is as follows: 
 
 ```          
 sub-001
@@ -53,39 +53,43 @@ sub-001
 	 └── sub-001_acq-multibandPA_dwi.nii.gz
 ```
 
-### Step 0: SetUpOGIOArg.sh and run Main.sh
+### One-click solution: run Main.sh with argument file (SetUpOGIOArg.sh)
 **Synopsis**
-Performing the OGIO pipeline with predefined options. Run the Main.sh and  done all the process!
+Performing the iDIO pipeline with predefined options.  
 
 **Usage**
-> sh Main.sh -bids InputDir -proc OutputDir -arg configurefile
+> sh Main.sh -bids *InputDir* -proc *OutputDir* -arg *SetUpiDIOArg.sh*
 
-- -bids* InputDir*: datapath that including two directories - anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwi.bval, dwi.bvec, dwi.json) (As shown in the **Data preparing** section above )
-- -proc *OutputDir* Provide a output path for saving the output processed data
-- -arg  *configurefile* configuration file
+- **-bids InputDir**: Data path that including two directories - anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwiPHASE.bval, dwiPHASE.bvec, dwiPHASE.json) (As shown in the ** Data preparing** section above )
+- **-proc OutputDir**: Provide a output path for saving the output processed data
+- **-arg SetUpiDIOArg.sh**: Provide a script that include all needed predefined options. (For more details, please see **Options** below)
 
 **Options**
-All options need to be predefined are list in the ** SetUpOGIOArg.sh** file. OGIO pipeline include six steps in the following order, (1) data preprocessing, (2) bias correction, (3) eddy correction, (4) diffusion tensor fitting, (5) constrained spherical deconvolution, (6) network construction.
-- **Step**: Set the wanted processing steps to perform [default=1.2.3.4.5.6.7.]
-- **cuda**: If the processing server has discrete GPU and support cuda >9.1, cuda version of eddy could be applied to speed up the processing procedure [default=0] (True = 1/ False = 0)
-- **stv**: If cuda version of eddy is applied, the function also support to perform the slice-to-volume correction [default=0] (True = 1/ False = 0)
-- **rsimg**: resize the dwi image into isotropic voxels with given size value. DWI image will be resized after eddy correction. rsimg = 0 will skip the resize steps.  [default=0]
-- **bzero**: Values to determine the null image with certain b-value threshold [defult = 10]
-- **AtlasDir**: Default needed files were save in ${HOGIO}/share with several folders. We recommend not to change this path, but save Atlas you need in ${HOGIO}/share/Atlas instead. [default = ${HOGIO}/share]
-- **trkNum**: Set the desired number of streamlines to be selected when generating the tractogram [default = 10M].
+All options need to be predefined are list in the ** SetUpiDIOArg.sh** file. iDIO pipeline include eight steps in the following order, (1) data preprocessing, (2) bias correction, (3) eddy correction, (4) T1 preprocessing,  (5) diffusion tensor fitting, (6) constrained spherical deconvolution processing, (7)network construction and (8)quality control
+- **Step**: Set the wanted processing steps to perform [default=1.2.3.4.5.6.7.8]
+- **first/second**: If the series number is not recorded in the JSON file, please provide the filename by the scan order [default=None]
+- **cuda** : A boolean value to indicate whether to run the CUDA version of eddy to speed up the processing procedure. iDIO will automatically selected the supported cuda version (8.0/9.1/10.2) if the processing server has discrete GPU installed with CUDA. [default=0]
+- **stv**: A boolean value to indicate whether to perform the slice-to-volume correction. Slice-to-volume correction only implemented for CUDA version. [default=0]
+- **rsimg**: Specifies the isotropic voxel size (mm) of DWIs, which will be apply  before step (5) diffusion tensor fitting and step (6) constrained spherical deconvolution. [default=0 (no resize)]
+- **bzero**: Specifies the values to determine the null image with certain b-value threshold [default = 10]
+- **AtlasDir**: Default needed files were save in ${iDIO_HOME}/share with several folders, we recommend not to change this path, but save Atlas you need  in ${iDIO_HOME}/share/Atlas instead. [default = ${iDIO_HOME}/share]
+- **trkNum**: Specifies the desired number of streamlines to be selected when generating the tractogram [default = 10M]
+      
 
-Details for each step are shown as follows:
-### Step 0: CheckData.sh
-**Synopsis**    
-Initially check the data configuration
+### Details of each steps
+#### Step 0: CheckData.sh
 
-**Usage**
-> sh 0_CheckData.sh -b BIDSDir
+****Synopsis**** 
 
+This is not embeded in the main script. This script aims to Initially check the data accessibility with proper reverse phase diffusion images in matched folder.
 
+****Usage****
+> sh 0_CheckData.sh -b *BIDSDir*
 
-### Step 1: 1_DWIprep.sh
-**Synopsis**    
+- **-b InputDir** datapath that including two directory- anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwi.bval, dwi.bvec, dwi.json)
+
+#### Step 1: 1_DWIprep.sh
+**Synopsis**
 DWI data preparation (identify phase encoding of DWI image and generate needed description files in 0_BIDS_NIFTI and 1_DWIprep folders)
 
 ```      
@@ -108,19 +112,20 @@ DWI data preparation (identify phase encoding of DWI image and generate needed d
 	 │   └── MBF.txt
 ```
 **Usage**
-> sh 1_DWIprep.sh -b InputDir -p OutputDir [ options ]
+> sh 1_DWIprep.sh -b *InputDir* -p *OutputDir* [ options ]
 
-- -b *InputDir* datapath that including two directory- anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwi.bval, dwi.bvec, dwi.json)
-- -p *OutputDir* Provide a output path for saving the output processed data
+- **-b InputDir** datapath that including two directory- anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwiPHASE.bval, dwiPHASE.bvec, dwiPHASE.json)
+- **-p OutputDir** Provide a output path for saving the output processed data 
 
 **Options**
-- **-first  *1st_Filename* filename of the former acquired diffusion data, no need to specifty the filename extension (i.e. dwi1) 
-- **-second *2nd Filename* filename of the latter acquired diffusion data, no need to specifty the filename extension (i.e. dwi1) 
-**Reference**
+- **-first 1stFilename** filename of the former acquired diffusion data, no need to specifty the filename extension (i.e. dwi1) 
+- **-second 2ndFilename** filename of the latter acquired diffusion data, no need to specifty the filename extension (i.e. dwi2)
 
-### 2_BiasCo.sh
+**Reference**
+	
+#### 2_BiasCo.sh
 **Synopsis**
-implement the 4D signal denoise, gibbs ringing correction, and drifting correction
+implement the 4D signal denoise, gibbs ringing correction, and drifting correction 
 
 **Usage**
 > sh 2_BiasCo.sh  [ options ]
@@ -129,19 +134,22 @@ implement the 4D signal denoise, gibbs ringing correction, and drifting correcti
 └── OutputDir
        ├── 2_BiasCo
 	   │   ├── Drifting_Correction_B0only.png
-   	   │   ├── Drifting_Correction_allData.png
-   	   │   ├── dwi_APPA-denoise-deGibbs-DriftCo.nii.gz
+	   │   ├── Drifting_Correction_allData.png
+	   │   ├── Drifting_val.csv
+	   │   ├── Res.nii.gz
+   	   │   ├── dwi_AP-denoise.nii.gz
+	   │   ├── dwi_AP-noise.nii.gz
+	   │   ├── dwi_APPA-denoise-deGibbs-DriftCo.nii.gz
 	   │   ├── dwi_APPA-denoise-deGibbs.nii.gz
 	   │   ├── dwi_APPA.bval
-	   │   ├── dwi_APPA.bvec
+       │   ├── dwi_APPA.bvec
 	   │   └── dwi_APPA.nii.gz
 ```
 
 **Options**
-- **-p OutputDir** The OutputDir has to include the 1_DWIprep folder (includes the converted files) [default = pwd directory]
-- **-t B0thr** Input Bzero threshold; [default = 10];
+- **-p OutputDir** the OutputDir has to include the 1_DWIprep folder (includes the converted files) [default = pwd directory]
 
-### 3_EddyCo.sh
+#### 3_EddyCo.sh
 **Synopsis**
 implement the distortion and eddy correction. Preprocessed_data folder will be generated when 3_Eddyco is finished
 ```
@@ -158,10 +166,12 @@ implement the distortion and eddy correction. Preprocessed_data folder will be g
 	 │   ├── Mean_Unwarped_Images_Brain_mask.nii.gz
 	 │   ├── Topup_Output_fieldcoef.nii.gz
 	 │   ├── Topup_Output_movpar.txt
-	 │   ├── Unwarped_Images.nii.gz
+	 │   ├── Unwarped_Images.nii.gz	      
+	 │   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo-BiasField.nii.gz
 	 │   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo-unbiased.nii.gz
 	 │   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.bval
-	 │   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.bvec
+	 │   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.bvec	      
+	 │   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_cnr_maps.nii.gz
 	 │   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_command_txt
 	 │   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_movement_rms
 	 │   ├── dwi_APPA-denoise-deGibbs-DriftCo-EddyCo.eddy_outlier_map
@@ -189,14 +199,14 @@ implement the distortion and eddy correction. Preprocessed_data folder will be g
 **Usage**
 > sh 3_eddyCo.sh [ options ]
 
-**Options**
-- **-p OutputDir** the OutputDir has to include the 1_DWIprep and 2_BiasCo folder (includes the converted files). [default = pwd directory]
-- **-c** using CUDA to accelerate the correction process. Both CUDA v9.1 and v8.0 is available. [default = none]
-- **-m** with -c, -m is applicable for slice-to-volume motion correction. [default = none]
-- **-r size**  Resize dwi image to input value isotropic size [default = 2mm isotropic voxel, 0 = do not resize].
-- **-t B0thr** Input Bzero threshold; [default = 10];
+**Options**      
+- **-p OutputDir** The OutputDir has to include the 1_DWIprep and 2_BiasCo folder (includes the converted files). [default = pwd directory]
+- **-c Boolean** Usng CUDA to accelerate the correction process. Both CUDA v8.0, v9.1 and v10.2 are available. [default = 0]
+- **-m Boolean** with -c, -m is applicable for slice-to-volume motion correction. [default = 0]
+- **-r size(mm)** Resize dwi image to isotropic voxel with input value size [default =0 (do not resize)].
+- **-t B0thr**  Bzero threshold; [default = 10];
 
-### 4_T1preproc.sh
+#### 4_T1preproc.sh
 **Synopsis**
 T1 preprocessing: Creating brain mask, registration of T1w and Diff images. Negative values on preprocessed image wil be reported
 ```
@@ -229,10 +239,10 @@ T1 preprocessing: Creating brain mask, registration of T1w and Diff images. Nega
 > sh 4_T1preproc.sh [ options ]
 
 **Options**
-- **-p OutputDir** the ProcPath has to include the 2_BiasCo and 3_EddyCo folder (includes the converted files). [default = pwd directory]
-- **-a AtlasDir**  the Atlas directory with MNI normalized images [default = ${HOGIO}/share/]
+- **-p OutputDir** The ProcPath has to include the 2_BiasCo and 3_EddyCo folder (includes the converted files). [default = pwd directory]
+- **-a AtlasDir**  The Atlas directory with MNI normalized images [default = ${iDIO_HOME}/share/]
 
-### 5_DTIFIT.sh
+#### 5_DTIFIT.sh
 **Synopsis**
 Diffusion tensor estimation. Only low-b (b<1500 s/mm^2) images were used for further fitting.
 ```
@@ -244,7 +254,8 @@ Diffusion tensor estimation. Only low-b (b<1500 s/mm^2) images were used for fur
     │   ├── Process-preproc-lowb-data.nii.gz
     │   ├── Process-preproc.bval
     │   ├── Process-preproc.bvec
-    │   ├── Process-preproc.nii.gz
+    │   ├── Process-preproc.nii.gz      
+	│   ├── POST_OPT_DEC.nii.gz
     │   ├── Process_FA.nii.gz
     │   ├── Process_L1.nii.gz
     │   ├── Process_L2.nii.gz
@@ -255,17 +266,18 @@ Diffusion tensor estimation. Only low-b (b<1500 s/mm^2) images were used for fur
     │   ├── Process_S0.nii.gz
     │   ├── Process_V1.nii.gz
     │   ├── Process_V2.nii.gz
-    │   ├── Process_V3.nii.gz
+    │   ├── Process_V3.nii.gz      
+	│   ├── POST_OPT_sse.nii.gz	
     │   └── T1w_mask_inDWIspace.nii.gz
 ```
 **Usage**
 > sh 5_DTIFIT.sh [ options ]
 
 **Options**
-- **-p OutputDir** the ProcPath has to include the 2_BiasCo and 3_EddyCo folder (includes the converted files). [default = pwd directory]
-- **-t B0thr** Input Bzero threshold; [default = 10];
+- **-p OutputDir** The ProcPath has to include the 2_BiasCo and 3_EddyCo folder (includes the converted files). [default = pwd directory]
+- **-t B0thr**  Bzero threshold; [default = 10];
 
-### 6_CSDpreproc.sh
+#### 6_CSDpreproc.sh
 **Synopsis**
 DWI preprocessing of constrained spherical deconvolution with Dhollanders algorithms
 ```
@@ -291,10 +303,10 @@ DWI preprocessing of constrained spherical deconvolution with Dhollanders algori
 > sh 6_CSDpreproc.sh [ options ]
 
 **Options**
-- **-p OutputDir** the OutputDir has to include the 3_EddyCo and 4_DTIFIT folder (includes the converted files). [default = pwd directory]
-- **-t B0thr** Input Bzero threshold; [default = 10];
+- **-p OutputDir** The OutputDir has to include the 3_EddyCo and 4_DTIFIT folder (includes the converted files). [default = pwd directory]
+- **-t B0thr** Bzero threshold. [default = 10];
 
-### 7_NetworkProc.sh
+#### 7_NetworkProc.sh
 **Synopsis**
 Generate the tractogram based (anatomical constrained tractography with dynamic seeding and SIFT). Connectivity matrix with different scaled (SIFT2 weights, SIFT2 with mu and length) will be generated with four atlases (AAL3, HCPMMP w/o Subcortical regions(HCPex), and Yeo400) and save in Connectivity_Matrix folder. A
 ```
@@ -344,11 +356,28 @@ Generate the tractogram based (anatomical constrained tractography with dynamic 
 > sh 7_NetworkProc.sh [ options ]
 
 **Options**
-- **-p OutputDir** the OutputDir has to include the 5_CSDpreproc folder (includes the converted files). [default = pwd directory]
-- **-a AtlasDir** the Atlas directory [default = ${HOGIO}/share/]
+- **-p OutputDir** The OutputDir has to include the 5_CSDpreproc folder (includes the converted files). [default = pwd directory]
+- **-a AtlasDir** The Atlas directory [default = ${iDIO_HOME}/share/]
 - **-n TrackNum** Select track number; [default = 10M] (Please be aware of storage apace)
+#### run_IDIOQC.py
+**synopsis**
+Implement the quality control process and generate a report for iDIO diffusion preprocessing pipeline with pre-/post- processing comparison and related statistic values in a csv file. 
+```
+└── OutputDir       
+	├── 8_QC
+	│   ├── N0001_POST_OPT_QC.pdf
+	│   └── stats.csv
 
-###  Preprocessed_data and mainlog.txt
+```
+
+> python run_IDIOQC.py -p OutputDIr -a AtlasDir -t B0thr
+
+- **-p OutputDIr** Path of the iDIO PreprocDir (at least with directories from step 1 to 4)
+- ** -a AtlasDir** Path of the Template directory (include /MNI/QC/JHU-ICBM-FA-1mm.nii.gz and /MNI/QC/JHU-ICBM-labels-1mm.nii.gz)
+- **-t B0thr** Bzero threshold. [default = 10]
+
+
+####  Preprocessed_data and mainlog.txt
 For other purpose that may need preprocessed dwi and T1 image data, we save the preporcessed data in the Preprocessed_data folder. a log file with all options and information with processing time were save in the mainlog.txt in the main output dir.
 ```
 └── OutputDir         
@@ -366,7 +395,7 @@ For other purpose that may need preprocessed dwi and T1 image data, we save the 
 ```
 
 ## References
-Please cite the following articles if *OGIO* is utilized in your research publications:
+Please cite the following articles if *iDIO* is utilized in your research publications:
 
 ### ***FSL***
 1. Jenkinson, M.; Beckmann, C.F.; Behrens, T.E.; Woolrich, M.W.; Smith. S.M.; FSL. NeuroImage, 2012, 62:782-90
