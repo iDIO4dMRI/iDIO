@@ -212,6 +212,7 @@ implement the distortion and eddy correction. Preprocessed_data folder will be g
 #### 4_T1preproc.sh
 **Synopsis**
 T1 preprocessing: Creating brain mask, registration of T1w and Diff images. Negative values on preprocessed image wil be reported
+（ Negative values in preprocessed T1 image, which could be generated during the Gibbs ring removal step, will be replaced with zeros to prevent errors in other T1 processing. ）
 ```
 └── OutputDir     
     ├── 4_T1preproc
@@ -312,6 +313,8 @@ DWI preprocessing of constrained spherical deconvolution with Dhollanders algori
 #### 7_NetworkProc.sh
 **Synopsis**
 Generate the tractogram based (anatomical constrained tractography with dynamic seeding and SIFT). Connectivity matrix with different scaled (SIFT2 weights, SIFT2 with mu and length) will be generated with four atlases (AAL3, HCPMMP w/o Subcortical regions(HCPex), and Yeo400) and save in Connectivity_Matrix folder. A
+
+, cropping the streamline endpoints at GM-WM interface and enabling the ‘backtracking’ mechanism. Minimal and maximal streamline length was set as 5 and 250, respectively, and other options remain default (see tckgen command for the details).
 ```
 └── OutputDir  
     ├── 7_NetworkProc
