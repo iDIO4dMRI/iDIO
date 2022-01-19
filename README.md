@@ -7,7 +7,7 @@ iDIO is a software toolkit for processing diffusion-weighted MRI data. It integr
 ## Installation Guide
 ---
 
-iDIO can be run in Linux and macOS environment (Most recommend: Linux) . Its major functionalities come from ***Mrtrix3***,  ***FSL***,  ***ANTS***, and *** PreQual*** . Details for each software tools can be found in the links below: 
+iDIO can be run in Linux and macOS environment (Most recommend: Linux) . Its major functionalities come from ***Mrtrix3***,  ***FSL***,  ***ANTS***, and ***PreQual*** . Details for each software tools can be found in the links below: 
 
 * [*FSL v6.0.3*](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki)
 * [*MRtrix3*](https://www.mrtrix.org/)
