@@ -144,18 +144,18 @@ implement the 4D signal denoise, gibbs ringing correction, and drifting correcti
 
 ```      
 └── OutputDir
-		 ├── 2_BiasCo
-	   │   ├── Drifting_Correction_B0only.png
-	   │   ├── Drifting_Correction_allData.png
-	   │   ├── Drifting_val.csv
-	   │   ├── Res.nii.gz
-     │   ├── dwi_AP-denoise.nii.gz
-	   │   ├── dwi_AP-noise.nii.gz
-	   │   ├── dwi_APPA-denoise-deGibbs-DriftCo.nii.gz
-	   │   ├── dwi_APPA-denoise-deGibbs.nii.gz
-	   │   ├── dwi_APPA.bval
-     │   ├── dwi_APPA.bvec
-	   │   └── dwi_APPA.nii.gz
+         ├── 2_BiasCo
+	 │   ├── Drifting_Correction_B0only.png
+	 │   ├── Drifting_Correction_allData.png
+	 │   ├── Drifting_val.csv
+	 │   ├── Res.nii.gz
+     	 │   ├── dwi_AP-denoise.nii.gz
+	 │   ├── dwi_AP-noise.nii.gz
+	 │   ├── dwi_APPA-denoise-deGibbs-DriftCo.nii.gz
+	 │   ├── dwi_APPA-denoise-deGibbs.nii.gz
+	 │   ├── dwi_APPA.bval
+         │   ├── dwi_APPA.bvec
+	 │   └── dwi_APPA.nii.gz
 ```
 
 **Options**
@@ -262,28 +262,28 @@ T1 preprocessing: Creating brain mask, registration of T1w and Diff images. Nega
 Diffusion tensor estimation. Only low-b (b<1500 s/mm^2) images were used for further fitting.
 ```
 └── OutputDir     
-    ├── 5_DTIFIT
-    │   ├── Average_b0.nii.gz
-    │   ├── Process-preproc-lowb-data.bval
-    │   ├── Process-preproc-lowb-data.bvec
-    │   ├── Process-preproc-lowb-data.nii.gz
-    │   ├── Process-preproc.bval
-    │   ├── Process-preproc.bvec
-    │   ├── Process-preproc.nii.gz      
-	  │   ├── POST_OPT_DEC.nii.gz
-    │   ├── Process_FA.nii.gz
-    │   ├── Process_L1.nii.gz
-    │   ├── Process_L2.nii.gz
-    │   ├── Process_L3.nii.gz
-    │   ├── Process_MD.nii.gz
-    │   ├── Process_MO.nii.gz
-    │   ├── Process_RD.nii.gz
-    │   ├── Process_S0.nii.gz
-    │   ├── Process_V1.nii.gz
-    │   ├── Process_V2.nii.gz
-    │   ├── Process_V3.nii.gz      
-	  │   ├── POST_OPT_sse.nii.gz	
-    │   └── T1w_mask_inDWIspace.nii.gz
+         ├── 5_DTIFIT
+         │   ├── Average_b0.nii.gz
+         │   ├── Process-preproc-lowb-data.bval
+         │   ├── Process-preproc-lowb-data.bvec
+         │   ├── Process-preproc-lowb-data.nii.gz
+         │   ├── Process-preproc.bval
+         │   ├── Process-preproc.bvec
+         │   ├── Process-preproc.nii.gz      
+	 │   ├── POST_OPT_DEC.nii.gz
+         │   ├── Process_FA.nii.gz
+         │   ├── Process_L1.nii.gz
+         │   ├── Process_L2.nii.gz
+         │   ├── Process_L3.nii.gz
+         │   ├── Process_MD.nii.gz
+         │   ├── Process_MO.nii.gz
+         │   ├── Process_RD.nii.gz
+         │   ├── Process_S0.nii.gz
+         │   ├── Process_V1.nii.gz
+         │   ├── Process_V2.nii.gz
+         │   ├── Process_V3.nii.gz      
+	 │   ├── POST_OPT_sse.nii.gz	
+         │   └── T1w_mask_inDWIspace.nii.gz
 ```
 **Usage**
 > bash 5_DTIFIT.sh [ options ]
@@ -386,11 +386,12 @@ Implement the quality control process and generate a report for iDIO diffusion p
 	│   └── stats.csv
 
 ```
-
+**Usage**
 > python run_IDIOQC.py -p OutputDIr -a AtlasDir -t B0thr
 
+**Options**
 - **-p OutputDIr** Path of the iDIO PreprocDir (at least with directories from step 1 to 4)
-- ** -a AtlasDir** Path of the Template directory (include /MNI/QC/JHU-ICBM-FA-1mm.nii.gz and /MNI/QC/JHU-ICBM-labels-1mm.nii.gz)
+- **-a AtlasDir** Path of the Template directory (include /MNI/QC/JHU-ICBM-FA-1mm.nii.gz and /MNI/QC/JHU-ICBM-labels-1mm.nii.gz)
 - **-t B0thr** Bzero threshold. [default = 10]
 
 
