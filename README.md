@@ -57,7 +57,7 @@ sub-001
 Performing the iDIO pipeline with predefined options.  
 
 **Usage**
-> sh Main.sh -bids *InputDir* -proc *OutputDir* -arg *SetUpiDIOArg.sh*
+> bash Main.sh -bids *InputDir* -proc *OutputDir* -arg *SetUpiDIOArg.sh*
 
 - **-bids InputDir**: Data path that including two directories - anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwiPHASE.bval, dwiPHASE.bvec, dwiPHASE.json) (As shown in the ** Data preparing** section above. Note: **T1w** and **dwi** are case sensitive)
 - **-proc OutputDir**: Provide a output path for saving the output processed data
@@ -95,7 +95,7 @@ This is not embeded in the main script. This script aims to Initially check the 
 
 **Usage**
 
-> sh 0_CheckData.sh -b *BIDSDir*
+> bash 0_CheckData.sh -b *BIDSDir*
 
 - **-b InputDir** datapath that including two directory- anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwi.bval, dwi.bvec, dwi.json)
 
@@ -123,7 +123,7 @@ DWI data preparation (identify phase encoding of DWI image and generate needed d
 	 │   └── MBF.txt
 ```
 **Usage**
-> sh 1_DWIprep.sh -b *InputDir* -p *OutputDir* [ options ]
+> bash 1_DWIprep.sh -b *InputDir* -p *OutputDir* [ options ]
 
 - **-b InputDir** datapath that including two directory- anat (T1w.nii.gz/T1w.json) and dwi (dwiPHASE.nii.gz, dwiPHASE.bval, dwiPHASE.bvec, dwiPHASE.json) *Note: T1w and dwi are case sensitive.*
 - **-p OutputDir** Provide a output path for saving the output processed data 
@@ -140,7 +140,7 @@ DWI data preparation (identify phase encoding of DWI image and generate needed d
 implement the 4D signal denoise, gibbs ringing correction, and drifting correction 
 
 **Usage**
-> sh 2_BiasCo.sh  [ options ]
+> bash 2_BiasCo.sh  [ options ]
 
 ```      
 └── OutputDir
@@ -209,7 +209,7 @@ implement the distortion and eddy correction. Preprocessed_data folder will be g
 	 │   └── second_B0.nii.gz
 ```
 **Usage**
-> sh 3_eddyCo.sh [ options ]
+> bash 3_eddyCo.sh [ options ]
 
 **Options**      
 
@@ -251,7 +251,7 @@ T1 preprocessing: Creating brain mask, registration of T1w and Diff images. Nega
     │   └── WMseg.nii.gz
 ```
 **Usage**
-> sh 4_T1preproc.sh [ options ]
+> bash 4_T1preproc.sh [ options ]
 
 **Options**
 - **-p OutputDir** The ProcPath has to include the 2_BiasCo and 3_EddyCo folder (includes the converted files). [default = pwd directory]
@@ -286,7 +286,7 @@ Diffusion tensor estimation. Only low-b (b<1500 s/mm^2) images were used for fur
     │   └── T1w_mask_inDWIspace.nii.gz
 ```
 **Usage**
-> sh 5_DTIFIT.sh [ options ]
+> bash 5_DTIFIT.sh [ options ]
 
 **Options**
 - **-p OutputDir** The ProcPath has to include the 2_BiasCo and 3_EddyCo folder (includes the converted files). [default = pwd directory]
@@ -315,7 +315,7 @@ DWI preprocessing of constrained spherical deconvolution with Dhollanders algori
     │   └── dwi_preprocessed.nii.gz
 ```
 **Usage**
-> sh 6_CSDpreproc.sh [ options ]
+> bash 6_CSDpreproc.sh [ options ]
 
 **Options**
 - **-p OutputDir** The OutputDir has to include the 3_EddyCo and 4_DTIFIT folder (includes the converted files). [default = pwd directory]
@@ -370,7 +370,7 @@ Generate the tractogram based (anatomical constrained tractography with dynamic 
     │       └── Yeo400_ScaleMu.csv
 ```
 **Usage**
-> sh 7_NetworkProc.sh [ options ]
+> bash 7_NetworkProc.sh [ options ]
 
 **Options**
 - **-p OutputDir** The OutputDir has to include the 5_CSDpreproc folder (includes the converted files). [default = pwd directory]
