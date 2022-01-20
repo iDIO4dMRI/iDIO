@@ -39,7 +39,7 @@ if [ "${BIDSDir}" == "" ]; then
 fi
 
 cd ${BIDSDir}
-BIDSDir=${pwd}
+BIDSDir=$(pwd)
 
 mkdir -p ${BIDSDir}/tmp
 cd ${BIDSDir}/tmp
