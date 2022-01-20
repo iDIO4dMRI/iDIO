@@ -17,7 +17,7 @@ Usage() {
 
     0_CheckData - Initial checking the data compatibility
 
-    Usage: 1_DWIprep -b <BIDSDir> 
+    Usage: 0_CheckData -b <BIDSDir> 
 
 EOF
     exit
@@ -37,6 +37,9 @@ done
 if [ "${BIDSDir}" == "" ]; then
     Usage
 fi
+
+cd ${BIDSDir}
+BIDSDir=$(pwd)
 
 mkdir -p ${BIDSDir}/tmp
 cd ${BIDSDir}/tmp

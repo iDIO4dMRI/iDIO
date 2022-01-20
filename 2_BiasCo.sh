@@ -196,7 +196,7 @@ B0index=$(mrinfo ${File_degibbs}.nii.gz -fslgrad ${File_bvec} ${File_bval} -shel
 #B0num > 3 -> do drift correction
 if [[ "${B0num}" -gt "3"  ]]; then
 	echo "Calling python script for Drifting Correction"
-	python3 ${HOGIO}/python/driftco.py ${OriDir}/2_BiasCo/${File_degibbs}.nii.gz ${B0index} ${OriDir}/2_BiasCo/${File_degibbs}-DriftCo.nii.gz
+	python3 ${iDIO_HOME}/python/driftco.py ${OriDir}/2_BiasCo/${File_degibbs}.nii.gz ${B0index} ${OriDir}/2_BiasCo/${File_degibbs}-DriftCo.nii.gz
 else
 	echo "Not enough number of b0 (null scans), drifting correction skipped"
 fi
