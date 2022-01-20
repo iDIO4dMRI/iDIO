@@ -58,13 +58,13 @@ if [ "${PreprocDir}" == "" ] || [ "${BIDSDir}" == "" ]; then
     Usage
 fi
 
-OrigDir=${pwd}
+OrigDir=$(pwd)
 cd ${OrigDir}
 cd ${BIDSDir}
-BIDSDir=${pwd}
+BIDSDir=$(pwd)
 cd ${OrigDir}
 cd ${PreprocDir}
-PreprocDir=${pwd}
+PreprocDir=$(pwd)
 
 mkdir -p ${PreprocDir}/0_BIDS_NIFTI
 cd ${PreprocDir}/0_BIDS_NIFTI
