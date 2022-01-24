@@ -168,5 +168,5 @@ done
 
 for i in *; do
     AtName=$(echo ${i}|cut -f1 -d'_')
-    python3 ${HOGIO}/python/scale_mu.py ${OriDir}/Connectivity_Matrix/Mat_SIFT2Wei/${AtName}_SIFT2.csv ${OriDir}/7_NetworkProc/SIFT_mu.txt ${OriDir}/Connectivity_Matrix/Mat_ScaleMu/${AtName}_ScaleMu.csv
+    python3 ${iDIO_HOME}/python/scale_mu.py ${OriDir}/Connectivity_Matrix/Mat_SIFT2Wei/${AtName}_SIFT2.csv ${OriDir}/7_NetworkProc/SIFT_mu.txt ${OriDir}/Connectivity_Matrix/Mat_ScaleMu/${AtName}_ScaleMu.csv
 done
