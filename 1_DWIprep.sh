@@ -94,18 +94,41 @@ if [ "${FirstScan}" != "" ] && [ "${SecondScan}" != "" ]; then
 fi
 
 # check filenames
-rename -f 's/t1/T1/g' *t1*
 for T1_file in *T1*.nii.gz; do
-	[ ! -f "${T1_file}" ] || mv -f ${T1_file} T1w.nii.gz
+	[ ! -f "${T1_file}" ] || mv ${T1_file} T1w.nii.gz
 done
 
 for T1_file in *T1*.json; do
-	[ ! -f "${T1_file}" ] || mv -f ${T1_file} T1w.json
+	[ ! -f "${T1_file}" ] || mv ${T1_file} T1w.json
 done
 
-rename -f 's/DWI/dwi/g' *DWI*
-rename -f 's/b0/dwi_b0/g' *b0*
-rename -f 's/dwi_dwi/dwi/g' *dwi_dwi*
+for T1_file in *t1*.nii.gz; do
+	[ ! -f "${T1_file}" ] || mv ${T1_file} T1w.nii.gz
+done
+
+for T1_file in *t1*.json; do
+	[ ! -f "${T1_file}" ] || mv ${T1_file} T1w.json
+done
+
+for DWI_file in *DWI*; do
+	nname=$(echo ${DWI_file} | sed 's/DWI/dwi/g')
+	[ ! -f "${DWI_file}" ] || mv ${DWI_file} $nname
+done
+
+for b0_file in *b0*; do
+	nname=$(echo ${b0_file} | sed 's/b0/dwi_b0/g')
+	[ ! -f "${b0_file}" ] || mv ${b0_file} $nname
+done
+
+bvals_tmp=$(ls -f *.bvals 2>>error.log) 
+for bvals_file in ${bvals_tmp}; do
+	mv ${bvals_file} ${bvals_file:0:${#bvals_file}-1}
+done
+
+bvecs_tmp=$(ls -f *.bvecs 2>>error.log)
+for bvecs_file in ${bvecs_tmp}; do
+	mv ${bvecs_file} ${bvecs_file:0:${#bvecs_file}-1}
+done
 
 # check fieldmap
 n_b0=$(ls *b0*.nii.gz | wc -l)
