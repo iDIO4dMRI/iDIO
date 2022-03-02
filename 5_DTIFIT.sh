@@ -203,7 +203,7 @@ echo 0 >> b0
 paste -d ' ' b0 ${subjid}-preproc-lowb-only-data.bvec > ${subjid}-preproc-lowb-data.bvec
 
 
-dtifit -k ${subjid}-preproc-lowb-data.nii.gz -o ${subjid} -m T1w_mask_inDWIspace.nii.gz -r ${subjid}-preproc-lowb-data.bvec -b ${subjid}-preproc-lowb-data.bval --sse 
+dtifit -k ${subjid}-preproc-lowb-data.nii.gz -o ${subjid} -m T1w_mask_inDWIspace.nii.gz -r ${subjid}-preproc-lowb-data.bvec -b ${subjid}-preproc-lowb-data.bval --sse -w
 
 fslmaths ${subjid}_L2.nii.gz -add ${subjid}_L3 ${subjid}_RD_tmp.nii.gz
 fslmaths ${subjid}_RD_tmp.nii.gz -div 2 ${subjid}_RD.nii.gz
