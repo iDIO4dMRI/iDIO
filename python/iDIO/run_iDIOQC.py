@@ -181,7 +181,12 @@ def iDIO_QC(subj_dir, template_dir, Bzerothr):
     preproc_vis_file = iDIOvis.vis_preproc_mask(dwi_files, bvecs_files, bvals_files, dwi_preproc_file, bvals_preproc_shelled, eddy_mask_file, mask_file, percent_improbable, BPV_mask_file, pe_axis, pe_dirs, out_dir, Bzerothr)
 
     # P.8 Bias field correction
-    if os.path.exists(glob.glob(subj_dir + '/3_EddyCo/*-EddyCo.nii.gz')[0]) and os.path.exists(glob.glob(subj_dir + '/3_EddyCo/*-EddyCo-unbiased.nii.gz')[0]) and os.path.exists(glob.glob(subj_dir + '/3_EddyCo/*BiasField.nii.gz')[0]):
+    if os.path.exists(glob.glob(subj_dir + '/3_EddyCo/*zeropad-EddyCo.nii.gz')[0]) and os.path.exists(glob.glob(subj_dir + '/3_EddyCo/*zeropad-EddyCo-unbiased.nii.gz')[0]) and os.path.exists(glob.glob(subj_dir + '/3_EddyCo/*BiasField.nii.gz')[0]):
+        wobias_file = glob.glob(subj_dir + '/3_EddyCo/*zeropad-EddyCo.nii.gz')[0]
+        unbiased_file = glob.glob(subj_dir + '/3_EddyCo/*zeropad-EddyCo-unbiased.nii.gz')[0]
+        BiasField = glob.glob(subj_dir + '/3_EddyCo/*BiasField.nii.gz')[0]
+        bias_vis_file = iDIOvis.vis_bias(wobias_file, BiasField, unbiased_file, bvals_preproc_shelled, out_dir) 
+    elif os.path.exists(glob.glob(subj_dir + '/3_EddyCo/*-EddyCo.nii.gz')[0]) and os.path.exists(glob.glob(subj_dir + '/3_EddyCo/*-EddyCo-unbiased.nii.gz')[0]) and os.path.exists(glob.glob(subj_dir + '/3_EddyCo/*BiasField.nii.gz')[0]):
         wobias_file = glob.glob(subj_dir + '/3_EddyCo/*-EddyCo.nii.gz')[0]
         unbiased_file = glob.glob(subj_dir + '/3_EddyCo/*-EddyCo-unbiased.nii.gz')[0]
         BiasField = glob.glob(subj_dir + '/3_EddyCo/*BiasField.nii.gz')[0]
@@ -201,6 +206,13 @@ def iDIO_QC(subj_dir, template_dir, Bzerothr):
     bvals = np.sort(np.unique(bvals_preproc_shelled))
     stats_out_list = []
 
+    if os.path.exists(glob.glob(subj_dir + '/3_EddyCo/*zeropad-EddyCo.nii.gz')[0]):
+        m_cmd = 'mrgrid {} pad -all_axes -axis 2 0,-1 {}'.format(cnr_mask, tmp_dir + '/cnr_mask_2.nii.gz')
+        utils.run_cmd(m_cmd)
+        cnr_u_mask = tmp_dir + '/cnr_mask_2.nii.gz'
+    else:
+        cnr_u_mask = cnr_mask
+
     for i in range(len(bvals)):
         bX = bvals[i]
         if bX == 0:
@@ -212,7 +224,7 @@ def iDIO_QC(subj_dir, template_dir, Bzerothr):
             snr_cmd = 'fslmaths {} -div {} {}'.format(tmp_dir + '/Raw_b0mean.nii.gz', tmp_dir + '/Raw_b0std.nii.gz', tmp_dir + '/Raw_SNR.nii.gz')
             utils.run_cmd(snr_cmd)
             snr_img, _, _ = utils.load_nii(tmp_dir + '/Raw_SNR.nii.gz', ndim=3)
-            mask_img, _, _ = utils.load_nii(cnr_mask, dtype='bool', ndim=3)
+            mask_img, _, _ = utils.load_nii(cnr_u_mask, dtype='bool', ndim=3)
             snr = np.nanmedian(snr_img[mask_img])
             # bvals_shelled_file.close()
             stats_out_list.append('Raw_b{}_median_{},{}'.format(bX, 'snr' , snr))
