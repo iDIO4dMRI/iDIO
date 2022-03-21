@@ -376,7 +376,12 @@ fi
 
 
 [ -d ${OriDir}/Preprocessed_data ] || mkdir ${OriDir}/Preprocessed_data
-cp ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz
+if [ ${zeropad} == 1 ]; then
+	cp ${OriDir}/3_EddyCo/${handle_raw}-EddyCo-unbiased.nii.gz ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz
+else
+	cp ${OriDir}/3_EddyCo/${handle}-EddyCo-unbiased.nii.gz ${OriDir}/Preprocessed_data/dwi_preprocessed.nii.gz
+fi
+
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bval ${OriDir}/Preprocessed_data/dwi_preprocessed.bval
 cp ${OriDir}/3_EddyCo/${handle}-EddyCo.bvec ${OriDir}/Preprocessed_data/dwi_preprocessed.bvec
 
