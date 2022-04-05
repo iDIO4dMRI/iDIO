@@ -74,12 +74,12 @@ if [ ! -d "${OriDir}/Preprocessed_data" ]; then
 	exit 1
 fi
 
-if [ ! -d "${OriDir}/5_DTIFIT" ]; then
-	echo ""
-	echo "Error: 5_DTIFIT is not detected."
-	echo "Please process previous step..."
-	exit 1
-fi
+# if [ ! -d "${OriDir}/5_DTIFIT" ]; then
+# 	echo ""
+# 	echo "Error: 5_DTIFIT is not detected."
+# 	echo "Please process previous step..."
+# 	exit 1
+# fi
 
 
 # Check if DWI exists(default: Using resized processed.nii.gz in the Processed_data directory )

@@ -42,10 +42,10 @@ exit 1
 
 
 # Setup default variables
-#Replace pwd to HOGIO
-#setting HOGIO DIR
+#Replace pwd to iDIO_HOME
+#setting iDIO_HOME DIR
 
-AtlasDir=${HOGIO}/share
+AtlasDir=${iDIO_HOME}/share
 OriDir=$(pwd)
 tckNum=10M
 run_script=y
@@ -138,7 +138,7 @@ tcksift2 ${OriDir}/7_NetworkProc/Track_DynamicSeed_${tckNum}.tck ${OriDir}/6_CSD
 
 # ----- Registration to MNI and generate native space atlas
 echo Registrating to MNI atlas
-antsRegistrationSyNQuick.sh -d 3 -f ${AtlasDir}/MNI/mni_icbm152_t1_tal_nlin_asym_09c_bet.nii.gz -m ${OriDir}/4_T1preproc/T1w-deGibbs-BiasCo-Brain.nii.gz -o ${OriDir}/7_NetworkProc/Reg_matrix/T12MNI_ 
+antsRegistrationSyNQuick.sh -d 3 -f ${AtlasDir}/MNI/mni_icbm152_t1_tal_nlin_asym_09c_bet.nii.gz -m ${OriDir}/4_T1preproc/T1w-deGibbs-BiasCo-Brain.nii.gz -o ${OriDir}/7_NetworkProc/Reg_matrix/T12MNI_
 
 [ -d ${OriDir}/Connectivity_Matrix ] || mkdir ${OriDir}/Connectivity_Matrix
 
@@ -155,7 +155,7 @@ echo Reconstructing connectome
 
 for i in *; do
     AtName=$(echo ${i}|cut -f1 -d'_')
-    WarpImageMultiTransform 3 ${AtlasDir}/Atlas/${i} ${OriDir}/Connectivity_Matrix/Atlas/${AtName}_inT1.nii.gz -R ${OriDir}/4_T1preproc/T1w-deGibbs-BiasCo-Brain.nii.gz -i ${OriDir}/7_NetworkProc/Reg_matrix/T12MNI_0GenericAffine.mat ${OriDir}/7_NetworkProc/Reg_matrix/T12MNI_1InverseWarp.nii.gz --use-NN 
+    WarpImageMultiTransform 3 ${AtlasDir}/Atlas/${i} ${OriDir}/Connectivity_Matrix/Atlas/${AtName}_inT1.nii.gz -R ${OriDir}/4_T1preproc/T1w-deGibbs-BiasCo-Brain.nii.gz -i ${OriDir}/7_NetworkProc/Reg_matrix/T12MNI_0GenericAffine.mat ${OriDir}/7_NetworkProc/Reg_matrix/T12MNI_1InverseWarp.nii.gz --use-NN
 
     mrtransform ${OriDir}/Connectivity_Matrix/Atlas/${AtName}_inT1.nii.gz ${OriDir}/Connectivity_Matrix/Atlas/${AtName}_inDWI.nii.gz -linear ${OriDir}/4_T1preproc/Reg_matrix/str2epi.txt -interp nearest
     # ----- Network reconstruction
