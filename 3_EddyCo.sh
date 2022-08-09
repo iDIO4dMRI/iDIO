@@ -90,7 +90,7 @@ do
     l)
 		s2v_lambda=$OPTARG;;
 	n)
-		s2v_niter=$OPTARG::
+		s2v_niter=$OPTARG;;
 	\?)
 		exit 42
 		;;
