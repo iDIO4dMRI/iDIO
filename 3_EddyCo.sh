@@ -38,6 +38,8 @@ Options:
 	-m 	Slice-to-vol motion correction. This option is only implemented for the CUDA version.
 	-r  Resize dwi image to input isotropic size [default = 0: do not resize].
 	-t  Input Bzero threshold; [default = 10];
+	-n  s2v_lambda [default=1]
+	-l  s2v_niter [defualt=5]
 
 EOF
 exit 1
@@ -52,6 +54,8 @@ mporder=0
 rsimg=0
 Bzerothr=10
 run_script=y
+s2v_lambda=1
+s2v_niter=5
 
 args="$(sed -E 's/(-[A-Za-z]+ )([^-]*)( |$)/\1"\2"\3/g' <<< $@)"
 declare -a a="($args)"
@@ -60,7 +64,7 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hp:cmr:t:" optionName;
+while getopts "hp:cmr:t:l:n:" optionName;
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
@@ -83,6 +87,10 @@ do
 	t)
 		Bzerothr=$OPTARG
         ;;
+    l)
+		s2v_lambda=$OPTARG;;
+	n)
+		s2v_niter=$OPTARG::
 	\?)
 		exit 42
 		;;
@@ -222,7 +230,7 @@ case ${Topup} in
 					if [ ${mporder} == 0 ]; then
 						eddy_cuda${cuda_ver} --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --ol_type=$MBF --cnr_maps
 					else # with --mporder 8
-						eddy_cuda${cuda_ver} --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --ol_type=$MBF --mporder=8 --cnr_maps
+						eddy_cuda${cuda_ver} --imain=${handle}.nii.gz --mask=bet_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --out=${handle}-EddyCo --json=DWI.json --verbose --ol_type=$MBF --mporder=8 --cnr_maps  --s2v_lambda=${s2v_lambda} --s2v_niter=${s2v_niter}
 					fi
 				fi
 				;;
@@ -328,7 +336,7 @@ case ${Topup} in
 					if [ ${mporder} == 0 ]; then
 						eddy_cuda${cuda_ver} --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --json=DWI.json --verbose --ol_type=$MBF --cnr_maps
 					else # with --mporder 8
-						eddy_cuda${cuda_ver} --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --json=DWI.json --verbose --ol_type=$MBF --mporder=8 --cnr_maps
+						eddy_cuda${cuda_ver} --imain=${handle}.nii.gz --mask=Mean_Unwarped_Images_Brain_mask.nii.gz --index=Eddy_Index.txt --bvals=${b_handle}.bval --bvecs=${b_handle}.bvec --acqp=Acqparams_Topup.txt --topup=Topup_Output --out=${handle}-EddyCo --json=DWI.json --verbose --ol_type=$MBF --mporder=8 --cnr_maps --s2v_lambda=${s2v_lambda} --s2v_niter=${s2v_niter}
 					fi
 				fi
 				;;

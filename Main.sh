@@ -111,10 +111,20 @@ if [[ ! -z "${first}" ]] && [ ! -z "${second}" ] ; then
     step1Arg="-first ${first} -second ${second}"
 fi
 
+if [[ "1" -eq "${driftco}" ]]; then
+    step2Arg="-d"
+fi
+
 if [[ "1" -eq "${cuda}" ]]; then
     step3Arg="-c"
     if [[ "1" -eq "${stv}" ]]; then
         step3Arg="${step3Arg} -m"
+        if [[ "${s2v_lambda}" -gt "0" ]];then
+            step3Arg="${step3Arg} -l ${s2v_lambda}"
+        fi
+        if [[ "${s2v_niter}" -gt "0" ]];then
+            step3Arg="${step3Arg} -n ${s2v_niter}"
+        fi
     fi
 fi
 

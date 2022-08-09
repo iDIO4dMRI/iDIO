@@ -12,6 +12,7 @@
 ## Edit: 2021/07/28, Heather,  skip the denoise if the recon matrix is interpolated
 ## Edit: 2021/09/23, Heather, output with noise map -> for QC purpose
 ## Edit: 2021/10/13, Heather, minor correction in the naming
+## Edit: 2022/08/05, Heather, making drifting correction as optional step
 ##########################################################################################################################
 
 
@@ -33,6 +34,7 @@ System will automatically detect all folders in directory if no input arguments 
 Options:
 	-p 	Input directory(and output dir); [default = pwd directory]
 	-t  Input Bzero threshold; [default = 10]; 
+	-d  Run drifting correction
 EOF
 exit 1
 }
@@ -45,9 +47,10 @@ arg=-1
 # Setup default variables
 OriDir=$(pwd)
 Bzerothr=10
+drift=
 
 # Parse options
-while getopts "hp:t:" optionName;
+while getopts "hp:t:d:" optionName;
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in
@@ -56,8 +59,9 @@ do
 	p)
 		OriDir=$OPTARG;;
 	t)
-		Bzerothr=$OPTARG
-		;;
+		Bzerothr=$OPTARG;;
+	d)
+		drift=1;;
 	\?)
 		exit 42;;
 	*)
@@ -194,9 +198,11 @@ B0num=$(mrinfo ${File_degibbs}.nii.gz -fslgrad ${File_bvec} ${File_bval} -shell_
 B0index=$(mrinfo ${File_degibbs}.nii.gz -fslgrad ${File_bvec} ${File_bval} -shell_indices -config BZeroThreshold ${Bzerothr}|awk {'print $1'})
 
 #B0num > 3 -> do drift correction
-if [[ "${B0num}" -gt "3"  ]]; then
-	echo "Calling python script for Drifting Correction"
-	python3 ${iDIO_HOME}/python/driftco.py ${OriDir}/2_BiasCo/${File_degibbs}.nii.gz ${B0index} ${OriDir}/2_BiasCo/${File_degibbs}-DriftCo.nii.gz
-else
-	echo "Not enough number of b0 (null scans), drifting correction skipped"
+if [[ "${drift}" -eq "1" ]]; then
+	if [[ "${B0num}" -gt "3" ]]; then
+		echo "Calling python script for Drifting Correction"
+		python3 ${iDIO_HOME}/python/driftco.py ${OriDir}/2_BiasCo/${File_degibbs}.nii.gz ${B0index} ${OriDir}/2_BiasCo/${File_degibbs}-DriftCo.nii.gz
+	else
+		echo "Not enough number of b0 (null scans), drifting correction skipped"
+	fi
 fi
