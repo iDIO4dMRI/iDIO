@@ -57,5 +57,5 @@ AtlasDir=${iDIO_HOME}/share
 mtnormalise=1
 
 # 7_NetworkProc: Set track select number. [default=10M]
-trkNum=10000
+trkNum=10M
 
