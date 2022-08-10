@@ -27,13 +27,21 @@ Step=1.2.3.4.5.6.7.8
 first=
 second=
 
+# 2_BiasCo: [true=1 / false=0]
+driftco=1
+
 # 3_EddyCo: Using CUDA to speed up. NVIDIA GPU with CUDA version (8.0/9.1/10.2) is available to use this option. [true=1 / false=0]
 # cuda_ver=$(nvcc --version | grep release | cut -d ' ' -f 5 | sed 's/,//g') for CUDA version check
 cuda=0
 
 # 3_EddyCo: Slice-to-vol motion correction.
 #           This option is only implemented for the CUDA version(cuda=1). [true=1 / false=0]
+#           if stv is apply, you can define the parameter for s2v_lambda[defult = 1] /s2v_niter [defult = 5]
+#           input 0 -> using default setting
 stv=0
+s2v_lambda=0
+s2v_niter=0
+
 
 # 3_EddyCo: Resize dwi image intp isotropic voxels (mm) by given value [values / false=0]
 # apply for 3_EddyCo  [defult = 0 ]
@@ -45,5 +53,9 @@ bzero=10
 # 4_T1preproc, 7_NetworkProc, 8_QC: Set input Atlas directory. [default=${HOGIO}/share]
 AtlasDir=${iDIO_HOME}/share
 
+# 6_CSDproc: to run mtnormalise or not. [ture=1 / false=0]
+mtnormalise=1
+
 # 7_NetworkProc: Set track select number. [default=10M]
 trkNum=10M
+

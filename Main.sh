@@ -111,10 +111,20 @@ if [[ ! -z "${first}" ]] && [ ! -z "${second}" ] ; then
     step1Arg="-first ${first} -second ${second}"
 fi
 
+if [[ "1" -eq "${driftco}" ]]; then
+    step2Arg="-d"
+fi
+
 if [[ "1" -eq "${cuda}" ]]; then
     step3Arg="-c"
     if [[ "1" -eq "${stv}" ]]; then
         step3Arg="${step3Arg} -m"
+        if [[ "${s2v_lambda}" -gt "0" ]];then
+            step3Arg="${step3Arg} -l ${s2v_lambda}"
+        fi
+        if [[ "${s2v_niter}" -gt "0" ]];then
+            step3Arg="${step3Arg} -n ${s2v_niter}"
+        fi
     fi
 fi
 
@@ -130,6 +140,9 @@ if [[ ! -z "${bzero}" ]]; then
     step8Arg="${step8Arg} -t ${bzero}"
 fi
 
+if [[ "1" -eq "${mtnormalise}" ]]; then
+    step6Arg="${step6Arg} -m"
+fi
 
 if [[ ! -z "${AtlasDir}" ]]; then
     if [[ ! -d ${AtlasDir} ]]; then

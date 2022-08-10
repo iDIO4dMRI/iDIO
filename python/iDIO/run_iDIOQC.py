@@ -94,7 +94,11 @@ def iDIO_QC(subj_dir, template_dir, Bzerothr):
     else:
         iDIO_Output['DTIFIT'] = False
 
-    odf_file = glob.glob(subj_dir + '/6_CSDpreproc/S1_Response/odf_wm_norm.mif')
+    if os.path.exists(subj_dir + '/6_CSDpreproc/S1_Response/odf_wm_norm.mif'):
+        odf_file = glob.glob(subj_dir + '/6_CSDpreproc/S1_Response/odf_wm_norm.mif')
+    else:
+        odf_file = glob.glob(subj_dir + '/6_CSDpreproc/S1_Response/odf_wm.mif')
+
     if os.path.exists(odf_file[0]):
         iDIO_Output['CSDproc'] = True
     else:
