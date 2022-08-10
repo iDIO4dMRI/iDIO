@@ -132,9 +132,15 @@ mkdir ${OriDir}/7_NetworkProc/Reg_matrix
 cd ${OriDir}/7_NetworkProc
 #---- generate Track
 echo Generating track
-tckgen ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/7_NetworkProc/Track_DynamicSeed_${tckNum}.tck -act ${OriDir}/4_T1preproc/5tt2dwispace.nii.gz -backtrack -crop_at_gmwmi -seed_dynamic ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif -maxlength 250 -minlength 5 -mask ${OriDir}/Preprocessed_data/${handleMask} -select ${tckNum} -quiet
+if [[ -f ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ]]; then
+    tckgen ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/7_NetworkProc/Track_DynamicSeed_${tckNum}.tck -act ${OriDir}/4_T1preproc/5tt2dwispace.nii.gz -backtrack -crop_at_gmwmi -seed_dynamic ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif -maxlength 250 -minlength 5 -mask ${OriDir}/Preprocessed_data/${handleMask} -select ${tckNum} -quiet
 
-tcksift2 ${OriDir}/7_NetworkProc/Track_DynamicSeed_${tckNum}.tck ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/7_NetworkProc/SIFT2_weights.txt -act ${OriDir}/4_T1preproc/5tt2dwispace.nii.gz -out_mu ${OriDir}/7_NetworkProc/SIFT_mu.txt -quiet
+    tcksift2 ${OriDir}/7_NetworkProc/Track_DynamicSeed_${tckNum}.tck ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/7_NetworkProc/SIFT2_weights.txt -act ${OriDir}/4_T1preproc/5tt2dwispace.nii.gz -out_mu ${OriDir}/7_NetworkProc/SIFT_mu.txt -quiet
+else
+    tckgen ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/7_NetworkProc/Track_DynamicSeed_${tckNum}.tck -act ${OriDir}/4_T1preproc/5tt2dwispace.nii.gz -backtrack -crop_at_gmwmi -seed_dynamic ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif -maxlength 250 -minlength 5 -mask ${OriDir}/Preprocessed_data/${handleMask} -select ${tckNum} -quiet
+
+    tcksift2 ${OriDir}/7_NetworkProc/Track_DynamicSeed_${tckNum}.tck ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/7_NetworkProc/SIFT2_weights.txt -act ${OriDir}/4_T1preproc/5tt2dwispace.nii.gz -out_mu ${OriDir}/7_NetworkProc/SIFT_mu.txt -quiet
+fi
 
 # ----- Registration to MNI and generate native space atlas
 echo Registrating to MNI atlas

@@ -13,7 +13,7 @@
 
 # Set the process you need. [default=1.2.3.4.5.6.7.8]
 # Step=1.2.3.4.5.6.7.8
-Step=1.2.
+Step=6.7.8
 # 1: 1_DWIprep
 # 2: 2_BiasCo
 # 3: 3_EddyCo
@@ -29,7 +29,7 @@ first=
 second=
 
 # 2_BiasCo: 
-driftco=1
+driftco=0
 
 # 3_EddyCo: Using CUDA to speed up. NVIDIA GPU with CUDA version (8.0/9.1/10.2) is available to use this option. [true=1 / false=0]
 # cuda_ver=$(nvcc --version | grep release | cut -d ' ' -f 5 | sed 's/,//g') for CUDA version check
@@ -54,7 +54,9 @@ bzero=10
 # 4_T1preproc, 7_NetworkProc, 8_QC: Set input Atlas directory. [default=${HOGIO}/share]
 AtlasDir=${iDIO_HOME}/share
 
-# 7_NetworkProc: Set track select number. [default=10M]
-trkNum=10M
+# 6_CSDproc: to run mtnormalise or not. [ture=1 / false=0]
+mtnormalise=0
 
-mtnormalise=1
+# 7_NetworkProc: Set track select number. [default=10M]
+trkNum=10000
+

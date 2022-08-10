@@ -140,6 +140,9 @@ if [[ ! -z "${bzero}" ]]; then
     step8Arg="${step8Arg} -t ${bzero}"
 fi
 
+if [[ "1" -eq "${mtnormalise}" ]]; then
+    step6Arg="${step6Arg} -m"
+fi
 
 if [[ ! -z "${AtlasDir}" ]]; then
     if [[ ! -d ${AtlasDir} ]]; then

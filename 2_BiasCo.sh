@@ -50,7 +50,7 @@ Bzerothr=10
 drift=
 
 # Parse options
-while getopts "hp:t:d:" optionName;
+while getopts "hp:t:d" optionName;
 do
 	#echo "-$optionName is present [$OPTARG]"
 	case $optionName in

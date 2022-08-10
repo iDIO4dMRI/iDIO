@@ -8,6 +8,7 @@
 ##########################################################################################################################
 ## 20210123 - copy files from Preprocessed_data
 ##          - dwi preprocessed only, T1 processing habe been move to step 6
+## 20220805 - adding mtnnormalise as option
 ##########################################################################################################################
 ##---START OF SCRIPT----------------------------------------------------------------------------------------------------##
 ##########################################################################################################################
@@ -27,6 +28,7 @@ System will automatically detect all folders in directory if no input arguments 
 Options:
 	-p 	Input directory; [default = pwd directory]
 	-t  Input Bzero threhold; [default = 10];
+	-m  to run mtnormalise [default = 1] [0 = do not run]
 
 EOF
 exit 1
@@ -43,7 +45,7 @@ set - "${a[@]}"
 arg=-1
 
 # Parse options
-while getopts "hp:t:" optionName;
+while getopts "hp:t:m" optionName;
 do
 	case $optionName in
 	h)
@@ -55,6 +57,8 @@ do
 	t)
 		Bzerothr=$OPTARG
 		;;
+	m)
+		mtnormalise=1;;
 	\?)
 		exit 42
 		;;
@@ -203,7 +207,9 @@ if [[ ${shell_num_all} -ge 2 ]]; then
 		dwi2fod msmt_csd ${OriDir}/6_CSDpreproc/${handle}.mif ${OriDir}/6_CSDpreproc/S1_Response/response_wm.txt ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/6_CSDpreproc/S1_Response/response_csf.txt ${OriDir}/6_CSDpreproc/S1_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr} -quiet
 
 		# multi-tissue informed log-domain intensity normalisation
-		mtnormalise ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf_norm.mif -mask ${handleMask} -quiet
+		if [[ "${mtnormalise}" -eq "1" ]]; then
+			mtnormalise ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf_norm.mif -mask ${handleMask} -quiet
+		fi
 
 	else
 		#for multi-shell
@@ -211,7 +217,9 @@ if [[ ${shell_num_all} -ge 2 ]]; then
 		dwi2fod msmt_csd ${OriDir}/6_CSDpreproc/${handle}.mif ${OriDir}/6_CSDpreproc/S1_Response/response_wm.txt ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/6_CSDpreproc/S1_Response/response_gm.txt ${OriDir}/6_CSDpreproc/S1_Response/odf_gm.mif ${OriDir}/6_CSDpreproc/S1_Response/response_csf.txt ${OriDir}/6_CSDpreproc/S1_Response/odf_csf.mif -mask ${handleMask} -config BZeroThreshold ${Bzerothr} -quiet
 
 		# multi-tissue informed log-domain intensity normalisation
-		mtnormalise ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_gm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_gm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf_norm.mif -mask ${handleMask} -quiet
+		if [[ "${mtnormalise}" -eq "1" ]]; then
+			mtnormalise ${OriDir}/6_CSDpreproc/S1_Response/odf_wm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_gm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_gm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf.mif ${OriDir}/6_CSDpreproc/S1_Response/odf_csf_norm.mif -mask ${handleMask} -quiet
+		fi
 	fi
 	# fod2dec ${OriDir}/6_CSDpreproc/S1_Response/odf_wm_norm.mif ${OriDir}/6_CSDpreproc/S1_Response/wm_norm_dec.mif
 else
